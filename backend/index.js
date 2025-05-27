@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { getEnglishBotReply } = require('./rules');
+const { getEnglishBotReply, translateSingleWord } = require('./rules');
 const pool = require('./db');
 const app = express();
 
@@ -132,6 +132,42 @@ app.post('/delete-user-word', async (req, res) => {
   await pool.execute('DELETE FROM user_words WHERE id = ?', [id]);
   res.json({ message: "Đã xóa từ!" });
 });
+
+// Ở app.js hoặc routes file
+app.post('/save-highlight', async (req, res) => {
+  const { text } = req.body;
+  if (!text || text.trim().length === 0)
+    return res.status(400).json({ message: "Thiếu đoạn văn bản!" });
+
+  // Gọi hàm AI bot để dịch EN->VI
+  let translatedText = "";
+  try {
+    // Có thể truyền format message theo dạng: "Dịch sang tiếng Việt: ..."
+    translatedText = await translateSingleWord(text);
+    // Nếu getEnglishBotReply trả về object {reply}, thì lấy .reply
+    if (typeof translatedText === "object" && translatedText.reply) {
+      translatedText = translatedText.reply;
+    }
+  } catch (e) {
+    translatedText = "";
+  }
+
+  await pool.execute(
+    "INSERT INTO user_highlighted_text (text, translated_text) VALUES (?, ?)",
+    [text, translatedText]
+  );
+  res.json({ message: "Đã lưu và dịch đoạn văn bằng AI!", translatedText });
+});
+
+// API lấy danh sách các đoạn đã lưu (cho tab mới ở FE)
+app.get('/highlights', async (req, res) => {
+  const [rows] = await pool.execute(
+    "SELECT id, text, translated_text, created_at FROM user_highlighted_text ORDER BY id DESC"
+  );
+  res.json(rows);
+});
+
+// (Có thể bổ sung API xóa, update, hoặc chuyển thành từ mới nếu cần)
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`Backend running at http://localhost:${PORT}`));

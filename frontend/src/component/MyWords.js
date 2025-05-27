@@ -114,7 +114,7 @@ export default function MyWords() {
               <th>Duyệt</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody style={{ color: '#000' }}>
             {words.map(word => (
               <tr key={word.id}>
                 <td>{word.word_en}</td>

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import Chat from './Chat';
-import Feedback from './Feedback';
-import Admin from './Admin';
-import MyWords from './MyWords';
-import { useDarkMode } from './DarkModeContext';
+import Chat from './component/Chat';
+import Feedback from './component/Feedback';
+import Admin from './component/Admin';
+import MyWords from './component/MyWords';
+import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
   const [view, setView] = useState('chat');

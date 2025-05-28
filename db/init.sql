@@ -71,3 +71,5 @@ CREATE TABLE user_highlighted_text (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 ALTER TABLE user_highlighted_text ADD COLUMN translated_text TEXT;
+
+ALTER TABLE user_highlighted_text ADD COLUMN approved TINYINT(1) DEFAULT 0;

@@ -12,7 +12,7 @@ export default function MyWords() {
   }
 
   async function fetchWords() {
-    const res = await fetch("http://localhost:3001/user-words");
+    const res = await fetch("http://localhost:3001/dictionary/user-words");
     const data = await res.json();
     setWords(data);
   }
@@ -21,7 +21,7 @@ export default function MyWords() {
 
   async function approveWord(id) {
     if (!window.confirm("Bạn có chắc muốn duyệt từ này vào hệ thống từ điển?")) return;
-    const res = await fetch("http://localhost:3001/approve-word", {
+    const res = await fetch("http://localhost:3001/dictionary/approve-word", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -34,7 +34,7 @@ export default function MyWords() {
 
   async function deleteWord(id) {
     if (!window.confirm("Bạn có chắc muốn xóa từ này khỏi danh sách?")) return;
-    const res = await fetch("http://localhost:3001/delete-user-word", {
+    const res = await fetch("http://localhost:3001/dictionary/delete-user-word", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })

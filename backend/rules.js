@@ -1,6 +1,7 @@
 const pool = require('./db');
 const Fuse = require('fuse.js');
 
+// Trả về toàn bộ dictionary với type, example (giúp tra theo loại từ)
 async function getVocabulary() {
     const [rows] = await pool.execute(
         'SELECT word_en, word_vi, type, example_en, example_vi FROM dictionary'
@@ -18,22 +19,64 @@ async function logUnknownQuery(message) {
     await pool.execute('INSERT INTO unknown_queries (user_message) VALUES (?)', [message]);
 }
 
-// Giả sử dùng MySQL và pool đã khai báo
+// Dịch một từ đơn EN->VI, trả về string hoặc null
 async function translateSingleWord(word_en) {
     const [rows] = await pool.execute(
         "SELECT word_vi FROM dictionary WHERE word_en = ? LIMIT 1", 
         [word_en.trim().toLowerCase()]
     );
-    if (rows.length > 0) {
-        return rows[0].word_vi; // Trả về nghĩa tiếng Việt
+    return rows.length > 0 ? rows[0].word_vi : null;
+}
+
+// Helper: Format kết quả tra từ Anh-Việt
+async function formatEnViResult(word, founds) {
+    let html = `<div><b>Các loại từ và nghĩa của "<span style='color:#7137ea'>${word}</span>":</b><ul style="margin-left:1em;">`;
+    for (const found of founds) {
+        html += `<li style="margin-bottom:0.7em;">
+          <b>${found.type || "Loại từ không xác định"}</b><br/>
+          <span>• Nghĩa:</span> ${found.word_vi ? `<span>${found.word_vi}</span>` : "<i>Chưa có</i>"}
+        `;
+        let hasExample = false;
+        if (found.example_en || found.example_vi) {
+            html += `<br/><span>• Ví dụ:</span>
+                <ul style="margin-left:1.3em; margin-bottom:0.3em;">
+                  <li><i>${found.example_en || ""}</i> ${found.example_vi ? `<span style="color:#666;">(${found.example_vi})</span>` : ""}</li>
+                </ul>`;
+            hasExample = true;
+        }
+        if (!hasExample) {
+            const examples = await getSentences(found.word_en);
+            if (examples.length) {
+                html += `<br/><span>• Một số ví dụ khác:</span>
+                  <ul style="margin-left:1.3em; margin-bottom:0.3em;">` +
+                    examples.map(ex =>
+                        `<li><i>${ex.sentence_en}</i> <span style="color:#666;">(${ex.sentence_vi || "?"})</span></li>`
+                    ).join('') +
+                    `</ul>`;
+            }
+        }
+        html += `</li>`;
     }
-    return null; // Không tìm thấy
+    html += `</ul></div>`;
+    return html;
+}
+
+// Helper: Fuzzy search
+function getFuzzyResult(word, vocabRows, field = 'word_en') {
+    const fuse = new Fuse(vocabRows.map(r => r[field]), { threshold: 0.4 });
+    const fuzzy = fuse.search(word);
+    if (fuzzy.length > 0) {
+        const w = fuzzy[0].item;
+        return vocabRows.find(r => r[field] === w);
+    }
+    return null;
 }
 
 async function getEnglishBotReply(message) {
     const msg = message.toLowerCase().trim();
     const vocabRows = await getVocabulary();
 
+    // 1. Nhận diện intent
     let word = null, en2vi = false, vi2en = false, match;
 
     const patternsEnVi = [
@@ -53,7 +96,6 @@ async function getEnglishBotReply(message) {
             break;
         }
     }
-
     if (!word) {
         const patternsViEn = [
             /dịch từ ([\w\s\-à-ỹ]+) sang tiếng anh/i,
@@ -70,56 +112,22 @@ async function getEnglishBotReply(message) {
             }
         }
     }
-
     if (!word) {
         await logUnknownQuery(message);
         return `<div>Xin lỗi, tôi chưa hiểu từ/câu này. Bạn có thể góp ý hoặc chờ admin cập nhật thêm!</div>`;
     }
 
-    // --- Dịch Anh-Việt (tra Anh-Việt) ---
+    // 2. Dịch Anh-Việt (tra từ)
     if (en2vi) {
         const founds = vocabRows.filter(row => row.word_en.trim().toLowerCase() === word);
-
         if (founds.length > 0) {
-            let html = `<div><b>Các loại từ và nghĩa của "<span style='color:#7137ea'>${word}</span>":</b><ul style="margin-left:1em;">`;
-            for (const found of founds) {
-                html += `<li style="margin-bottom:0.7em;">
-                  <b>${found.type || "Loại từ không xác định"}</b><br/>
-                  <span>• Nghĩa:</span> ${found.word_vi ? `<span>${found.word_vi}</span>` : "<i>Chưa có</i>"}
-                `;
-                let hasExample = false;
-                if (found.example_en || found.example_vi) {
-                    html += `<br/><span>• Ví dụ:</span>
-                        <ul style="margin-left:1.3em; margin-bottom:0.3em;">
-                          <li><i>${found.example_en || ""}</i> ${found.example_vi ? `<span style="color:#666;">(${found.example_vi})</span>` : ""}</li>
-                        </ul>`;
-                    hasExample = true;
-                }
-                if (!hasExample) {
-                    const examples = await getSentences(found.word_en);
-                    if (examples.length) {
-                        html += `<br/><span>• Một số ví dụ khác:</span>
-                          <ul style="margin-left:1.3em; margin-bottom:0.3em;">` +
-                            examples.map(ex =>
-                                `<li><i>${ex.sentence_en}</i> <span style="color:#666;">(${ex.sentence_vi || "?"})</span></li>`
-                            ).join('') +
-                            `</ul>`;
-                    }
-                }
-                html += `</li>`;
-            }
-            html += `</ul></div>`;
-            return html;
+            return await formatEnViResult(word, founds);
         }
-
-        // Fuzzy search
-        const fuseEn = new Fuse(vocabRows.map(r => r.word_en), { threshold: 0.4 });
-        const fuzzy = fuseEn.search(word);
-        if (fuzzy.length > 0) {
-            const w = fuzzy[0].item;
-            const frow = vocabRows.find(r => r.word_en === w);
+        // Fuzzy
+        const frow = getFuzzyResult(word, vocabRows, 'word_en');
+        if (frow) {
             const examples = await getSentences(frow.word_en);
-            let html = `<div>Bạn có hỏi từ "<b>${w}</b>"? Từ này nghĩa là: <b>${frow.word_vi}</b>`;
+            let html = `<div>Bạn có hỏi từ "<b>${frow.word_en}</b>"? Từ này nghĩa là: <b>${frow.word_vi}</b>`;
             if (examples.length) {
                 html += `<br/>Ví dụ:<ul style="margin-left:1.3em;">` +
                     examples.map(ex => `<li><i>${ex.sentence_en}</i> <span style="color:#666;">(${ex.sentence_vi || "?"})</span></li>`).join('') +
@@ -132,7 +140,7 @@ async function getEnglishBotReply(message) {
         return `<div>Xin lỗi, tôi chưa biết nghĩa của từ "<b>${word}</b>". Bạn có thể góp ý để tôi học thêm!</div>`;
     }
 
-    // --- Dịch Việt-Anh (tra Việt-Anh) ---
+    // 3. Dịch Việt-Anh (tra từ)
     if (vi2en) {
         const found = vocabRows.find(row => row.word_vi.trim().toLowerCase() === word);
         if (found) {
@@ -146,14 +154,11 @@ async function getEnglishBotReply(message) {
             html += `</div>`;
             return html;
         }
-        // Fuzzy search
-        const fuseVi = new Fuse(vocabRows.map(r => r.word_vi), { threshold: 0.4 });
-        const fuzzy = fuseVi.search(word);
-        if (fuzzy.length > 0) {
-            const wvn = fuzzy[0].item;
-            const row = vocabRows.find(r => r.word_vi === wvn);
+        // Fuzzy
+        const row = getFuzzyResult(word, vocabRows, 'word_vi');
+        if (row) {
             const examples = await getSentences(row.word_en);
-            let html = `<div>Bạn có hỏi từ "<b>${wvn}</b>"? Tiếng Anh là: <b>${row.word_en}</b>`;
+            let html = `<div>Bạn có hỏi từ "<b>${row.word_vi}</b>"? Tiếng Anh là: <b>${row.word_en}</b>`;
             if (examples.length) {
                 html += `<br/>Ví dụ:<ul style="margin-left:1.3em;">` +
                     examples.map(ex => `<li><i>${ex.sentence_en}</i> <span style="color:#666;">(${ex.sentence_vi || "?"})</span></li>`).join('') +

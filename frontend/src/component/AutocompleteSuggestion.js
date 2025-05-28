@@ -25,7 +25,7 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
     clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       axios
-        .get(`http://localhost:3001/suggest?query=${encodeURIComponent(value)}`)
+        .get(`http://localhost:3001/chat/suggest?query=${encodeURIComponent(value)}`)
         .then(res => {
           setSuggestions(res.data || []);
           setShowDropdown(true);

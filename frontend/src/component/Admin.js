@@ -48,7 +48,8 @@ function Admin() {
               background: fb.approved ? "#e6ffe6" : "#fffbe7",
               borderRadius: 8,
               boxShadow: "0 2px 10px #f0f0f0",
-              padding: "12px 16px"
+              padding: "12px 16px",
+              color: "#000"
             }}
           >
             <div style={{ marginBottom: 4 }}>

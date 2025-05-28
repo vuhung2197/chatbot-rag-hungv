@@ -73,19 +73,6 @@ export default function Chat() {
           onSelect={handleSelectSuggestion}
           onEnterKey={sendChat}
         />
-        <button
-          onClick={sendChat}
-          style={{
-            background: "#7137ea", color: "white", border: "none",
-            borderRadius: "0 1em 1em 0", padding: "10px 18px",
-            fontSize: "1em", fontWeight: 500, cursor: "pointer",
-            transition: "background 0.2s"
-          }}
-          onMouseOver={e => e.target.style.background = "#5223a7"}
-          onMouseOut={e => e.target.style.background = "#7137ea"}
-        >
-          Gửi
-        </button>
       </div>
       <div style={{
         maxHeight: 260, overflowY: "auto",

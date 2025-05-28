@@ -25,7 +25,7 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
     clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       axios
-        .get(`http://localhost:3001/suggest?query=${encodeURIComponent(value)}`)
+        .get(`http://localhost:3001/chat/suggest?query=${encodeURIComponent(value)}`)
         .then(res => {
           setSuggestions(res.data || []);
           setShowDropdown(true);
@@ -71,12 +71,26 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
   };
 
   return (
-    <div style={{ position: "relative", flex: 1 }}>
+    <div style={{
+      position: "relative",
+      display: "flex",
+      alignItems: "center",
+      width: "100%",
+      background: "#fff",
+      borderRadius: "1em",
+      border: "1px solid #bcbcbc"
+    }}>
       <input
         ref={inputRef}
         style={{
-          width: "90%", padding: "10px 14px", borderRadius: "1em 0 0 1em",
-          border: "1px solid #bcbcbc", fontSize: "1em", outline: "none", background: "#f8f8ff"
+          flex: 1,
+          background: "#fff",
+          color: "#000",
+          padding: "10px 16px 10px 14px",
+          border: "none",
+          borderRadius: "1em",
+          fontSize: "1em",
+          outline: "none",
         }}
         value={value}
         placeholder="Nhập từ hoặc câu hỏi..."
@@ -92,6 +106,35 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
         onKeyDown={handleKeyDown}
         autoComplete="off"
       />
+      {/* Nút gửi là mũi tên, bấm gọi onEnterKey */}
+      <button
+        onClick={onEnterKey}
+        style={{
+          position: "absolute",
+          right: 8,
+          top: "50%",
+          transform: "translateY(-50%)",
+          background: "#7137ea",
+          border: "none",
+          borderRadius: "50%",
+          width: 38,
+          height: 38,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fff",
+          fontSize: "1.3em",
+          cursor: "pointer",
+          boxShadow: "0 2px 8px #d2d2ff44"
+        }}
+        tabIndex={-1} // Không tab vào nút gửi
+        title="Gửi"
+      >
+        {/* Có thể dùng icon ↑ hoặc SVG */}
+        <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+          <path d="M10 16V4M10 4L4 10M10 4l6 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
       {showDropdown && suggestions.length > 0 && (
         <ul style={{
           listStyle: "none",

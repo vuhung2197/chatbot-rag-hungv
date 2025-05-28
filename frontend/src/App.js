@@ -3,6 +3,7 @@ import Chat from './component/Chat';
 import Feedback from './component/Feedback';
 import Admin from './component/Admin';
 import MyWords from './component/MyWords';
+import Highlights from './component/Highlights';
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
@@ -37,7 +38,13 @@ export default function App() {
       }}>
         <button
           onClick={() => setView('chat')}
-          style={{ background: view === 'chat' ? '#7137ea' : '#f6f9fc', color: view === 'chat' ? '#fff' : '#333', border: "1px solid #7137ea", borderRadius: 8, padding: "8px 16px" }}
+          style={{
+            background: view === 'chat' ? '#7137ea' : '#f6f9fc',
+            color: view === 'chat' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
         >
           Học tiếng Anh
         </button>
@@ -54,14 +61,38 @@ export default function App() {
           My Words
         </button>
         <button
+          onClick={() => setView('highlights')}
+          style={{
+            background: view === 'highlights' ? '#7137ea' : '#f6f9fc',
+            color: view === 'highlights' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
+        >
+          Highlights
+        </button>
+        <button
           onClick={() => setView('feedback')}
-          style={{ background: view === 'feedback' ? '#7137ea' : '#f6f9fc', color: view === 'feedback' ? '#fff' : '#333', border: "1px solid #7137ea", borderRadius: 8, padding: "8px 16px" }}
+          style={{
+            background: view === 'feedback' ? '#7137ea' : '#f6f9fc',
+            color: view === 'feedback' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
         >
           Góp ý bot
         </button>
         <button
           onClick={() => setView('admin')}
-          style={{ background: view === 'admin' ? '#7137ea' : '#f6f9fc', color: view === 'admin' ? '#fff' : '#333', border: "1px solid #7137ea", borderRadius: 8, padding: "8px 16px" }}
+          style={{
+            background: view === 'admin' ? '#7137ea' : '#f6f9fc',
+            color: view === 'admin' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
         >
           Admin (Duyệt góp ý)
         </button>
@@ -85,6 +116,7 @@ export default function App() {
       )}
       {view === 'chat' && <Chat darkMode={darkMode} />}
       {view === 'mywords' && <MyWords darkMode={darkMode} />}
+      {view === 'highlights' && <Highlights darkMode={darkMode} />}
       {view === 'feedback' && <Feedback darkMode={darkMode} />}
       {view === 'admin' && <Admin darkMode={darkMode} />}
     </>

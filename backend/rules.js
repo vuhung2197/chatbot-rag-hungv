@@ -18,6 +18,18 @@ async function logUnknownQuery(message) {
     await pool.execute('INSERT INTO unknown_queries (user_message) VALUES (?)', [message]);
 }
 
+// Giả sử dùng MySQL và pool đã khai báo
+async function translateSingleWord(word_en) {
+    const [rows] = await pool.execute(
+        "SELECT word_vi FROM dictionary WHERE word_en = ? LIMIT 1", 
+        [word_en.trim().toLowerCase()]
+    );
+    if (rows.length > 0) {
+        return rows[0].word_vi; // Trả về nghĩa tiếng Việt
+    }
+    return null; // Không tìm thấy
+}
+
 async function getEnglishBotReply(message) {
     const msg = message.toLowerCase().trim();
     const vocabRows = await getVocabulary();
@@ -155,4 +167,4 @@ async function getEnglishBotReply(message) {
     }
 }
 
-module.exports = { getEnglishBotReply };
+module.exports = { getEnglishBotReply, translateSingleWord };

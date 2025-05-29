@@ -1,5 +1,7 @@
 const pool = require('./db');
 const Fuse = require('fuse.js');
+const OpenAI = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Trả về toàn bộ dictionary với type, example (giúp tra theo loại từ)
 async function getVocabulary() {
@@ -19,13 +21,44 @@ async function logUnknownQuery(message) {
     await pool.execute('INSERT INTO unknown_queries (user_message) VALUES (?)', [message]);
 }
 
-// Dịch một từ đơn EN->VI, trả về string hoặc null
-async function translateSingleWord(word_en) {
-    const [rows] = await pool.execute(
-        "SELECT word_vi FROM dictionary WHERE word_en = ? LIMIT 1", 
-        [word_en.trim().toLowerCase()]
-    );
-    return rows.length > 0 ? rows[0].word_vi : null;
+async function translateWordByWord(sentence) {
+  // Tách từ, loại bỏ dấu câu
+  const words = sentence
+    .replace(/[.,!?;:()"]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // Dịch từng từ, chỉ lấy nghĩa thuần Việt, bỏ nghĩa không hợp lệ
+  const translations = await Promise.all(
+    words.map(async (word) => {
+      let vi = await translateSingleWord(word.toLowerCase());
+      // Loại bỏ kí tự không mong muốn, chỉ giữ chữ cái tiếng Việt, số và dấu cách
+      vi = vi.replace(/[^a-zA-ZÀ-ỹà-ỹ0-9\s]/g, '').trim();
+      return vi;
+    })
+  );
+
+  // Lọc bỏ nghĩa rỗng hoặc toàn kí tự lạ (nếu có)
+  const filtered = translations.filter(vi => vi && vi.length > 0);
+
+  // Ghép lại thành một chuỗi, cách nhau bởi dấu cách
+  return filtered.join(' ');
+}
+
+async function translateSingleWord(word) {
+  const prompt = `Translate the English word '${word}' to Vietnamese. Only return the Vietnamese word, nothing else.`;
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 10,
+      temperature: 0,
+    });
+    return completion.choices[0].message.content.trim();
+  } catch (err) {
+    console.error("OpenAI error:", err.response ? err.response.data : err);
+    return "(lỗi)";
+  }
 }
 
 // Helper: Format kết quả tra từ Anh-Việt
@@ -172,4 +205,4 @@ async function getEnglishBotReply(message) {
     }
 }
 
-module.exports = { getEnglishBotReply, translateSingleWord };
+module.exports = { getEnglishBotReply, translateWordByWord };

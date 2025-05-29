@@ -5,6 +5,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+require('dotenv').config();
+
 // Import routes
 app.use('/chat', require('./routes/chat'));
 app.use('/feedback', require('./routes/feedback'));

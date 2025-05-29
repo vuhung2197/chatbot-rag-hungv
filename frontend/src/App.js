@@ -32,7 +32,10 @@ export default function App() {
       >
         {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
       </button>
-      <h2 style={{ textAlign: "center", color: darkMode ? "#fff" : "#7137ea" }}>English Chatbot</h2>
+      <h3 style={{
+        color: "#7137ea", fontSize: "2em", fontWeight: "bold",
+        marginBottom: "1em", textAlign: "center"
+      }}>📚 Dictionary Chatbot</h3>
       <nav style={{
         marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10
       }}>

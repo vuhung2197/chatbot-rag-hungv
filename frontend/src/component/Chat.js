@@ -40,6 +40,7 @@ export default function Chat() {
     const data = await res.json();
     setHistory([{ user: input, bot: data.reply }, ...history]);
     setInput("");
+    console.log("Bot reply:", data.reply);
   }
 
   function handleSelectSuggestion(word) {
@@ -62,10 +63,6 @@ export default function Chat() {
         {showGuide ? "Ẩn hướng dẫn" : "Hiện hướng dẫn"}
       </button>
       {showGuide && <HelpGuide />}
-      <h3 style={{
-        color: "#7137ea", fontSize: "2em", fontWeight: "bold",
-        marginBottom: "1em", textAlign: "center"
-      }}>📚 Dictionary Chatbot</h3>
       <div style={{ display: "flex", gap: 8, marginBottom: "1.5em" }}>
         <AutocompleteSuggestion
           value={input}

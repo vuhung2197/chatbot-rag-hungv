@@ -98,7 +98,7 @@ export default function MyWords() {
       )}
 
       {words.length === 0 ? (
-        <div>Chưa có từ nào được lưu.</div>
+        <div style={{ color: "#000" }}>Chưa có từ nào được lưu.</div>
       ) : (
         <table
           style={{

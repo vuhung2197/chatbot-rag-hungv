@@ -22,27 +22,24 @@ async function logUnknownQuery(message) {
 }
 
 async function translateWordByWord(sentence) {
-  // Tách từ, loại bỏ dấu câu
+  // Tách từng từ, loại bỏ dấu câu
   const words = sentence
     .replace(/[.,!?;:()"]/g, '')
     .split(/\s+/)
     .filter(Boolean);
 
-  // Dịch từng từ, chỉ lấy nghĩa thuần Việt, bỏ nghĩa không hợp lệ
+  // Dịch từng từ và trả về dạng { en, vi }
   const translations = await Promise.all(
     words.map(async (word) => {
       let vi = await translateSingleWord(word.toLowerCase());
-      // Loại bỏ kí tự không mong muốn, chỉ giữ chữ cái tiếng Việt, số và dấu cách
+      // Lọc ký tự không mong muốn, chỉ lấy nghĩa tiếng Việt chuẩn
       vi = vi.replace(/[^a-zA-ZÀ-ỹà-ỹ0-9\s]/g, '').trim();
-      return vi;
+      return { en: word, vi };
     })
   );
 
-  // Lọc bỏ nghĩa rỗng hoặc toàn kí tự lạ (nếu có)
-  const filtered = translations.filter(vi => vi && vi.length > 0);
-
-  // Ghép lại thành một chuỗi, cách nhau bởi dấu cách
-  return filtered.join(' ');
+  // Loại bỏ từ không dịch được
+  return translations.filter(item => item.vi && item.vi.length > 0);
 }
 
 async function translateSingleWord(word) {

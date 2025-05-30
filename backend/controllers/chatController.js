@@ -1,13 +1,29 @@
 const pool = require('../db');
-const { getEnglishBotReply } = require('../rules');
+const { askChatGPT } = require('../rules');
 
 exports.chat = async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ reply: "No message!" });
-  const reply = await getEnglishBotReply(message);
-  await pool.execute(
-      "INSERT INTO chat_history (message, reply) VALUES (?, ?)", [message, reply]
-  );
+  // Lấy toàn bộ knowledge từ DB
+  const [rows] = await pool.execute("SELECT * FROM knowledge_base");
+  const allKnowledge = rows;
+
+  // Lọc contexts
+  const lowerQuestion = message.toLowerCase();
+  const contexts = allKnowledge
+    .filter(k =>
+      k.content.toLowerCase().includes(lowerQuestion) ||
+      k.title.toLowerCase().includes(lowerQuestion)
+    )
+    .map(k => k.content);
+
+  // Không có contexts phù hợp
+  if (contexts.length === 0) {
+    return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
+  }
+
+  // Có contexts, gọi AI
+  const reply = await askChatGPT({ message, contexts, apiKey: process.env.OPENAI_API_KEY });
   res.json({ reply });
 };
 

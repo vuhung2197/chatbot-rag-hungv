@@ -73,3 +73,10 @@ CREATE TABLE user_highlighted_text (
 ALTER TABLE user_highlighted_text ADD COLUMN translated_text TEXT;
 
 ALTER TABLE user_highlighted_text ADD COLUMN approved TINYINT(1) DEFAULT 0;
+
+DROP TABLE IF EXISTS knowledge_base;
+CREATE TABLE knowledge_base (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255),
+    content TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

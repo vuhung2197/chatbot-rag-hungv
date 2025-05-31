@@ -4,7 +4,7 @@ const { askChatGPT } = require('../rules');
 exports.chat = async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ reply: "No message!" });
-  // Lấy toàn bộ knowledge từ DB
+  // Tìm các dòng trong bảng knowledge base mà nội dung trong title hoặc content phù hợp nhất với nội dung truyền vào, chỉ lấy tối đa 5 kết quả
   const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE MATCH(title, content) AGAINST(?) LIMIT 5", [message]);
   const allKnowledge = rows;
 

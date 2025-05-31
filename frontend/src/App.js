@@ -4,7 +4,7 @@ import Feedback from './component/Feedback';
 import Admin from './component/Admin';
 import MyWords from './component/MyWords';
 import Highlights from './component/Highlights';
-import KnowledgeAdmin from './component/KnowledgeAdmin'; // Thêm dòng này
+import KnowledgeAdmin from './component/KnowledgeAdmin';
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {

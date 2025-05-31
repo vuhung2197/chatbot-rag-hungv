@@ -2,6 +2,7 @@ const pool = require('./db');
 const Fuse = require('fuse.js');
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const axios = require('axios');
 
 // Trả về toàn bộ dictionary với type, example (giúp tra theo loại từ)
 async function getVocabulary() {
@@ -22,27 +23,24 @@ async function logUnknownQuery(message) {
 }
 
 async function translateWordByWord(sentence) {
-  // Tách từ, loại bỏ dấu câu
+  // Tách từng từ, loại bỏ dấu câu
   const words = sentence
     .replace(/[.,!?;:()"]/g, '')
     .split(/\s+/)
     .filter(Boolean);
 
-  // Dịch từng từ, chỉ lấy nghĩa thuần Việt, bỏ nghĩa không hợp lệ
+  // Dịch từng từ và trả về dạng { en, vi }
   const translations = await Promise.all(
     words.map(async (word) => {
       let vi = await translateSingleWord(word.toLowerCase());
-      // Loại bỏ kí tự không mong muốn, chỉ giữ chữ cái tiếng Việt, số và dấu cách
+      // Lọc ký tự không mong muốn, chỉ lấy nghĩa tiếng Việt chuẩn
       vi = vi.replace(/[^a-zA-ZÀ-ỹà-ỹ0-9\s]/g, '').trim();
-      return vi;
+      return { en: word, vi };
     })
   );
 
-  // Lọc bỏ nghĩa rỗng hoặc toàn kí tự lạ (nếu có)
-  const filtered = translations.filter(vi => vi && vi.length > 0);
-
-  // Ghép lại thành một chuỗi, cách nhau bởi dấu cách
-  return filtered.join(' ');
+  // Loại bỏ từ không dịch được
+  return translations.filter(item => item.vi && item.vi.length > 0);
 }
 
 async function translateSingleWord(word) {
@@ -103,6 +101,43 @@ function getFuzzyResult(word, vocabRows, field = 'word_en') {
         return vocabRows.find(r => r[field] === w);
     }
     return null;
+}
+
+async function askChatGPT({ question, contexts, apiKey }) {
+  if (!contexts || contexts.length === 0) {
+    return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
+  }
+  // contexts: array các đoạn kiến thức liên quan (content)
+  // Tối đa khoảng 10-20 đoạn, hoặc tổng token < 10,000
+
+  // Tạo context string
+  const contextString = contexts.map((c, i) => `[${i + 1}] ${c}`).join('\n\n');
+
+  // Prompt mẫu
+  const prompt = `
+Dưới đây là các đoạn kiến thức đã học:
+${contextString}
+
+Dựa vào các đoạn kiến thức trên, hãy trả lời câu hỏi sau một cách chính xác, ngắn gọn và bám sát kiến thức đã cung cấp. Nếu không đủ thông tin, hãy trả lời "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này".
+
+Câu hỏi: ${question}
+  `;
+
+  const response = await axios.post(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      model: 'gpt-4o', // Model mạnh nhất hiện nay của OpenAI
+      messages: [
+        { role: 'system', content: 'Bạn là trợ lý AI chuyên trả lời dựa trên kiến thức đã cung cấp.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.2,
+      max_tokens: 512,
+    },
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+
+  return response.data.choices[0].message.content.trim();
 }
 
 async function getEnglishBotReply(message) {
@@ -205,4 +240,4 @@ async function getEnglishBotReply(message) {
     }
 }
 
-module.exports = { getEnglishBotReply, translateWordByWord };
+module.exports = { getEnglishBotReply, translateWordByWord, askChatGPT };

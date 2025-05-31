@@ -4,6 +4,7 @@ import Feedback from './component/Feedback';
 import Admin from './component/Admin';
 import MyWords from './component/MyWords';
 import Highlights from './component/Highlights';
+import KnowledgeAdmin from './component/KnowledgeAdmin'; // Thêm dòng này
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
@@ -99,6 +100,18 @@ export default function App() {
         >
           Admin (Duyệt góp ý)
         </button>
+        <button
+          onClick={() => setView('knowledgeadmin')}
+          style={{
+            background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
+            color: view === 'knowledgeadmin' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
+        >
+          Knowledge Admin
+        </button>
       </nav>
       {toast && (
         <div style={{
@@ -122,6 +135,7 @@ export default function App() {
       {view === 'highlights' && <Highlights darkMode={darkMode} />}
       {view === 'feedback' && <Feedback darkMode={darkMode} />}
       {view === 'admin' && <Admin darkMode={darkMode} />}
+      {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
     </>
   );
 }

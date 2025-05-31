@@ -103,7 +103,8 @@ function getFuzzyResult(word, vocabRows, field = 'word_en') {
     return null;
 }
 
-async function askChatGPT({ question, contexts, apiKey }) {
+async function askChatGPT(question, contexts) {
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!contexts || contexts.length === 0) {
     return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
   }
@@ -114,14 +115,7 @@ async function askChatGPT({ question, contexts, apiKey }) {
   const contextString = contexts.map((c, i) => `[${i + 1}] ${c}`).join('\n\n');
 
   // Prompt mẫu
-  const prompt = `
-Dưới đây là các đoạn kiến thức đã học:
-${contextString}
-
-Dựa vào các đoạn kiến thức trên, hãy trả lời câu hỏi sau một cách chính xác, ngắn gọn và bám sát kiến thức đã cung cấp. Nếu không đủ thông tin, hãy trả lời "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này".
-
-Câu hỏi: ${question}
-  `;
+  const prompt = `Chỉ sử dụng các đoạn kiến thức sau để trả lời câu hỏi. Nếu không đủ thông tin, trả lời đúng nguyên văn: "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này." Kiến thức: ${contextString} Câu hỏi: ${question}`;
 
   const response = await axios.post(
     'https://api.openai.com/v1/chat/completions',
@@ -240,4 +234,4 @@ async function getEnglishBotReply(message) {
     }
 }
 
-module.exports = { getEnglishBotReply, translateWordByWord, askChatGPT };
+module.exports = { askChatGPT };

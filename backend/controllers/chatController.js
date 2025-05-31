@@ -5,7 +5,7 @@ exports.chat = async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ reply: "No message!" });
   // Lấy toàn bộ knowledge từ DB
-  const [rows] = await pool.execute("SELECT * FROM knowledge_base");
+  const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE MATCH(title, content) AGAINST(?) LIMIT 5", [message]);
   const allKnowledge = rows;
 
   // Lọc contexts
@@ -15,7 +15,8 @@ exports.chat = async (req, res) => {
       k.content.toLowerCase().includes(lowerQuestion) ||
       k.title.toLowerCase().includes(lowerQuestion)
     )
-    .map(k => k.content);
+    .map(k => k.content)
+    .slice(0, 5); // chỉ lấy 5 đoạn đầu tiên
 
   // Không có contexts phù hợp
   if (contexts.length === 0) {
@@ -23,7 +24,10 @@ exports.chat = async (req, res) => {
   }
 
   // Có contexts, gọi AI
-  const reply = await askChatGPT({ message, contexts, apiKey: process.env.OPENAI_API_KEY });
+  const t0 = Date.now();
+  const reply = await askChatGPT(message, contexts);
+  const t1 = Date.now();
+  console.log("Thời gian gọi OpenAI:", (t1 - t0), "ms");
   res.json({ reply });
 };
 

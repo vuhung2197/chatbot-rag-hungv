@@ -80,3 +80,7 @@ CREATE TABLE knowledge_base (
     title VARCHAR(255),
     content TEXT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+ALTER TABLE knowledge_base
+ADD FULLTEXT(title, content);
+

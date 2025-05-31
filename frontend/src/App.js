@@ -23,7 +23,7 @@ export default function App() {
       <button
         onClick={toggleDarkMode}
         style={{
-          position: "absolute", right: 30, top: 0,
+          position: "absolute", right: 0, top: 10,
           background: darkMode ? "#333" : "#fff",
           color: darkMode ? "#fff" : "#7137ea",
           border: "1px solid #7137ea",

@@ -39,7 +39,7 @@ function Admin() {
         background: "#44bd32", color: "#fff", padding: "8px 18px", borderRadius: 8,
         marginBottom: 14, fontWeight: 500
       }}>{toast}</div>}
-      <div style={{ maxHeight: 350, overflowY: 'auto', border: '1px solid #eee', borderRadius: 10, padding: 14 }}>
+      <div style={{ maxHeight: 350, overflowY: 'auto', border: '1px solid #eee', borderRadius: 10, padding: 14, color: "#000" }}>
         {feedbacks.length === 0 ? <div>Chưa có góp ý nào.</div> : feedbacks.map((fb) => (
           <div
             key={fb.id}

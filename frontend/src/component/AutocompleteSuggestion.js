@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-export default function AutocompleteSuggestion({ value, onChange, onSelect, onEnterKey }) {
+export default function AutocompleteSuggestion({ value, onChange, onSelect, onEnterKey, disabled }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlight, setHighlight] = useState(-1);
@@ -105,13 +105,15 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
         onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         onKeyDown={handleKeyDown}
         autoComplete="off"
+        disabled={disabled}
       />
       {/* Nút gửi là mũi tên, bấm gọi onEnterKey */}
       <button
         onClick={onEnterKey}
+        disabled={disabled}
         style={{
           position: "absolute",
-          right: 8,
+          right: 0,
           top: "50%",
           transform: "translateY(-50%)",
           background: "#7137ea",
@@ -124,13 +126,13 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
           justifyContent: "center",
           color: "#fff",
           fontSize: "1.3em",
-          cursor: "pointer",
+          cursor: disabled ? "not-allowed" : "pointer",
+          opacity: disabled ? 0.5 : 1,
           boxShadow: "0 2px 8px #d2d2ff44"
         }}
-        tabIndex={-1} // Không tab vào nút gửi
+        tabIndex={-1}
         title="Gửi"
       >
-        {/* Có thể dùng icon ↑ hoặc SVG */}
         <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
           <path d="M10 16V4M10 4L4 10M10 4l6 6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>

@@ -84,6 +84,12 @@ CREATE TABLE knowledge_base (
 ALTER TABLE knowledge_base
 ADD FULLTEXT(title, content);
 
+CREATE TABLE important_keywords (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  keyword VARCHAR(100) NOT NULL UNIQUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 INSERT INTO `knowledge_base` (`id`, `title`, `content`) VALUES
 (1, 'Docker là gì?\r\n', 'Docker là một nền tảng mã nguồn mở giúp đóng gói, phân phối và chạy các ứng dụng trong môi trường gọi là container. Nhờ Docker, ứng dụng được cô lập với hệ điều hành và các ứng dụng khác, đảm bảo chạy đồng nhất trên nhiều môi trường.'),
 (2, 'Sự khác biệt giữa Props và State trong React', 'Props là dữ liệu truyền từ component cha xuống component con và không thể thay đổi trong component con. State là dữ liệu cục bộ của mỗi component và có thể thay đổi bằng hàm setState.'),

@@ -15,8 +15,7 @@ function speak(text, lang = "en-US") {
 
 // Hàm lấy ra từ cần phát âm từ phần trả lời của bot
 function extractWordFromBotReply(botReply) {
-  // Tìm từ nằm trong dấu "..."
-  const match = botReply.match(/nghĩa của &quot;(.+?)&quot;/i) // trường hợp trả về &quot;
+  const match = botReply.match(/nghĩa của &quot;(.+?)&quot;/i)
     || botReply.match(/nghĩa của "(.+?)"/i)
     || botReply.match(/Từ &quot;(.+?)&quot;/i)
     || botReply.match(/Từ "(.+?)"/i)
@@ -29,24 +28,35 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]);
   const [showGuide, setShowGuide] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   async function sendChat() {
-    if (!input.trim()) return;
-    const res = await fetch("http://localhost:3001/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input })
-    });
-    const data = await res.json();
-    setHistory([{ user: input, bot: data.reply }, ...history]);
-    setInput("");
-    console.log("Bot reply:", data.reply);
+    if (!input.trim() || loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:3001/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input })
+      });
+      const data = await res.json();
+      setHistory([{ user: input, bot: data.reply }, ...history]);
+      setInput("");
+    } catch (err) {
+      setHistory([{ user: input, bot: "Lỗi khi gửi câu hỏi!" }, ...history]);
+      setInput("");
+    }
+    setLoading(false);
   }
 
   function handleSelectSuggestion(word) {
     setInput(word);
     // Nếu muốn tự động gửi luôn khi chọn suggestion thì mở dòng này:
     // sendChat();
+  }
+
+  function handleInputKeyDown(e) {
+    if (e.key === "Enter" && !loading) sendChat();
   }
 
   return (
@@ -69,12 +79,32 @@ export default function Chat() {
           onChange={setInput}
           onSelect={handleSelectSuggestion}
           onEnterKey={sendChat}
+          disabled={loading}
         />
+        {/* Nếu không dùng AutocompleteSuggestion, có thể dùng input thường:
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleInputKeyDown}
+          disabled={loading}
+          style={{ flex: 1, fontSize: 17, borderRadius: 8, padding: 8 }}
+        />
+        */}
       </div>
       <div style={{
         maxHeight: 260, overflowY: "auto",
         display: "flex", flexDirection: "column-reverse", gap: "1em"
       }}>
+        {loading && (
+          <div style={{
+            textAlign: "left",
+            color: "#999",
+            fontStyle: "italic",
+            margin: "0.5em 0 0.5em 10px"
+          }}>
+            <b>Bot:</b> <span>Đang trả lời...</span>
+          </div>
+        )}
         {history.map((item, idx) => {
           const botWord = extractWordFromBotReply(item.bot);
           return (
@@ -86,7 +116,6 @@ export default function Chat() {
                 marginBottom: 4, display: "inline-block", maxWidth: "85%"
               }}>
                 <b>Bạn:</b> {item.user}
-                {/* Nút phát âm nếu là tiếng Anh */}
                 {/^[a-zA-Z\s\-]+$/.test(item.user.trim()) && (
                   <button
                     title="Phát âm"
@@ -108,11 +137,10 @@ export default function Chat() {
                 alignSelf: "flex-start", marginRight: "auto",
                 padding: "8px 12px", borderRadius: "1em",
                 marginBottom: 4, display: "inline-block", maxWidth: "85%",
-                whiteSpace: "normal", // Để nội dung HTML xuống dòng tự nhiên
+                whiteSpace: "normal",
                 fontSize: "1.06em"
               }}>
                 <b>Bot:</b>
-                {/* Nút phát âm từ nếu trả về đúng một từ */}
                 {botWord && (
                   <button
                     title={`Phát âm "${botWord}"`}

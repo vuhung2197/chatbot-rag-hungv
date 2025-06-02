@@ -13,19 +13,21 @@ function normalizeText(str) {
 exports.chat = async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ reply: "No message!" });
-  // Lấy tối đa 5 knowledge phù hợp nhất
+
+  // Lấy tối đa 3 knowledge phù hợp nhất
   const [rows] = await pool.execute(
-    "SELECT * FROM knowledge_base WHERE MATCH(title, content) AGAINST(?) LIMIT 5", [message]
+    "SELECT * FROM knowledge_base WHERE MATCH(title, content) AGAINST(?) LIMIT 3", [message]
   );
   const allKnowledge = rows;
+
+  // Lấy importantKeywords từ DB
+  const [kwRows] = await pool.execute("SELECT keyword FROM important_keywords");
+  const importantKeywords = kwRows.map(r => r.keyword); // lấy thành mảng string
 
   const normalizedQuestion = normalizeText(message);
 
   // Tách các từ khoá trong câu hỏi
   const questionKeywords = normalizedQuestion.split(" ").filter(w => w.length > 2); // bỏ các từ quá ngắn
-
-  // Ưu tiên tìm context nào chứa các từ khóa đặc biệt trong lĩnh vực công ty
-  const importantKeywords = ["địa chỉ", "liên hệ", "công ty", "số điện thoại", "email", "website", "trụ sở"];
 
   const contexts = allKnowledge
     .map(k => {
@@ -47,13 +49,12 @@ exports.chat = async (req, res) => {
     })
     .filter(item => item.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
+    .slice(0, 3)
     .map(item => item.value);
 
   if (contexts.length === 0) {
     return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
   }
-
 
   // Gọi AI với cả tiêu đề và nội dung
   const t0 = Date.now();

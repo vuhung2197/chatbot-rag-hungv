@@ -1,29 +1,61 @@
 const pool = require('../db');
 const { askChatGPT } = require('../rules');
 
+function normalizeText(str) {
+  // Bỏ dấu tiếng Việt, chuyển thường, loại bỏ ký tự đặc biệt
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ");
+}
+
 exports.chat = async (req, res) => {
   const { message } = req.body;
   if (!message) return res.status(400).json({ reply: "No message!" });
-  // Tìm các dòng trong bảng knowledge base mà nội dung trong title hoặc content phù hợp nhất với nội dung truyền vào, chỉ lấy tối đa 5 kết quả
-  const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE MATCH(title, content) AGAINST(?) LIMIT 5", [message]);
+  // Lấy tối đa 5 knowledge phù hợp nhất
+  const [rows] = await pool.execute(
+    "SELECT * FROM knowledge_base WHERE MATCH(title, content) AGAINST(?) LIMIT 5", [message]
+  );
   const allKnowledge = rows;
 
-  // Lọc contexts
-  const lowerQuestion = message.toLowerCase();
-  const contexts = allKnowledge
-    .filter(k =>
-      k.content.toLowerCase().includes(lowerQuestion) ||
-      k.title.toLowerCase().includes(lowerQuestion)
-    )
-    .map(k => k.content)
-    .slice(0, 5); // chỉ lấy 5 đoạn đầu tiên
+  const normalizedQuestion = normalizeText(message);
 
-  // Không có contexts phù hợp
+  // Tách các từ khoá trong câu hỏi
+  const questionKeywords = normalizedQuestion.split(" ").filter(w => w.length > 2); // bỏ các từ quá ngắn
+
+  // Ưu tiên tìm context nào chứa các từ khóa đặc biệt trong lĩnh vực công ty
+  const importantKeywords = ["địa chỉ", "liên hệ", "công ty", "số điện thoại", "email", "website", "trụ sở"];
+
+  const contexts = allKnowledge
+    .map(k => {
+      const normTitle = normalizeText(k.title);
+      const normContent = normalizeText(k.content);
+      // Đếm số keyword trùng giữa câu hỏi và từng context
+      let matchCount = 0;
+      questionKeywords.forEach(kw => {
+        if (normTitle.includes(kw) || normContent.includes(kw)) matchCount += 1;
+      });
+      // Ưu tiên các đoạn có các từ khóa quan trọng
+      importantKeywords.forEach(kw => {
+        if (normTitle.includes(kw) || normContent.includes(kw)) matchCount += 2;
+      });
+      return {
+        score: matchCount,
+        value: `Tiêu đề: ${k.title}\nNội dung: ${k.content}`,
+      };
+    })
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5)
+    .map(item => item.value);
+
   if (contexts.length === 0) {
     return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
   }
 
-  // Có contexts, gọi AI
+
+  // Gọi AI với cả tiêu đề và nội dung
   const t0 = Date.now();
   const reply = await askChatGPT(message, contexts);
   const t1 = Date.now();

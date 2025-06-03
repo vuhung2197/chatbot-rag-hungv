@@ -103,24 +103,60 @@ function getFuzzyResult(word, vocabRows, field = 'word_en') {
     return null;
 }
 
+// ----- Hàm mã hóa (mask) và giải mã (unmask) thông tin -----
+function maskSensitiveInfo(text, mapping = {}) {
+  let counter = 1;
+  // Số điện thoại
+  text = text.replace(/\b\d{2,4}[-\s]?\d{3,4}[-\s]?\d{3,4}\b/g, (match) => {
+    const key = `[PHONE_${counter++}]`;
+    mapping[key] = match;
+    return key;
+  });
+  // Email
+  text = text.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, (match) => {
+    const key = `[EMAIL_${counter++}]`;
+    mapping[key] = match;
+    return key;
+  });
+  // Địa chỉ (mẫu đơn giản, có thể tuỳ biến thêm)
+  text = text.replace(/(\d{1,4}\s?[\w\s,.\/\-]+(đường|phố|tòa nhà)[^\n,.]*)/gi, (match) => {
+    const key = `[ADDR_${counter++}]`;
+    mapping[key] = match;
+    return key;
+  });
+  return text;
+}
+
+function unmaskSensitiveInfo(text, mapping) {
+  for (const [key, value] of Object.entries(mapping)) {
+    text = text.replaceAll(key, value);
+  }
+  return text;
+}
+
+// ---- Hàm gọi ChatGPT với mã hóa ----
 async function askChatGPT(question, contexts) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!contexts || contexts.length === 0) {
     return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
   }
-  // contexts: array các đoạn kiến thức liên quan (content)
-  // Tối đa khoảng 10-20 đoạn, hoặc tổng token < 10,000
 
-  // Tạo context string
-  const contextString = contexts.map((c, i) => `[${i + 1}] ${c}`).join('\n\n');
+  // 1. Tạo mapping & mã hóa thông tin trong context/question
+  const mapping = {};
+  const maskedContexts = contexts.map(context => maskSensitiveInfo(context, mapping));
+  const maskedQuestion = maskSensitiveInfo(question, mapping);
 
-  // Prompt mẫu
-  const prompt = `Chỉ sử dụng các đoạn kiến thức sau để trả lời câu hỏi. Nếu không đủ thông tin, trả lời đúng nguyên văn: "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này." Kiến thức: ${contextString} Câu hỏi: ${question}`;
+  // 2. Tạo context string cho prompt
+  const contextString = maskedContexts.map((c, i) => `[${i + 1}] ${c}`).join('\n\n');
 
+  // 3. Prompt
+  const prompt = `Chỉ sử dụng các đoạn kiến thức sau để trả lời câu hỏi. Nếu không đủ thông tin, trả lời đúng nguyên văn: "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này." Kiến thức: ${contextString} Câu hỏi: ${maskedQuestion}`;
+
+  // 4. Gọi OpenAI
   const response = await axios.post(
     'https://api.openai.com/v1/chat/completions',
     {
-      model: 'gpt-4o', // Model mạnh nhất hiện nay của OpenAI
+      model: 'gpt-4o',
       messages: [
         { role: 'system', content: 'Bạn là trợ lý AI chuyên trả lời dựa trên kiến thức đã cung cấp.' },
         { role: 'user', content: prompt }
@@ -131,7 +167,11 @@ async function askChatGPT(question, contexts) {
     { headers: { Authorization: `Bearer ${apiKey}` } }
   );
 
-  return response.data.choices[0].message.content.trim();
+  // 5. Giải mã (unmask) kết quả trả về
+  let reply = response.data.choices[0].message.content.trim();
+  reply = unmaskSensitiveInfo(reply, mapping);
+
+  return reply;
 }
 
 async function getEnglishBotReply(message) {

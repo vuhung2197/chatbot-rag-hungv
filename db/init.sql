@@ -84,6 +84,8 @@ CREATE TABLE knowledge_base (
 ALTER TABLE knowledge_base
 ADD FULLTEXT(title, content);
 
+ALTER TABLE knowledge_base ADD COLUMN embedding JSON NULL;
+
 CREATE TABLE important_keywords (
   id INT AUTO_INCREMENT PRIMARY KEY,
   keyword VARCHAR(100) NOT NULL UNIQUE,

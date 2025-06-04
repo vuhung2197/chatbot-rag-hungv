@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import Chat from './component/Chat';
-import Feedback from './component/Feedback';
-import Admin from './component/Admin';
-import MyWords from './component/MyWords';
+// import Feedback from './component/Feedback';
+// import Admin from './component/Admin';
+// import MyWords from './component/MyWords';
 import Highlights from './component/Highlights';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
 import { useDarkMode } from './component/DarkModeContext';
@@ -36,7 +36,7 @@ export default function App() {
       <h3 style={{
         color: "#7137ea", fontSize: "2em", fontWeight: "bold",
         marginBottom: "1em", textAlign: "center"
-      }}>📚 Dictionary Chatbot</h3>
+      }}>📚 Knowledge Chatbot</h3>
       <nav style={{
         marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10
       }}>
@@ -50,9 +50,9 @@ export default function App() {
             padding: "8px 16px"
           }}
         >
-          Học tiếng Anh
+          Tra cứu kiến thức
         </button>
-        <button
+        {/* <button
           onClick={() => setView('mywords')}
           style={{
             background: view === 'mywords' ? '#7137ea' : '#f6f9fc',
@@ -63,7 +63,7 @@ export default function App() {
           }}
         >
           My Words
-        </button>
+        </button> */}
         <button
           onClick={() => setView('highlights')}
           style={{
@@ -76,7 +76,7 @@ export default function App() {
         >
           Highlights
         </button>
-        <button
+        {/* <button
           onClick={() => setView('feedback')}
           style={{
             background: view === 'feedback' ? '#7137ea' : '#f6f9fc',
@@ -99,7 +99,7 @@ export default function App() {
           }}
         >
           Admin (Duyệt góp ý)
-        </button>
+        </button> */}
         <button
           onClick={() => setView('knowledgeadmin')}
           style={{
@@ -131,10 +131,10 @@ export default function App() {
         </div>
       )}
       {view === 'chat' && <Chat darkMode={darkMode} />}
-      {view === 'mywords' && <MyWords darkMode={darkMode} />}
+      {/* {view === 'mywords' && <MyWords darkMode={darkMode} />} */}
       {view === 'highlights' && <Highlights darkMode={darkMode} />}
-      {view === 'feedback' && <Feedback darkMode={darkMode} />}
-      {view === 'admin' && <Admin darkMode={darkMode} />}
+      {/* {view === 'feedback' && <Feedback darkMode={darkMode} />} */}
+      {/* {view === 'admin' && <Admin darkMode={darkMode} />} */}
       {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
     </>
   );

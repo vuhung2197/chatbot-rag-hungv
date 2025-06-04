@@ -1,4 +1,20 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 const pool = require('../db');
+const axios = require("axios");
+
+// Hàm lấy embedding từ OpenAI
+async function getEmbedding(text) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  const response = await axios.post(
+    "https://api.openai.com/v1/embeddings",
+    {
+      input: text,
+      model: "text-embedding-3-small" // hoặc text-embedding-3-large nếu muốn mạnh hơn
+    },
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+  return response.data.data[0].embedding; // trả về mảng số
+}
 
 // Hàm extract keywords
 function extractKeywords(text) {
@@ -34,14 +50,17 @@ exports.addKnowledge = async (req, res) => {
   if (!title || !content)
     return res.status(400).json({ message: "Thiếu tiêu đề hoặc nội dung!" });
 
+  // Gộp title + content cho embedding
+  const embedding = await getEmbedding(`${title}\n${content}`);
+
   const [result] = await pool.execute(
-    "INSERT INTO knowledge_base (title, content) VALUES (?, ?)",
-    [title, content]
+    "INSERT INTO knowledge_base (title, content, embedding) VALUES (?, ?, ?)",
+    [title, content, JSON.stringify(embedding)]
   );
   const insertedId = result.insertId;
 
-  // Cập nhật important keywords
-  await updateImportantKeywords(title, content);
+  // Cập nhật important keywords nếu cần
+  // await updateImportantKeywords(title, content);
 
   const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [insertedId]);
   res.json({ message: "Đã thêm kiến thức!", data: rows[0] });
@@ -62,13 +81,16 @@ exports.updateKnowledge = async (req, res) => {
   if (!title || !content)
     return res.status(400).json({ message: "Thiếu tiêu đề hoặc nội dung!" });
 
+  // Gộp title + content cho embedding mới
+  const embedding = await getEmbedding(`${title}\n${content}`);
+
   await pool.execute(
-    "UPDATE knowledge_base SET title=?, content=? WHERE id=?",
-    [title, content, id]
+    "UPDATE knowledge_base SET title=?, content=?, embedding=? WHERE id=?",
+    [title, content, JSON.stringify(embedding), id]
   );
 
-  // Cập nhật important keywords
-  await updateImportantKeywords(title, content);
+  // Cập nhật important keywords nếu cần
+  // await updateImportantKeywords(title, content);
 
   const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [id]);
   res.json({ message: "Đã cập nhật kiến thức!", data: rows[0] });

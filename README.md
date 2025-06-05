@@ -12,16 +12,14 @@ Dự án xây dựng một chatbot AI hỗ trợ người dùng **dịch song so
 
 ## 📁 Cấu trúc thư mục dự án
 
+<pre>
 .
 ├── docker-compose.yml
 ├── .env.example
 ├── README.md
-├── backend/ # Node.js API, xử lý chatbot và dịch
-└── frontend/ # React app, giao diện người dùng
-
-markdown
-Copy
-Edit
+├── backend/    # Node.js API, xử lý chatbot và dịch
+└── frontend/   # React app, giao diện người dùng
+</pre>
 
 ---
 

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HelpGuide from "./HelpGuide";
-import AutocompleteSuggestion from "./AutocompleteSuggestion";
+import ChatInputSuggest from "./ChatInputSuggest";
 
-// Hàm phát âm bằng SpeechSynthesis API
 function speak(text, lang = "en-US") {
   if ('speechSynthesis' in window) {
     const utter = new window.SpeechSynthesisUtterance(text);
@@ -13,10 +12,8 @@ function speak(text, lang = "en-US") {
   }
 }
 
-// Hàm lấy ra từ cần phát âm từ phần trả lời của bot
 function extractWordFromBotReply(botReply) {
-  // Tìm từ nằm trong dấu "..."
-  const match = botReply.match(/nghĩa của &quot;(.+?)&quot;/i) // trường hợp trả về &quot;
+  const match = botReply.match(/nghĩa của &quot;(.+?)&quot;/i)
     || botReply.match(/nghĩa của "(.+?)"/i)
     || botReply.match(/Từ &quot;(.+?)&quot;/i)
     || botReply.match(/Từ "(.+?)"/i)
@@ -29,23 +26,47 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]);
   const [showGuide, setShowGuide] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState("embedding");
+
+  const algorithmDescriptions = {
+    embedding: "🔍 Thuật toán Embedding Vector: Dựa trên mô hình AI OpenAI để chuyển câu hỏi thành vector số và so sánh với vector kiến thức bằng cosine similarity. Hiệu quả với câu hỏi ngữ nghĩa sâu, không cần trùng từ khóa.",
+    context: "🧠 Thuật toán Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau."
+  };
+
+  useEffect(() => {
+    const saved = localStorage.getItem("chatbot_history");
+    if (saved) {
+      try {
+        setHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error("Lỗi khi parse history từ localStorage:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("chatbot_history", JSON.stringify(history));
+  }, [history]);
 
   async function sendChat() {
-    if (!input.trim()) return;
-    const res = await fetch("http://localhost:3001/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: input })
-    });
-    const data = await res.json();
-    setHistory([{ user: input, bot: data.reply }, ...history]);
-    setInput("");
-  }
-
-  function handleSelectSuggestion(word) {
-    setInput(word);
-    // Nếu muốn tự động gửi luôn khi chọn suggestion thì mở dòng này:
-    // sendChat();
+    if (!input.trim() || loading) return;
+    setLoading(true);
+    const timestamp = new Date().toISOString();
+    try {
+      const res = await fetch("http://localhost:3001/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input, mode })
+      });
+      const data = await res.json();
+      setHistory([{ user: input, bot: data.reply, createdAt: timestamp }, ...history]);
+      setInput("");
+    } catch (err) {
+      setHistory([{ user: input, bot: "Lỗi khi gửi câu hỏi!", createdAt: timestamp }, ...history]);
+      setInput("");
+    }
+    setLoading(false);
   }
 
   return (
@@ -62,24 +83,69 @@ export default function Chat() {
         {showGuide ? "Ẩn hướng dẫn" : "Hiện hướng dẫn"}
       </button>
       {showGuide && <HelpGuide />}
-      <h3 style={{
-        color: "#7137ea", fontSize: "2em", fontWeight: "bold",
-        marginBottom: "1em", textAlign: "center"
-      }}>📚 Dictionary Chatbot</h3>
+
+      <button
+        onClick={() => {
+          if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?")) {
+            setHistory([]);
+            localStorage.removeItem("chatbot_history");
+          }
+        }}
+        style={{
+          marginTop: 8,
+          marginBottom: 12,
+          backgroundColor: "#f44336",
+          color: "white",
+          border: "none",
+          borderRadius: "6px",
+          padding: "6px 12px",
+          cursor: "pointer"
+        }}
+      >
+        🗑 Xóa toàn bộ lịch sử
+      </button>
+
+      <label style={{ marginTop: 16, display: "block", fontWeight: "bold", color: "#000" }}>
+        Chọn thuật toán:
+      </label>
+      <select value={mode} onChange={e => setMode(e.target.value)} style={{ marginBottom: 8 }}>
+        <option value="embedding">🔍 Embedding vector</option>
+        <option value="context">🧠 Score context</option>
+      </select>
+      <div style={{ fontSize: "0.95em", color: "#666", marginBottom: 16 }}>
+        {algorithmDescriptions[mode]}
+      </div>
+
       <div style={{ display: "flex", gap: 8, marginBottom: "1.5em" }}>
-        <AutocompleteSuggestion
+        <ChatInputSuggest
           value={input}
           onChange={setInput}
-          onSelect={handleSelectSuggestion}
-          onEnterKey={sendChat}
+          onSend={sendChat}
+          disabled={loading}
         />
       </div>
+
       <div style={{
-        maxHeight: 260, overflowY: "auto",
-        display: "flex", flexDirection: "column-reverse", gap: "1em"
+        maxHeight: 260,
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column-reverse",
+        gap: "1em"
       }}>
+        {loading && (
+          <div style={{
+            textAlign: "left",
+            color: "#999",
+            fontStyle: "italic",
+            margin: "0.5em 0 0.5em 10px"
+          }}>
+            <b>Bot:</b> <span>Đang trả lời...</span>
+          </div>
+        )}
         {history.map((item, idx) => {
           const botWord = extractWordFromBotReply(item.bot);
+          const time = new Date(item.createdAt).toLocaleString("vi-VN");
+
           return (
             <div key={idx}>
               <div style={{
@@ -89,33 +155,16 @@ export default function Chat() {
                 marginBottom: 4, display: "inline-block", maxWidth: "85%"
               }}>
                 <b>Bạn:</b> {item.user}
-                {/* Nút phát âm nếu là tiếng Anh */}
-                {/^[a-zA-Z\s\-]+$/.test(item.user.trim()) && (
-                  <button
-                    title="Phát âm"
-                    onClick={() => speak(item.user)}
-                    style={{
-                      marginLeft: 6,
-                      background: "none",
-                      border: "none",
-                      color: "#2d8cf0",
-                      fontSize: "1.1em",
-                      cursor: "pointer",
-                      verticalAlign: "middle"
-                    }}
-                  >🔊</button>
-                )}
+                <div style={{ fontSize: "0.8em", color: "#999", marginTop: 4 }}>{time}</div>
               </div>
               <div style={{
                 background: "#e2fcfa", color: "#24637c",
                 alignSelf: "flex-start", marginRight: "auto",
                 padding: "8px 12px", borderRadius: "1em",
                 marginBottom: 4, display: "inline-block", maxWidth: "85%",
-                whiteSpace: "normal", // Để nội dung HTML xuống dòng tự nhiên
-                fontSize: "1.06em"
+                whiteSpace: "normal", fontSize: "1.06em"
               }}>
                 <b>Bot:</b>
-                {/* Nút phát âm từ nếu trả về đúng một từ */}
                 {botWord && (
                   <button
                     title={`Phát âm "${botWord}"`}
@@ -131,13 +180,11 @@ export default function Chat() {
                     }}
                   >🔊</button>
                 )}
-                <div
-                  style={{ marginTop: 4 }}
-                  dangerouslySetInnerHTML={{ __html: item.bot }}
-                />
+                <div style={{ marginTop: 4 }} dangerouslySetInnerHTML={{ __html: item.bot }} />
+                <div style={{ fontSize: "0.8em", color: "#999", marginTop: 4 }}>{time}</div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
     </div>

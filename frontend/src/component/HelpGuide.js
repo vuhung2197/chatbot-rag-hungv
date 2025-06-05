@@ -10,38 +10,43 @@ function HelpGuide() {
       marginBottom: 20,
       color: "#333"
     }}>
-      <h3 style={{ marginTop: 0, color: "#1976d2" }}>Hướng dẫn sử dụng chatbot tra từ điển</h3>
+      <h3 style={{ marginTop: 0, color: "#1976d2" }}>Hướng dẫn sử dụng Chatbot Tra cứu Kiến Thức</h3>
       <ul style={{ paddingLeft: 18, marginBottom: 8 }}>
         <li>
-          <b>Tra nghĩa tiếng Việt của từ tiếng Anh:</b>
+          <b>Hỏi về các thông tin đã lưu trong hệ thống:</b>
           <br />
-          <code>dịch từ [từ tiếng Anh] sang tiếng Việt</code><br />
-          <code>dịch sang tiếng việt từ [từ tiếng Anh]</code><br />
-          <code>nghĩa của [từ tiếng Anh] là gì</code><br />
-          <code>từ [từ tiếng Anh] nghĩa tiếng việt là gì</code><br />
-          <code>what does [từ tiếng Anh] mean?</code><br />
-          <code>translate [từ tiếng Anh] to vietnamese </code><br />
-          <code>[từ tiếng Anh]</code> (nếu chỉ cần tra nghĩa đơn giản)
-          <br />
-          <span style={{ color: "#40916c" }}>Ví dụ: <i>dịch từ <b>apple</b> sang tiếng Việt</i> → quả táo</span>
+          <span style={{ color: "#333" }}>
+            Bạn có thể hỏi về bất kỳ nội dung nào mà hệ thống đã được học hoặc admin đã nhập vào.<br />
+            <i>Ví dụ:</i>
+            <br />
+            <code>Địa chỉ công ty TNHH ABC ở đâu?</code><br />
+            <code>Số điện thoại liên hệ của công ty là gì?</code><br />
+            <code>Nội quy làm việc của công ty ra sao?</code><br />
+            <code>Chính sách bảo hiểm nhân viên như thế nào?</code><br />
+            <code>Giờ làm việc công ty TNHH ABC?</code>
+          </span>
         </li>
         <li style={{ marginTop: 10 }}>
-          <b>Tra nghĩa tiếng Anh của từ tiếng Việt:</b>
+          <b>Hỏi về quy định, thông báo hoặc các chủ đề đã lưu:</b>
           <br />
-          <code>dịch từ [từ tiếng Việt] sang tiếng Anh</code><br />
-          <code>nghĩa tiếng Anh của [từ tiếng Việt] là gì</code>
-          <br />
-          <span style={{ color: "#40916c" }}>Ví dụ: <i>dịch từ <b>con mèo</b> sang tiếng Anh</i> → cat</span>
+          <span style={{ color: "#333" }}>
+            <code>Nội dung thông báo nghỉ lễ mới nhất là gì?</code><br />
+            <code>Các quy định về sử dụng email nội bộ</code>
+          </span>
         </li>
         <li style={{ marginTop: 10 }}>
           <b>Lưu ý:</b>
           <ul style={{ marginLeft: 18 }}>
-            <li>Nhập đúng <b>từ cần tra</b> (không cần dấu nháy, có thể viết hoa/thường)</li>
-            <li>Hệ thống nhận diện nhiều cách hỏi (có thể hỏi tự nhiên)</li>
-            <li>Nếu không tìm thấy kết quả, hãy gửi góp ý để bot học thêm</li>
+            <li>Bạn có thể hỏi tự nhiên như nói chuyện với người thật.</li>
+            <li>Chỉ những thông tin đã được lưu trong hệ thống hoặc đã “dạy” cho bot mới được trả lời.</li>
+            <li>Nếu bot trả lời “Xin lỗi, tôi chưa có kiến thức phù hợp...” tức là nội dung này chưa được bổ sung.</li>
+            <li>Nếu cần bổ sung kiến thức, hãy liên hệ admin hoặc gửi góp ý.</li>
           </ul>
         </li>
       </ul>
+      <div style={{ marginTop: 16, color: "#1976d2", fontWeight: 500 }}>
+        📚 <i>Hãy hỏi bot về những gì bạn muốn biết trong phạm vi kiến thức đã được lưu trữ!</i>
+      </div>
     </div>
   );
 }

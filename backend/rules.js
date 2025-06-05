@@ -1,5 +1,8 @@
 const pool = require('./db');
 const Fuse = require('fuse.js');
+const OpenAI = require('openai');
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const axios = require('axios');
 
 // Trả về toàn bộ dictionary với type, example (giúp tra theo loại từ)
 async function getVocabulary() {
@@ -19,13 +22,41 @@ async function logUnknownQuery(message) {
     await pool.execute('INSERT INTO unknown_queries (user_message) VALUES (?)', [message]);
 }
 
-// Dịch một từ đơn EN->VI, trả về string hoặc null
-async function translateSingleWord(word_en) {
-    const [rows] = await pool.execute(
-        "SELECT word_vi FROM dictionary WHERE word_en = ? LIMIT 1", 
-        [word_en.trim().toLowerCase()]
-    );
-    return rows.length > 0 ? rows[0].word_vi : null;
+async function translateWordByWord(sentence) {
+  // Tách từng từ, loại bỏ dấu câu
+  const words = sentence
+    .replace(/[.,!?;:()"]/g, '')
+    .split(/\s+/)
+    .filter(Boolean);
+
+  // Dịch từng từ và trả về dạng { en, vi }
+  const translations = await Promise.all(
+    words.map(async (word) => {
+      let vi = await translateSingleWord(word.toLowerCase());
+      // Lọc ký tự không mong muốn, chỉ lấy nghĩa tiếng Việt chuẩn
+      vi = vi.replace(/[^a-zA-ZÀ-ỹà-ỹ0-9\s]/g, '').trim();
+      return { en: word, vi };
+    })
+  );
+
+  // Loại bỏ từ không dịch được
+  return translations.filter(item => item.vi && item.vi.length > 0);
+}
+
+async function translateSingleWord(word) {
+  const prompt = `Translate the English word '${word}' to Vietnamese. Only return the Vietnamese word, nothing else.`;
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 10,
+      temperature: 0,
+    });
+    return completion.choices[0].message.content.trim();
+  } catch (err) {
+    console.error("OpenAI error:", err.response ? err.response.data : err);
+    return "(lỗi)";
+  }
 }
 
 // Helper: Format kết quả tra từ Anh-Việt
@@ -70,6 +101,77 @@ function getFuzzyResult(word, vocabRows, field = 'word_en') {
         return vocabRows.find(r => r[field] === w);
     }
     return null;
+}
+
+// ----- Hàm mã hóa (mask) và giải mã (unmask) thông tin -----
+function maskSensitiveInfo(text, mapping = {}) {
+  let counter = 1;
+  // Số điện thoại
+  text = text.replace(/\b\d{2,4}[-\s]?\d{3,4}[-\s]?\d{3,4}\b/g, (match) => {
+    const key = `[PHONE_${counter++}]`;
+    mapping[key] = match;
+    return key;
+  });
+  // Email
+  text = text.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, (match) => {
+    const key = `[EMAIL_${counter++}]`;
+    mapping[key] = match;
+    return key;
+  });
+  // Địa chỉ (mẫu đơn giản, có thể tuỳ biến thêm)
+  text = text.replace(/(\d{1,4}\s?[\w\s,.\/\-]+(đường|phố|tòa nhà)[^\n,.]*)/gi, (match) => {
+    const key = `[ADDR_${counter++}]`;
+    mapping[key] = match;
+    return key;
+  });
+  return text;
+}
+
+function unmaskSensitiveInfo(text, mapping) {
+  for (const [key, value] of Object.entries(mapping)) {
+    text = text.replaceAll(key, value);
+  }
+  return text;
+}
+
+// ---- Hàm gọi ChatGPT với mã hóa ----
+async function askChatGPT(question, contexts) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!contexts || contexts.length === 0) {
+    return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
+  }
+
+  // 1. Tạo mapping & mã hóa thông tin trong context/question
+  const mapping = {};
+  const maskedContexts = contexts.map(context => maskSensitiveInfo(context, mapping));
+  const maskedQuestion = maskSensitiveInfo(question, mapping);
+
+  // 2. Tạo context string cho prompt
+  const contextString = maskedContexts.map((c, i) => `[${i + 1}] ${c}`).join('\n\n');
+
+  // 3. Prompt
+  const prompt = `Chỉ sử dụng các đoạn kiến thức sau để trả lời câu hỏi. Nếu không đủ thông tin, trả lời đúng nguyên văn: "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này." Kiến thức: ${contextString} Câu hỏi: ${maskedQuestion}`;
+
+  // 4. Gọi OpenAI
+  const response = await axios.post(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: 'Bạn là trợ lý AI chuyên trả lời dựa trên kiến thức đã cung cấp.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.2,
+      max_tokens: 512,
+    },
+    { headers: { Authorization: `Bearer ${apiKey}` } }
+  );
+
+  // 5. Giải mã (unmask) kết quả trả về
+  let reply = response.data.choices[0].message.content.trim();
+  reply = unmaskSensitiveInfo(reply, mapping);
+
+  return reply;
 }
 
 async function getEnglishBotReply(message) {
@@ -172,4 +274,4 @@ async function getEnglishBotReply(message) {
     }
 }
 
-module.exports = { getEnglishBotReply, translateSingleWord };
+module.exports = { askChatGPT };

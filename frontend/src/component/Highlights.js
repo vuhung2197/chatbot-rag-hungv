@@ -24,8 +24,8 @@ export default function Highlights() {
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        // Sau khi duyệt xong, reload lại danh sách highlights
-        fetchHighlights();
+        // Xóa khỏi state local thay vì reload lại từ API
+        setHighlights(prev => prev.filter(h => h.id !== id));
       });
   }
 

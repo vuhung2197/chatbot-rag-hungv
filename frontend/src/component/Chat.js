@@ -1,26 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import HelpGuide from "./HelpGuide";
 import ChatInputSuggest from "./ChatInputSuggest";
-
-function speak(text, lang = "en-US") {
-  if ('speechSynthesis' in window) {
-    const utter = new window.SpeechSynthesisUtterance(text);
-    utter.lang = lang;
-    window.speechSynthesis.speak(utter);
-  } else {
-    alert("Trình duyệt không hỗ trợ phát âm!");
-  }
-}
-
-function extractWordFromBotReply(botReply) {
-  const match = botReply.match(/nghĩa của &quot;(.+?)&quot;/i)
-    || botReply.match(/nghĩa của "(.+?)"/i)
-    || botReply.match(/Từ &quot;(.+?)&quot;/i)
-    || botReply.match(/Từ "(.+?)"/i)
-    || botReply.match(/Bạn có hỏi từ "&lt;b&gt;(.+?)&lt;\/b&gt;/i)
-    || botReply.match(/Bạn có hỏi từ "<b>(.+?)<\/b>/i);
-  return match ? match[1] : null;
-}
+import CryptoJS from "crypto-js";
 
 export default function Chat() {
   const [input, setInput] = useState("");
@@ -30,8 +11,8 @@ export default function Chat() {
   const [mode, setMode] = useState("embedding");
 
   const algorithmDescriptions = {
-    embedding: "🔍 Thuật toán Embedding Vector: Dựa trên mô hình AI OpenAI để chuyển câu hỏi thành vector số và so sánh với vector kiến thức bằng cosine similarity. Hiệu quả với câu hỏi ngữ nghĩa sâu, không cần trùng từ khóa.",
-    context: "🧠 Thuật toán Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau."
+    embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
+    context: "🧠 Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau."
   };
 
   useEffect(() => {
@@ -49,10 +30,25 @@ export default function Chat() {
     localStorage.setItem("chatbot_history", JSON.stringify(history));
   }, [history]);
 
+  const hashQuestion = (text) => {
+    return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
+  };
+
   async function sendChat() {
     if (!input.trim() || loading) return;
     setLoading(true);
     const timestamp = new Date().toISOString();
+    const hash = hashQuestion(input);
+
+    // Kiểm tra cache
+    const cached = JSON.parse(localStorage.getItem("chatbot_cache") || "{}");
+    if (cached[hash]) {
+      setHistory([{ user: input, bot: cached[hash], createdAt: timestamp }, ...history]);
+      setInput("");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("http://localhost:3001/chat", {
         method: "POST",
@@ -61,6 +57,19 @@ export default function Chat() {
       });
       const data = await res.json();
       setHistory([{ user: input, bot: data.reply, createdAt: timestamp }, ...history]);
+
+      const isNoAnswer = [
+        "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.",
+        "Không thể tính embedding câu hỏi!",
+        "Bot đang bận, vui lòng thử lại sau!",
+        "Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này."
+      ].includes(data.reply);
+
+      if (!isNoAnswer) {
+        cached[hash] = data.reply;
+        localStorage.setItem("chatbot_cache", JSON.stringify(cached));
+      }
+
       setInput("");
     } catch (err) {
       setHistory([{ user: input, bot: "Lỗi khi gửi câu hỏi!", createdAt: timestamp }, ...history]);
@@ -89,6 +98,7 @@ export default function Chat() {
           if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?")) {
             setHistory([]);
             localStorage.removeItem("chatbot_history");
+            localStorage.removeItem("chatbot_cache");
           }
         }}
         style={{
@@ -109,7 +119,7 @@ export default function Chat() {
         Chọn thuật toán:
       </label>
       <select value={mode} onChange={e => setMode(e.target.value)} style={{ marginBottom: 8 }}>
-        <option value="embedding">🔍 Embedding vector</option>
+        <option value="embedding">📚 RAG + Chunk</option>
         <option value="context">🧠 Score context</option>
       </select>
       <div style={{ fontSize: "0.95em", color: "#666", marginBottom: 16 }}>
@@ -143,7 +153,6 @@ export default function Chat() {
           </div>
         )}
         {history.map((item, idx) => {
-          const botWord = extractWordFromBotReply(item.bot);
           const time = new Date(item.createdAt).toLocaleString("vi-VN");
 
           return (
@@ -165,21 +174,6 @@ export default function Chat() {
                 whiteSpace: "normal", fontSize: "1.06em"
               }}>
                 <b>Bot:</b>
-                {botWord && (
-                  <button
-                    title={`Phát âm "${botWord}"`}
-                    onClick={() => speak(botWord)}
-                    style={{
-                      marginLeft: 8,
-                      background: "none",
-                      border: "none",
-                      color: "#2d8cf0",
-                      fontSize: "1.1em",
-                      cursor: "pointer",
-                      verticalAlign: "middle"
-                    }}
-                  >🔊</button>
-                )}
                 <div style={{ marginTop: 4 }} dangerouslySetInnerHTML={{ __html: item.bot }} />
                 <div style={{ fontSize: "0.8em", color: "#999", marginTop: 4 }}>{time}</div>
               </div>

@@ -1,6 +1,7 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 const pool = require('../db');
 const axios = require("axios");
+const { updateChunksForKnowledge } = require("../services/updateChunks");
 
 // Hàm lấy embedding từ OpenAI
 async function getEmbedding(text) {
@@ -62,8 +63,9 @@ exports.addKnowledge = async (req, res) => {
   // Cập nhật important keywords nếu cần
   // await updateImportantKeywords(title, content);
 
-  const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [insertedId]);
-  res.json({ message: "Đã thêm kiến thức!", data: rows[0] });
+  // const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [insertedId]);
+  await updateChunksForKnowledge(insertedId, title, content);
+  res.json({ message: "Đã thêm kiến thức và cập nhật embedding!" });
 };
 
 // Lấy toàn bộ kiến thức
@@ -92,8 +94,9 @@ exports.updateKnowledge = async (req, res) => {
   // Cập nhật important keywords nếu cần
   // await updateImportantKeywords(title, content);
 
-  const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [id]);
-  res.json({ message: "Đã cập nhật kiến thức!", data: rows[0] });
+  // const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [id]);
+  await updateChunksForKnowledge(id, title, content);
+  res.json({ message: "Đã cập nhật kiến thức!" });
 };
 
 // Xóa kiến thức

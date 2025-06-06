@@ -135,30 +135,27 @@ function unmaskSensitiveInfo(text, mapping) {
 }
 
 // ---- Hàm gọi ChatGPT với mã hóa ----
-async function askChatGPT(question, contexts) {
+async function askChatGPT(question, context) {
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!contexts || contexts.length === 0) {
+  if (!context || context.trim().length === 0) {
     return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
   }
 
-  // 1. Tạo mapping & mã hóa thông tin trong context/question
+  // ----- Mã hóa thông tin nhạy cảm -----
   const mapping = {};
-  const maskedContexts = contexts.map(context => maskSensitiveInfo(context, mapping));
+  const maskedContext = maskSensitiveInfo(context, mapping);
   const maskedQuestion = maskSensitiveInfo(question, mapping);
 
-  // 2. Tạo context string cho prompt
-  const contextString = maskedContexts.map((c, i) => `[${i + 1}] ${c}`).join('\n\n');
+  // ----- Tạo prompt -----
+  const prompt = `Thông tin tham khảo:\n${maskedContext}\n\nCâu hỏi: ${maskedQuestion}`;
 
-  // 3. Prompt
-  const prompt = `Chỉ sử dụng các đoạn kiến thức sau để trả lời câu hỏi. Nếu không đủ thông tin, trả lời đúng nguyên văn: "Xin lỗi, tôi chưa có câu trả lời cho câu hỏi này." Kiến thức: ${contextString} Câu hỏi: ${maskedQuestion}`;
-
-  // 4. Gọi OpenAI
+  // ----- Gọi OpenAI -----
   const response = await axios.post(
     'https://api.openai.com/v1/chat/completions',
     {
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'Bạn là trợ lý AI chuyên trả lời dựa trên kiến thức đã cung cấp.' },
+        { role: 'system', content: 'Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.' },
         { role: 'user', content: prompt }
       ],
       temperature: 0.2,
@@ -167,7 +164,7 @@ async function askChatGPT(question, contexts) {
     { headers: { Authorization: `Bearer ${apiKey}` } }
   );
 
-  // 5. Giải mã (unmask) kết quả trả về
+  // ----- Giải mã kết quả trả về -----
   let reply = response.data.choices[0].message.content.trim();
   reply = unmaskSensitiveInfo(reply, mapping);
 
@@ -274,4 +271,4 @@ async function getEnglishBotReply(message) {
     }
 }
 
-module.exports = { askChatGPT };
+module.exports = { askChatGPT, translateWordByWord };

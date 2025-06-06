@@ -1,0 +1,44 @@
+const pool = require("../db");
+
+/**
+ * Trả về danh sách các câu hỏi chưa được trả lời để admin huấn luyện lại bot
+ */
+exports.getUnansweredQuestions = async (req, res) => {
+  try {
+    const [rows] = await pool.execute(
+      "SELECT id, question FROM unanswered_questions ORDER BY created_at DESC"
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Lỗi lấy danh sách unanswered_questions:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
+/**
+ * Xoá 1 câu hỏi đã huấn luyện xong
+ */
+exports.deleteUnanswered = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.execute("DELETE FROM unanswered_questions WHERE id = ?", [id]);
+    res.json({ message: "Đã xóa câu hỏi khỏi danh sách chưa trả lời." });
+  } catch (err) {
+    console.error("Lỗi xóa unanswered_questions:", err);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
+exports.getChunksByKnowledgeId = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const [rows] = await pool.execute(
+      "SELECT id, content, token_count FROM knowledge_chunks WHERE parent_id = ? ORDER BY id ASC",
+      [id]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("Lỗi khi lấy chunk:", err);
+    res.status(500).json({ error: "Lỗi khi lấy chunk" });
+  }
+};

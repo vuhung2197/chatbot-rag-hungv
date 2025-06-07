@@ -99,14 +99,22 @@ exports.updateKnowledge = async (req, res) => {
   res.json({ message: "Đã cập nhật kiến thức!" });
 };
 
-// Xóa kiến thức
+// Xóa kiến thức và các chunk liên quan
 exports.deleteKnowledge = async (req, res) => {
   const { id } = req.params;
-  await pool.execute(
-    "DELETE FROM knowledge_base WHERE id=?",
-    [id]
-  );
-  res.json({ message: "Đã xóa kiến thức!", id });
+
+  try {
+    // Xóa các chunk liên quan
+    await pool.execute("DELETE FROM knowledge_chunks WHERE parent_id = ?", [id]);
+
+    // Xóa bản ghi kiến thức chính
+    await pool.execute("DELETE FROM knowledge_base WHERE id = ?", [id]);
+
+    res.json({ message: "✅ Đã xóa kiến thức và các chunk liên quan!", id });
+  } catch (err) {
+    console.error("❌ Lỗi khi xóa kiến thức:", err);
+    res.status(500).json({ error: "Lỗi trong quá trình xóa kiến thức." });
+  }
 };
 
 // Lấy kiến thức theo ID
@@ -117,6 +125,7 @@ exports.getKnowledgeById = async (req, res) => {
   res.json(rows[0]);
 };
 
+// Lấy tất cả chunks của kiến thức theo ID
 exports.getChunksByKnowledgeId = async (req, res) => {
   const { id } = req.params;
   try {

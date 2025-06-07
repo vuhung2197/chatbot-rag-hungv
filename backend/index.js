@@ -15,6 +15,7 @@ app.use('/highlights', require('./routes/highlights'));
 app.use('/knowledge', require('./routes/knowledge'));
 app.use("/suggest-next-word", require("./routes/suggest"));
 app.use("/unanswered", require("./routes/unanswered"));
+app.use("/upload", require("./routes/upload"));
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`Backend running at http://localhost:${PORT}`));

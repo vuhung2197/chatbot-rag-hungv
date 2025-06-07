@@ -28,17 +28,3 @@ exports.deleteUnanswered = async (req, res) => {
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
 };
-
-exports.getChunksByKnowledgeId = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const [rows] = await pool.execute(
-      "SELECT id, content, token_count FROM knowledge_chunks WHERE parent_id = ? ORDER BY id ASC",
-      [id]
-    );
-    res.json(rows);
-  } catch (err) {
-    console.error("Lỗi khi lấy chunk:", err);
-    res.status(500).json({ error: "Lỗi khi lấy chunk" });
-  }
-};

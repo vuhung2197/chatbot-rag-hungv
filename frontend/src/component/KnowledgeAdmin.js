@@ -5,14 +5,19 @@ export default function KnowledgeAdmin() {
   const [form, setForm] = useState({ title: "", content: "", id: null });
   const [chunkPreview, setChunkPreview] = useState({ id: null, chunks: [] });
   const [unanswered, setUnanswered] = useState([]);
+  const [showChunkModal, setShowChunkModal] = useState(false);
   const formRef = useRef(null);
+
+  useEffect(() => {
+    fetchList();
+    fetchUnanswered();
+  }, []);
 
   const fetchList = async () => {
     const res = await fetch("http://localhost:3001/knowledge");
     const data = await res.json();
     setList(data);
   };
-  useEffect(() => { fetchList(); fetchUnanswered(); }, []);
 
   const fetchUnanswered = async () => {
     const res = await fetch("http://localhost:3001/unanswered");
@@ -53,14 +58,17 @@ export default function KnowledgeAdmin() {
   const handleCancel = () => setForm({ title: "", content: "", id: null });
 
   const fetchChunks = async (id) => {
-    if (chunkPreview.id === id) {
-      setChunkPreview({ id: null, chunks: [] });
-      return;
+    console.log("🔍 Chunk button clicked with id:", id);
+    try {
+      const res = await fetch(`http://localhost:3001/knowledge/${id}/chunks`);
+      const data = await res.json();
+      setChunkPreview({ id, chunks: data });
+      setShowChunkModal(true);
+    } catch (err) {
+      console.error("❌ Lỗi khi lấy chunks:", err);
     }
-    const res = await fetch(`http://localhost:3001/knowledge/${id}/chunks`);
-    const data = await res.json();
-    setChunkPreview({ id, chunks: data });
   };
+
 
   const handleUseUnanswered = (question) => {
     setForm({ title: question.slice(0, 100), content: question, id: null });
@@ -88,19 +96,6 @@ export default function KnowledgeAdmin() {
               <div key={item.id} style={{ background: "#f3f0fc", borderLeft: "5px solid #4f3ed7", borderRadius: 10, padding: "16px 18px", boxShadow: "0 1px 6px 0 rgba(79,62,215,0.08)", position: "relative" }}>
                 <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 8, color: "#322b6d" }}>{item.title}</div>
                 <div style={{ fontSize: 16, color: "#444", whiteSpace: "pre-line", marginBottom: 12 }}>{item.content}</div>
-                {chunkPreview.id === item.id && (
-                  <div style={{ background: "#fff", padding: "10px 16px", borderRadius: 10, border: "1px dashed #ccc", marginTop: 10, maxHeight: 200, overflowY: "auto" }}>
-                    <div style={{ fontWeight: 600, marginBottom: 6 }}>📎 Các đoạn chunk:</div>
-                    {chunkPreview.chunks.length === 0 ? (<i style={{ color: "#999" }}>Chưa có chunk nào</i>) : (
-                      chunkPreview.chunks.map((c, i) => (
-                        <div key={c.id} style={{ fontSize: 14, marginBottom: 10 }}>
-                          <b>• Chunk {i + 1}</b> ({c.token_count} tokens):<br />
-                          <span style={{ whiteSpace: "pre-wrap" }}>{c.content}</span>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
                 <div style={{ display: "flex", gap: 10, position: "absolute", top: 16, right: 18 }}>
                   <button onClick={() => handleEdit(item)} style={{ background: "#fff", border: "1.2px solid #4f3ed7", color: "#4f3ed7", borderRadius: 6, padding: "4px 13px", fontWeight: 600, cursor: "pointer", marginRight: 3 }}>Sửa</button>
                   <button onClick={() => handleDelete(item.id)} style={{ background: "#ffeded", border: "1.2px solid #ed6060", color: "#ed6060", borderRadius: 6, padding: "4px 13px", fontWeight: 600, cursor: "pointer" }}>Xóa</button>
@@ -127,6 +122,35 @@ export default function KnowledgeAdmin() {
           </ul>
         )}
       </div>
+
+      {showChunkModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", borderRadius: 12, padding: "24px 28px", width: "90%", maxWidth: 600,
+            maxHeight: "80vh", overflowY: "auto", position: "relative", color: "#333", fontFamily: "Segoe UI, Arial, sans-serif"
+          }}>
+            <h3 style={{ marginBottom: 16 }}>📎 Các đoạn chunk của kiến thức</h3>
+            {chunkPreview.chunks.length === 0 ? (
+              <i style={{ color: "#999" }}>Chưa có chunk nào</i>
+            ) : (
+              chunkPreview.chunks.map((c, i) => (
+                <div key={c.id} style={{ fontSize: 14, marginBottom: 14 }}>
+                  <b>• Chunk {i + 1}</b> ({c.token_count} tokens):<br />
+                  <span style={{ whiteSpace: "pre-wrap" }}>{c.content}</span>
+                </div>
+              ))
+            )}
+            <button onClick={() => setShowChunkModal(false)} style={{
+              position: "absolute", top: 12, right: 14,
+              border: "none", background: "transparent", fontSize: 20, cursor: "pointer"
+            }}>✕</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

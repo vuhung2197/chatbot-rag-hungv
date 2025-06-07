@@ -75,9 +75,34 @@ export default function KnowledgeAdmin() {
     if (formRef.current) formRef.current.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:3001/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const result = await res.json();
+      alert(result.message || "Tải lên thành công");
+      fetchList();
+    } catch (err) {
+      alert("Lỗi khi tải lên file: " + err.message);
+    }
+  };
+
   return (
     <div style={{ maxWidth: 700, margin: "40px auto", background: "#fff", padding: "2em", borderRadius: 18, boxShadow: "0 6px 32px 0 rgba(0,0,0,0.10)", fontFamily: "Segoe UI, Arial, sans-serif" }}>
       <h2 style={{ color: "#4f3ed7", textAlign: "center", marginBottom: 28, fontWeight: 800, letterSpacing: 1 }}>🧠 Quản Lý Kiến Thức</h2>
+
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ fontWeight: 600, marginBottom: 6, display: "block" }}>📤 Upload file kiến thức:</label>
+        <input type="file" accept=".txt,.md,.csv,.json" onChange={handleFileUpload} />
+      </div>
 
       <form ref={formRef} onSubmit={handleSubmit} style={{ background: "#f8f7ff", padding: 18, borderRadius: 12, marginBottom: 30, boxShadow: "0 1px 8px 0 rgba(79,62,215,0.07)", display: "flex", flexDirection: "column", gap: 12 }}>
         <input placeholder="Tiêu đề kiến thức..." value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required maxLength={200} style={{ fontSize: 18, padding: "10px 16px", border: "1.5px solid #e3e0fd", borderRadius: 8, outline: "none" }} />

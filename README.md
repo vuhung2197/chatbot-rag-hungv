@@ -1,115 +1,129 @@
-# 🤖 Chatbot AI Dịch Song Ngữ Anh-Việt
+# 🤖 Chatbot AI Tư Duy Tri Thức & Dịch Thuật Song Ngữ
 
-## 📝 Mô tả dự án
+## 🧠 Giới thiệu dự án
 
-Dự án xây dựng một chatbot AI hỗ trợ người dùng **dịch song song Anh-Việt và Việt-Anh**.
+Dự án phát triển một chatbot AI với các khả năng nổi bật:
 
-- **Frontend:** React (giao diện trò chuyện thân thiện, dễ sử dụng)
-- **Backend:** Node.js (xử lý logic, giao tiếp với AI dịch thuật)
-- **Triển khai:** Docker Compose (phát triển, kiểm thử, triển khai dễ dàng & bảo mật thông tin cấu hình)
+- **Học và trả lời dựa trên kiến thức do người dùng cung cấp** (Knowledge-based Retrieval)
+- **Dịch song ngữ Anh-Việt và Việt-Anh** thông minh
+- **Lưu & dịch nội dung do người dùng chọn (bôi đậm)** trực tiếp từ giao diện
+
+> Hệ thống được xây dựng với kiến trúc **Frontend (React)** + **Backend (Node.js)** và triển khai toàn bộ qua **Docker Compose**.
 
 ---
 
-## 📁 Cấu trúc thư mục dự án
+## 📂 Cấu trúc thư mục
 
 <pre>
 .
 ├── docker-compose.yml
 ├── .env.example
-├── README.md
-├── backend/    # Node.js API, xử lý chatbot và dịch
-└── frontend/   # React app, giao diện người dùng
+├── backend/        # Node.js API: Chatbot, training, dịch ngôn ngữ
+├── frontend/       # React app: giao diện người dùng
+└── README.md
 </pre>
 
 ---
 
-## Hướng dẫn cài đặt & chạy dự án
+## 🚀 Tính năng chính
 
-### 1. Chuẩn bị môi trường
+### ✅ Chatbot AI học tập kiến thức
 
-- Cài đặt **Docker** và **Docker Compose**  
-  [Tải Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- Quản lý kiến thức dưới dạng **Tiêu đề + Nội dung**
+- Tự động chia nhỏ (chunk) & tính embedding để truy xuất chính xác
+- Sử dụng thuật toán **RAG (Retrieval-Augmented Generation)** để trả lời
+- Giao diện quản trị giúp thêm, chỉnh sửa, chunk và huấn luyện file
+
+### 🌐 Dịch song ngữ Anh-Việt
+
+- Tự động nhận diện ngôn ngữ nguồn
+- Cho phép bôi đậm văn bản bất kỳ để dịch nhanh
+- Dịch linh hoạt cả câu dài hoặc từ đơn
+
+### 📌 Ghi nhớ & đào tạo từ câu hỏi chưa trả lời
+
+- Lưu lại các câu hỏi mà bot chưa thể trả lời
+- Admin có thể xem lại và huấn luyện lại dễ dàng từ giao diện
+
+### 📁 Upload file để huấn luyện kiến thức
+
+- Hỗ trợ định dạng: `.txt`, `.docx`, `.pdf`
+- Trích xuất nội dung tự động, lưu vào hệ thống và tạo chunk embedding
+
+---
+
+## ⚙️ Cài đặt & chạy dự án
+
+### 1. Cài đặt yêu cầu
+
+- **Docker + Docker Compose**  
+  👉 [Tải Docker Desktop](https://www.docker.com/products/docker-desktop)
 
 ### 2. Thiết lập biến môi trường
 
-- **Bước 1:**  
-  Copy file `.env.example` thành `.env` trong thư mục gốc:
+```bash
+cp .env.example .env
+```
+Sau đó mở file `.env` và thiết lập các thông số như:
 
-  ```bash
-  cp .env.example .env
-  ```
+```env
+DB_USER=chatbot_user
+DB_PASSWORD=chatbot_pass
+DB_NAME=chatbot_db
+DB_ROOT_PASSWORD=rootpass
+OPENAI_API_KEY=sk-...
+```
 
-- **Bước 2:**  
-  Sửa các giá trị trong file .env phù hợp với môi trường của bạn, ví dụ:
-
-  ```env
-  # .env example
-  DB_USER = db_user
-  DB_PASSWORD = db_password
-  DB_NAME = dbname
-  DB_ROOT_PASSWORD = db_root_password
-  ```
-
-### 3. Build và khởi động dự án
+### 3. Khởi chạy toàn bộ dự án
 
 ```bash
 docker compose up -d
 ```
 
-(hoặc docker-compose up -d tùy phiên bản Docker)
-
-- Truy cập Frontend: [http://localhost:3000](http://localhost:3000)
-- API Backend: [http://localhost:3001](http://localhost:3001)
+- Truy cập giao diện: [http://localhost:3000](http://localhost:3000)
+- API backend: [http://localhost:3001](http://localhost:3001)
 
 ---
 
-## 🚀 Chức năng chính
+## 🧪 Tính năng dành cho quản trị viên
 
-- Chatbot AI dịch Anh-Việt & Việt-Anh
-- Nhận diện ngôn ngữ tự động
-- Trò chuyện thời gian thực
-- Lưu lịch sử dịch (nếu có)
+- Thêm / sửa / xóa kiến thức
+- Xem & chunk dữ liệu kiến thức
+- Huấn luyện lại từ câu hỏi chưa trả lời
+- Upload file để training tự động
 
-## ℹ️ Thông tin các service
-
-- **frontend:** React app, chạy trên port 3000
-- **backend:** Node.js API, chạy trên port 3001
+---
 
 ## 🔒 Bảo mật
 
-- KHÔNG commit file .env (chứa thông tin nhạy cảm) lên GitHub.
-- Sử dụng file .env.example để chia sẻ cấu trúc biến môi trường cho người dùng khác.
+- **KHÔNG commit file `.env` lên Git**
+- Chia sẻ file cấu trúc `.env.example` để hỗ trợ người khác cấu hình
 
 ---
 
-## 🛠️ Một số lệnh hữu ích
+## 🛠 Một số lệnh hữu ích
 
-- Xem log:
+```bash
+# Theo dõi log
+docker compose logs -f
 
-  ```bash
-  docker compose logs -f
-  ```
+# Dừng toàn bộ service
+docker compose down
 
-- Dừng tất cả service:
-
-  ```bash
-  docker compose down
-  ```
-
-- Build lại sau khi sửa code:
-
-  ```bash
-  docker compose build
-  ```
+# Build lại sau khi sửa code
+docker compose build
+```
 
 ---
 
-## 🤝 Đóng góp
+## 👨‍💻 Đóng góp phát triển
 
-- Fork repo, tạo branch mới, commit thay đổi và gửi Pull Request.
-- Không commit lên branch chính nếu chưa được duyệt.
+- Fork repo, tạo nhánh mới, commit thay đổi và gửi Pull Request
+- Vui lòng kiểm thử kỹ trước khi gửi PR
 
-## 👤 Tác giả & liên hệ
+---
 
-- Tác giả: Hùng Vũ
-- Liên hệ: hung97vu@gmail.com
+## 👤 Tác giả
+
+- **Hùng Vũ**
+- 📧 Email: hung97vu@gmail.com

@@ -4,6 +4,5 @@ const { getUnansweredQuestions, deleteUnanswered, getChunksByKnowledgeId } = req
 
 router.get("/", getUnansweredQuestions);
 router.delete("/:id", deleteUnanswered);
-router.get("/knowledge/:id/chunks", getChunksByKnowledgeId);
 
 module.exports = router;

@@ -26,9 +26,10 @@ exports.uploadAndTrain = async (req, res) => {
       return res.status(400).json({ error: "Định dạng file không hỗ trợ." });
     }
 
-    const rawName = path.basename(file.originalname, ext);
-
+    // const ext = path.extname(file.originalname).toLowerCase();
+    const rawName = Buffer.from(path.basename(file.originalname, ext), "latin1").toString("utf8");
     const title = rawName;
+
     const [result] = await pool.execute(
       "INSERT INTO knowledge_base (title, content) VALUES (?, ?)",
       [title, content]

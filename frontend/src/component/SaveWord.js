@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function SaveWord({ onSaved }) {
   const [show, setShow] = useState(false);
   const [word, setWord] = useState("");
@@ -14,7 +16,7 @@ export default function SaveWord({ onSaved }) {
       return;
     }
     try {
-      const res = await fetch("http://localhost:3001/dictionary/save-word", {
+      const res = await fetch(`${API_URL}/dictionary/save-word`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ word_en: word, word_vi: meaning })

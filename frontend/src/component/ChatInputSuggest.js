@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function ChatInputSuggest({ value, onChange, onSend, disabled }) {
   const [suggest, setSuggest] = useState("");
   const [loadingSuggest, setLoadingSuggest] = useState(false);
@@ -17,7 +19,7 @@ export default function ChatInputSuggest({ value, onChange, onSend, disabled }) 
       setLoadingSuggest(true);
       debounceRef.current = setTimeout(async () => {
         try {
-          const res = await axios.post("http://localhost:3001/suggest-next-word", {
+          const res = await axios.post(`${API_URL}/suggest-next-word`, {
             prompt: val
           });
           setSuggest(res.data.suggest);

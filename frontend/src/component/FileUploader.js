@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function FileUploader() {
   const [file, setFile] = useState(null);
   const [msg, setMsg] = useState("");
@@ -10,7 +12,7 @@ export default function FileUploader() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch("http://localhost:3001/upload", {
+    const res = await fetch(`${API_URL}/upload`, {
       method: "POST",
       body: formData
     });

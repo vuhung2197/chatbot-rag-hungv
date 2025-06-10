@@ -3,6 +3,8 @@ import HelpGuide from "./HelpGuide";
 import ChatInputSuggest from "./ChatInputSuggest";
 import CryptoJS from "crypto-js";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function Chat() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]);
@@ -50,7 +52,7 @@ export default function Chat() {
     }
 
     try {
-      const res = await fetch("http://localhost:3001/chat", {
+      const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: input, mode })

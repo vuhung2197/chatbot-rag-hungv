@@ -15,6 +15,7 @@ const axios = require("axios");
 const { getEmbedding, getTopEmbeddingMatches } = require("../services/embeddingVector");
 const { selectRelevantContexts } = require("../services/scoreContext");
 const { retrieveTopChunks } = require("../services/rag_retrieve");
+const { answerWithCoT } = require("../services/rag_cot");
 const crypto = require("crypto");
 
 function hashQuestion(text) {
@@ -69,6 +70,7 @@ exports.chat = async (req, res) => {
     // Gọi OpenAI để sinh câu trả lời dựa trên context đã chọn
     const t0 = Date.now();
     const reply = await askChatGPT(message, context);
+    // const reply = await answerWithCoT(message, context.split("\n---\n"));
     const t1 = Date.now();
     console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
 

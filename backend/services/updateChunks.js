@@ -1,5 +1,5 @@
 // services/updateChunks.js
-const { splitIntoChunks } = require("../utils/chunking");
+const { splitIntoSemanticChunks } = require("../utils/chunking");
 const { createHash } = require("../utils/hash");
 const pool = require("../db");
 const { getEmbedding } = require("./embeddingVector");
@@ -16,7 +16,7 @@ const { getEmbedding } = require("./embeddingVector");
  */
 async function updateChunksForKnowledge(id, title, content) {
   // 100 context words per chunk
-  const chunks = splitIntoChunks(content, 100);
+  const chunks = splitIntoSemanticChunks(content, 100);
 
   for (const chunk of chunks) {
     const hash = createHash(chunk);

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function KnowledgeAdmin() {
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ title: "", content: "", id: null });
@@ -14,13 +16,13 @@ export default function KnowledgeAdmin() {
   }, []);
 
   const fetchList = async () => {
-    const res = await fetch("http://localhost:3001/knowledge");
+    const res = await fetch(`${API_URL}/knowledge`);
     const data = await res.json();
     setList(data);
   };
 
   const fetchUnanswered = async () => {
-    const res = await fetch("http://localhost:3001/unanswered");
+    const res = await fetch(`${API_URL}/unanswered`);
     const data = await res.json();
     setUnanswered(data);
   };
@@ -28,8 +30,8 @@ export default function KnowledgeAdmin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const url = form.id
-      ? `http://localhost:3001/knowledge/${form.id}`
-      : "http://localhost:3001/knowledge";
+      ? `${API_URL}/knowledge/${form.id}`
+      : `${API_URL}/knowledge`;
     const method = form.id ? "PUT" : "POST";
     await fetch(url, {
       method,
@@ -44,7 +46,7 @@ export default function KnowledgeAdmin() {
 
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa kiến thức này?")) {
-      await fetch(`http://localhost:3001/knowledge/${id}`, { method: "DELETE" });
+      await fetch(`${API_URL}/knowledge/${id}`, { method: "DELETE" });
       setList(list.filter(item => item.id !== id));
       if (form.id === id) setForm({ title: "", content: "", id: null });
     }
@@ -60,7 +62,7 @@ export default function KnowledgeAdmin() {
   const fetchChunks = async (id) => {
     console.log("🔍 Chunk button clicked with id:", id);
     try {
-      const res = await fetch(`http://localhost:3001/knowledge/${id}/chunks`);
+      const res = await fetch(`${API_URL}/knowledge/${id}/chunks`);
       const data = await res.json();
       setChunkPreview({ id, chunks: data });
       setShowChunkModal(true);
@@ -68,7 +70,6 @@ export default function KnowledgeAdmin() {
       console.error("❌ Lỗi khi lấy chunks:", err);
     }
   };
-
 
   const handleUseUnanswered = (question) => {
     setForm({ title: question.slice(0, 100), content: question, id: null });
@@ -83,10 +84,17 @@ export default function KnowledgeAdmin() {
     formData.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:3001/upload", {
+      const res = await fetch(`${API_URL}/upload`, {
         method: "POST",
         body: formData,
       });
+
+      if (res.status === 409) {
+        const data = await res.json();
+        alert(data.error); // 👉 Show: "File đã được upload và huấn luyện trước đó."
+        return;
+      }
+
       const result = await res.json();
       alert(result.message || "Tải lên thành công");
       fetchList();

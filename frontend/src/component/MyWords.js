@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import SaveWord from './SaveWord';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function MyWords() {
   const [words, setWords] = useState([]);
   const [msg, setMsg] = useState("");
@@ -12,7 +14,7 @@ export default function MyWords() {
   }
 
   async function fetchWords() {
-    const res = await fetch("http://localhost:3001/dictionary/user-words");
+    const res = await fetch(`${API_URL}/dictionary/user-words`);
     const data = await res.json();
     setWords(data);
   }
@@ -21,7 +23,7 @@ export default function MyWords() {
 
   async function approveWord(id) {
     if (!window.confirm("Bạn có chắc muốn duyệt từ này vào hệ thống từ điển?")) return;
-    const res = await fetch("http://localhost:3001/dictionary/approve-word", {
+    const res = await fetch(`${API_URL}/dictionary/approve-word`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -34,7 +36,7 @@ export default function MyWords() {
 
   async function deleteWord(id) {
     if (!window.confirm("Bạn có chắc muốn xóa từ này khỏi danh sách?")) return;
-    const res = await fetch("http://localhost:3001/dictionary/delete-user-word", {
+    const res = await fetch(`${API_URL}/dictionary/delete-user-word`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })

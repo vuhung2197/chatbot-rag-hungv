@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function Highlights() {
   const [highlights, setHighlights] = useState([]);
 
   // Định nghĩa hàm fetchHighlights để có thể gọi lại nhiều lần
   function fetchHighlights() {
-    fetch("http://localhost:3001/highlights")
+    fetch(`${API_URL}/highlights`)
       .then(res => res.json())
       .then(setHighlights);
   }
@@ -16,7 +18,7 @@ export default function Highlights() {
   }, []);
 
   function approveHighlight(id) {
-    fetch('http://localhost:3001/highlights/approve', {
+    fetch(`${API_URL}/highlights/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),

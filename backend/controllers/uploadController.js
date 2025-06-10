@@ -26,10 +26,20 @@ exports.uploadAndTrain = async (req, res) => {
       return res.status(400).json({ error: "Định dạng file không hỗ trợ." });
     }
 
-    // const ext = path.extname(file.originalname).toLowerCase();
+    // Chuyển đổi tiêu đề có dấu tiếng Việt
     const rawName = Buffer.from(path.basename(file.originalname, ext), "latin1").toString("utf8");
     const title = rawName;
 
+    // 🔍 Kiểm tra xem title đã tồn tại chưa
+    const [rows] = await pool.execute(
+      "SELECT id FROM knowledge_base WHERE title = ? LIMIT 1",
+      [title]
+    );
+    if (rows.length > 0) {
+      return res.status(409).json({ error: "❗️ File đã được upload và huấn luyện trước đó." });
+    }
+
+    // ✅ Lưu vào DB nếu chưa tồn tại
     const [result] = await pool.execute(
       "INSERT INTO knowledge_base (title, content) VALUES (?, ?)",
       [title, content]

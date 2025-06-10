@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 function Feedback() {
   const [message, setMessage] = useState('');
   const [suggested, setSuggested] = useState('');
@@ -16,7 +18,7 @@ function Feedback() {
     }
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/feedback', {
+      const res = await fetch(`${API_URL}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, suggested_reply: suggested, explanation })

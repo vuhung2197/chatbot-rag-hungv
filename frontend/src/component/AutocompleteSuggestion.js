@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 export default function AutocompleteSuggestion({ value, onChange, onSelect, onEnterKey, disabled }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -25,7 +27,7 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
     clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(() => {
       axios
-        .get(`http://localhost:3001/chat/suggest?query=${encodeURIComponent(value)}`)
+        .get(`${API_URL}/chat/suggest?query=${encodeURIComponent(value)}`)
         .then(res => {
           setSuggestions(res.data || []);
           setShowDropdown(true);

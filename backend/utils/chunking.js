@@ -1,27 +1,52 @@
-/**
- * Chia một đoạn văn bản thành các chunk nhỏ hơn dựa trên số lượng từ tối đa.
- * Mỗi chunk sẽ cố gắng giữ nguyên câu (chia theo dấu câu).
- *
- * @param {string} text - Đoạn văn bản cần chia nhỏ
- * @param {number} maxWords - Số lượng từ tối đa cho mỗi chunk (mặc định: 120)
- * @returns {string[]} - Mảng các chunk đã chia
- */
-function splitIntoChunks(text, maxWords = 120) {
-  const sentences = text.split(/(?<=[.?!])\s+/);
-  const chunks = [];
-  let current = "";
+const { split } = require("sentence-splitter");
 
-  for (let s of sentences) {
-    const next = current + " " + s;
-    if (next.split(" ").length <= maxWords) {
-      current = next;
+/**
+ * Chia nội dung thành các chunk theo đoạn văn, giữ ngữ nghĩa trọn vẹn.
+ * @param {string} content - nội dung toàn bộ văn bản
+ * @param {number} maxWords - số từ tối đa mỗi chunk
+ * @returns {string[]} danh sách các chunk
+ */
+function splitIntoSemanticChunks(content, maxWords = 100) {
+  const paragraphs = content
+    .split(/\n\s*\n/)  // Tách đoạn văn theo dòng trống
+    .map(p => p.trim())
+    .filter(p => p.length > 0);  // Loại bỏ đoạn rỗng
+
+  const chunks = [];
+  let currentChunk = "";
+  let wordCount = 0;
+
+  for (const paragraph of paragraphs) {
+    const paragraphWordCount = paragraph.split(/\s+/).length;
+
+    // Nếu đoạn văn lớn hơn maxWords, chia nhỏ bằng câu
+    if (paragraphWordCount > maxWords) {
+      const sentences = paragraph.match(/[^.!?]+[.!?]+/g) || [paragraph];
+      for (const sentence of sentences) {
+        const sentenceWords = sentence.split(/\s+/).length;
+        if (wordCount + sentenceWords > maxWords) {
+          if (currentChunk.trim()) chunks.push(currentChunk.trim());
+          currentChunk = sentence;
+          wordCount = sentenceWords;
+        } else {
+          currentChunk += " " + sentence;
+          wordCount += sentenceWords;
+        }
+      }
     } else {
-      chunks.push(current.trim());
-      current = s;
+      if (wordCount + paragraphWordCount > maxWords) {
+        if (currentChunk.trim()) chunks.push(currentChunk.trim());
+        currentChunk = paragraph;
+        wordCount = paragraphWordCount;
+      } else {
+        currentChunk += "\n\n" + paragraph;
+        wordCount += paragraphWordCount;
+      }
     }
   }
-  if (current.trim()) chunks.push(current.trim());
+
+  if (currentChunk.trim()) chunks.push(currentChunk.trim());
   return chunks;
 }
 
-module.exports = { splitIntoChunks };
+module.exports = { splitIntoSemanticChunks };

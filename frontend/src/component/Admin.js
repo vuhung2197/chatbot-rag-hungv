@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+const API_URL = process.env.REACT_APP_API_URL;
 
 function Admin() {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -11,7 +12,7 @@ function Admin() {
 
   // Lấy danh sách góp ý
   const fetchFeedbacks = () => {
-    fetch('http://localhost:3001/feedback')
+    fetch(`${API_URL}/feedback`)
       .then(res => res.json())
       .then(data => setFeedbacks(data));
   };
@@ -20,7 +21,7 @@ function Admin() {
 
   // Duyệt góp ý
   const approveFeedback = async (id) => {
-    const res = await fetch('http://localhost:3001/feedback/approve', {
+    const res = await fetch(`${API_URL}/feedback/approve`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),

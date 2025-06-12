@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import HelpGuide from "./HelpGuide";
 import ChatInputSuggest from "./ChatInputSuggest";
 import CryptoJS from "crypto-js";
+import ReactMarkdown from 'react-markdown';
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -11,6 +14,14 @@ export default function Chat() {
   const [showGuide, setShowGuide] = useState(true);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("embedding");
+  // Chế độ luyện giao tiếp (normal hoặc conversation)
+  const [modeChat, setModeChat] = useState(
+    localStorage.getItem("chat_mode") || "normal"
+  );
+  // Đếm số lượt luyện giao tiếp
+  const [conversationCount, setConversationCount] = useState(
+    parseInt(localStorage.getItem("conversation_count") || "0", 10)
+  );
 
   const algorithmDescriptions = {
     embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
@@ -32,6 +43,14 @@ export default function Chat() {
     localStorage.setItem("chatbot_history", JSON.stringify(history));
   }, [history]);
 
+  useEffect(() => {
+    localStorage.setItem("chat_mode", modeChat);
+  }, [modeChat]);
+
+  useEffect(() => {
+    localStorage.setItem("conversation_count", conversationCount);
+  }, [conversationCount]);
+
   const hashQuestion = (text) => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
   };
@@ -48,6 +67,7 @@ export default function Chat() {
       setHistory([{ user: input, bot: cached[hash], createdAt: timestamp }, ...history]);
       setInput("");
       setLoading(false);
+      if (modeChat === "conversation") setConversationCount(c => c + 1);
       return;
     }
 
@@ -55,7 +75,8 @@ export default function Chat() {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input, mode })
+        // Gửi cả chế độ luyện giao tiếp xuống backend
+        body: JSON.stringify({ message: input, mode, modeChat })
       });
       const data = await res.json();
       setHistory([{ user: input, bot: data.reply, createdAt: timestamp }, ...history]);
@@ -70,6 +91,7 @@ export default function Chat() {
       if (!isNoAnswer) {
         cached[hash] = data.reply;
         localStorage.setItem("chatbot_cache", JSON.stringify(cached));
+        if (modeChat === "conversation") setConversationCount(c => c + 1);
       }
 
       setInput("");
@@ -85,7 +107,7 @@ export default function Chat() {
       background: "rgba(255,255,255,0.92)",
       borderRadius: "2em",
       padding: "2em 2.5em",
-      maxWidth: 480,
+      maxWidth: 620, // rộng hơn
       boxShadow: "0 8px 32px 0 rgba(31,38,135,0.18)",
       border: "1px solid #bcbcbc",
       margin: "0 auto"
@@ -101,6 +123,7 @@ export default function Chat() {
             setHistory([]);
             localStorage.removeItem("chatbot_history");
             localStorage.removeItem("chatbot_cache");
+            setConversationCount(0);
           }
         }}
         style={{
@@ -116,6 +139,20 @@ export default function Chat() {
       >
         🗑 Xóa toàn bộ lịch sử
       </button>
+
+      {/* Chọn chế độ chat */}
+      <label style={{ marginTop: 16, display: "block", fontWeight: "bold", color: "#000" }}>
+        Chọn chế độ:
+      </label>
+      <select value={modeChat} onChange={e => setModeChat(e.target.value)} style={{ marginBottom: 12 }}>
+        <option value="normal">✨ Chế độ thông thường</option>
+        <option value="conversation">💬 Luyện giao tiếp</option>
+      </select>
+      {modeChat === "conversation" && (
+        <div style={{ marginBottom: 8, color: "#2943a5", fontWeight: "bold" }}>
+          Đã luyện giao tiếp: <span style={{ color: "#7c3aed" }}>{conversationCount}</span> lượt
+        </div>
+      )}
 
       <label style={{ marginTop: 16, display: "block", fontWeight: "bold", color: "#000" }}>
         Chọn thuật toán:
@@ -138,7 +175,7 @@ export default function Chat() {
       </div>
 
       <div style={{
-        maxHeight: 260,
+        maxHeight: 340,
         overflowY: "auto",
         display: "flex",
         flexDirection: "column-reverse",
@@ -156,7 +193,6 @@ export default function Chat() {
         )}
         {history.map((item, idx) => {
           const time = new Date(item.createdAt).toLocaleString("vi-VN");
-
           return (
             <div key={idx}>
               <div style={{
@@ -176,7 +212,9 @@ export default function Chat() {
                 whiteSpace: "normal", fontSize: "1.06em"
               }}>
                 <b>Bot:</b>
-                <div style={{ marginTop: 4 }} dangerouslySetInnerHTML={{ __html: item.bot }} />
+                <div style={{ marginTop: 4 }}>
+                  <ReactMarkdown>{item.bot}</ReactMarkdown>
+                </div>
                 <div style={{ fontSize: "0.8em", color: "#999", marginTop: 4 }}>{time}</div>
               </div>
             </div>

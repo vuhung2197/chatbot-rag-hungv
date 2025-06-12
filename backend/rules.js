@@ -134,8 +134,15 @@ function unmaskSensitiveInfo(text, mapping) {
   return text;
 }
 
-// ---- Hàm gọi ChatGPT với mã hóa ----
-async function askChatGPT(question, context) {
+/**
+ * Gọi OpenAI ChatGPT, cho phép truyền prompt hệ thống (systemPrompt).
+ * Hỗ trợ mã hóa thông tin nhạy cảm.
+ * @param {string} question - Câu hỏi từ user
+ * @param {string} context - Context kiến thức tham khảo
+ * @param {string} systemPrompt - Prompt hệ thống (tùy chế độ: trả lời chuẩn, luyện giao tiếp, v.v.)
+ * @returns {string} - Nội dung trả lời của AI
+ */
+async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.") {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!context || context.trim().length === 0) {
     return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
@@ -155,7 +162,7 @@ async function askChatGPT(question, context) {
     {
       model: 'gpt-4o',
       messages: [
-        { role: 'system', content: 'Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.' },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt }
       ],
       temperature: 0.2,

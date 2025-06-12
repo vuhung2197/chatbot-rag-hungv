@@ -114,4 +114,12 @@ CREATE TABLE unanswered_questions (
 
 ALTER TABLE unanswered_questions ADD COLUMN hash CHAR(64) NOT NULL UNIQUE AFTER question;
 
+CREATE TABLE conversation_sessions (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    message TEXT,
+    reply TEXT,
+    mode_chat VARCHAR(32),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 

@@ -6,8 +6,6 @@ import ReactMarkdown from 'react-markdown';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-const API_URL = process.env.REACT_APP_API_URL;
-
 export default function Chat() {
   const [input, setInput] = useState("");
   const [history, setHistory] = useState([]);

@@ -44,13 +44,18 @@ async function translateWordByWord(sentence) {
 }
 
 async function translateSingleWord(word) {
-  const prompt = `Translate the English word '${word}' to Vietnamese. Only return the Vietnamese word, nothing else.`;
+  const isWord = /^[\p{L}\p{N}]+$/u.test(word.trim());
+
+  const prompt = isWord
+    ? `Bạn hãy dịch từ tiếng Anh '${word}' sang tiếng Việt. Vui lòng chỉ trả về bản dịch tiếng Việt tự nhiên và ngắn gọn, không kèm thêm giải thích.`
+    : `Bạn hãy dịch câu tiếng Anh sau sang tiếng Việt một cách tự nhiên, rõ nghĩa và dễ hiểu: '${word}'. Vui lòng chỉ trả về phần dịch tiếng Việt, không thêm chú thích.`;
+
   try {
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 10,
-      temperature: 0,
+      max_tokens: 100,
+      temperature: 0.3, // mềm mại hơn 0.0
     });
     return completion.choices[0].message.content.trim();
   } catch (err) {

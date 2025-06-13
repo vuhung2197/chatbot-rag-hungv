@@ -5,14 +5,12 @@ const API_URL = process.env.REACT_APP_API_URL;
 export default function Highlights() {
   const [highlights, setHighlights] = useState([]);
 
-  // Định nghĩa hàm fetchHighlights để có thể gọi lại nhiều lần
   function fetchHighlights() {
     fetch(`${API_URL}/highlights`)
       .then(res => res.json())
       .then(setHighlights);
   }
 
-  // Gọi fetchHighlights khi component mount
   useEffect(() => {
     fetchHighlights();
   }, []);
@@ -26,7 +24,21 @@ export default function Highlights() {
       .then(res => res.json())
       .then(data => {
         alert(data.message);
-        // Xóa khỏi state local thay vì reload lại từ API
+        setHighlights(prev => prev.filter(h => h.id !== id));
+      });
+  }
+
+  function deleteHighlight(id) {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa đoạn này?")) return;
+
+    fetch(`${API_URL}/highlights/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
         setHighlights(prev => prev.filter(h => h.id !== id));
       });
   }
@@ -49,19 +61,34 @@ export default function Highlights() {
                   </div>
                 )}
                 <div style={{ fontSize: "0.94em", color: "#999" }}>{new Date(h.created_at).toLocaleString()}</div>
-                {!h.approved && (
+
+                {/* Hành động */}
+                <div style={{ marginTop: 6 }}>
+                  {!h.approved && (
+                    <button
+                      onClick={() => approveHighlight(h.id)}
+                      style={{
+                        background: "#44bd32", color: "#fff",
+                        border: "none", padding: "6px 12px",
+                        borderRadius: 6, cursor: "pointer", marginRight: 8
+                      }}
+                    >
+                      Duyệt vào từ điển
+                    </button>
+                  )}
+                  {h.approved && <span style={{ color: "green", marginRight: 12 }}>✔ Đã duyệt</span>}
+
                   <button
-                    onClick={() => approveHighlight(h.id)}
+                    onClick={() => deleteHighlight(h.id)}
                     style={{
-                      background: "#44bd32", color: "#fff",
+                      background: "#e74c3c", color: "#fff",
                       border: "none", padding: "6px 12px",
-                      borderRadius: 6, cursor: "pointer", marginTop: 6
+                      borderRadius: 6, cursor: "pointer"
                     }}
                   >
-                    Duyệt vào từ điển
+                    🗑 Xóa
                   </button>
-                )}
-                {h.approved && <span style={{ color: "green", marginLeft: 8 }}>✔ Đã duyệt</span>}
+                </div>
               </li>
             ))}
           </ul>

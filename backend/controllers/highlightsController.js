@@ -70,3 +70,14 @@ exports.highlightsRoutes = async (req, res) => {
 
   res.json({ message: "Đã duyệt vào từ điển!" });
 };
+
+exports.deleteHighlight = async (req, res) => {
+  const { id } = req.body;
+  try {
+    await pool.execute("DELETE FROM user_highlighted_text WHERE id = ?", [id]);
+    res.json({ message: "Đã xóa đoạn văn." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi xóa đoạn văn." });
+  }
+};

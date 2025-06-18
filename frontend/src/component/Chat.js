@@ -69,10 +69,12 @@ export default function Chat() {
       return;
     }
 
+    const token = localStorage.getItem("token");
+
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         // Gửi cả chế độ luyện giao tiếp xuống backend
         body: JSON.stringify({ message: input, mode, modeChat })
       });

@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import Chat from './component/Chat';
 import Highlights from './component/Highlights';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
-import Login from './components/Login';
-import Register from './components/Register';
+import Login from './component/Login';
+import Register from './component/Register';
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
@@ -58,7 +58,7 @@ export default function App() {
       <button
         onClick={toggleDarkMode}
         style={{
-          position: "absolute", right: 0, top: 10,
+          position: "absolute", right: -15, top: 10,
           background: darkMode ? "#333" : "#fff",
           color: darkMode ? "#fff" : "#7137ea",
           border: "1px solid #7137ea",

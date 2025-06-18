@@ -65,10 +65,13 @@ function toMarkdown(text) {
  */
 exports.chat = async (req, res) => {
   const { message, mode = "rag", modeChat = "normal" } = req.body;
+  const userId = req.user?.id;
+
   if (!message) return res.status(400).json({ reply: "No message!" });
 
   try {
     let context = "";
+    let isAnswered = true;
 
     if (mode === "context") {
       const [rows] = await pool.execute("SELECT * FROM knowledge_base");
@@ -77,31 +80,50 @@ exports.chat = async (req, res) => {
 
       const contexts = selectRelevantContexts(message, rows, importantKeywords);
       if (contexts.length === 0) {
+        isAnswered = false;
         await logUnanswered(message);
+        if (userId) {
+          await pool.execute(
+            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
+            [userId, message, false]
+          );
+        }
         return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
       }
 
       context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
 
     } else {
-      // Lấy context bằng vector search (embedding)
       let embedding;
       try {
         embedding = await getEmbedding(message);
       } catch {
+        isAnswered = false;
+        if (userId) {
+          await pool.execute(
+            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
+            [userId, message, false]
+          );
+        }
         return res.json({ reply: "Không thể tính embedding câu hỏi!" });
       }
 
       const chunks = await retrieveTopChunks(embedding);
       if (!chunks.length) {
+        isAnswered = false;
         await logUnanswered(message);
+        if (userId) {
+          await pool.execute(
+            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
+            [userId, message, false]
+          );
+        }
         return res.json({ reply: "Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
       }
 
       context = chunks.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
     }
 
-    // Tạo system prompt theo chế độ chat
     let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
     if (modeChat === "conversation") {
       systemPrompt = "Bạn là bạn đồng hành luyện giao tiếp tiếng Anh. Hãy trả lời tự nhiên, thân thiện, hỏi lại hoặc chia sẻ cảm xúc để tiếp tục cuộc hội thoại.";
@@ -112,7 +134,7 @@ exports.chat = async (req, res) => {
     const t1 = Date.now();
     console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
 
-    // Ghi log chế độ luyện giao tiếp
+    // Lưu vào bảng conversation_sessions nếu đang luyện giao tiếp
     if (modeChat === "conversation") {
       await pool.execute(
         "INSERT INTO conversation_sessions (message, reply, mode_chat, created_at) VALUES (?, ?, ?, NOW())",
@@ -120,7 +142,13 @@ exports.chat = async (req, res) => {
       );
     }
 
-    // Ghi log câu hỏi chưa trả lời được nếu cần (như cũ)
+    // ✅ Ghi lại lịch sử vào user_questions
+    if (userId) {
+      await pool.execute(
+        "INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)",
+        [userId, message, reply, isAnswered]
+      );
+    }
 
     res.json({ reply: toMarkdown(reply) });
 

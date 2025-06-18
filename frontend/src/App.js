@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+// 📁 src/App.jsx
+import React, { useState, useEffect } from 'react';
 import Chat from './component/Chat';
-// import Feedback from './component/Feedback';
-// import Admin from './component/Admin';
-// import MyWords from './component/MyWords';
 import Highlights from './component/Highlights';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
+import Login from './component/Login';
+import Register from './component/Register';
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
@@ -12,18 +12,53 @@ export default function App() {
   const [toast, setToast] = useState("");
   const { darkMode, toggleDarkMode } = useDarkMode();
 
+  const [role, setRole] = useState(localStorage.getItem("role"));
+  const [page, setPage] = useState("login");
+
+  useEffect(() => {
+    if (role) setView(role === "admin" ? "knowledgeadmin" : "chat");
+  }, [role]);
+
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(""), 2000);
   }
 
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    setRole(null);
+    setPage("login");
+  }
+
+  if (!role) {
+    return (
+      <div style={{ maxWidth: 360, margin: "40px auto" }}>
+        {page === "login" ? (
+          <>
+            <Login onLogin={(r) => setRole(r)} />
+            <p style={{ marginTop: 10, textAlign: "center" }}>
+              Chưa có tài khoản? <button onClick={() => setPage("register")} style={{ background: "none", border: "none", color: "#7137ea", cursor: "pointer" }}>Đăng ký</button>
+            </p>
+          </>
+        ) : (
+          <>
+            <Register onRegister={() => setPage("login")} />
+            <p style={{ marginTop: 10, textAlign: "center" }}>
+              Đã có tài khoản? <button onClick={() => setPage("login")} style={{ background: "none", border: "none", color: "#7137ea", cursor: "pointer" }}>Đăng nhập</button>
+            </p>
+          </>
+        )}
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Nút chuyển dark/light mode */}
       <button
         onClick={toggleDarkMode}
         style={{
-          position: "absolute", right: 0, top: 10,
+          position: "absolute", right: -15, top: 10,
           background: darkMode ? "#333" : "#fff",
           color: darkMode ? "#fff" : "#7137ea",
           border: "1px solid #7137ea",
@@ -33,10 +68,21 @@ export default function App() {
       >
         {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
       </button>
+      <button
+        onClick={handleLogout}
+        style={{
+          position: "absolute", left: 0, top: 10,
+          background: "#eee", border: "1px solid #666", padding: "6px 18px",
+          borderRadius: 20, cursor: "pointer", zIndex: 1000
+        }}
+      >
+        Đăng xuất
+      </button>
       <h3 style={{
         color: "#7137ea", fontSize: "2em", fontWeight: "bold",
         marginBottom: "1em", textAlign: "center"
       }}>📚 Knowledge Chatbot</h3>
+
       <nav style={{
         marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10
       }}>
@@ -52,18 +98,6 @@ export default function App() {
         >
           Tra cứu kiến thức
         </button>
-        {/* <button
-          onClick={() => setView('mywords')}
-          style={{
-            background: view === 'mywords' ? '#7137ea' : '#f6f9fc',
-            color: view === 'mywords' ? '#fff' : '#333',
-            border: "1px solid #7137ea",
-            borderRadius: 8,
-            padding: "8px 16px"
-          }}
-        >
-          My Words
-        </button> */}
         <button
           onClick={() => setView('highlights')}
           style={{
@@ -76,43 +110,22 @@ export default function App() {
         >
           Highlights
         </button>
-        {/* <button
-          onClick={() => setView('feedback')}
-          style={{
-            background: view === 'feedback' ? '#7137ea' : '#f6f9fc',
-            color: view === 'feedback' ? '#fff' : '#333',
-            border: "1px solid #7137ea",
-            borderRadius: 8,
-            padding: "8px 16px"
-          }}
-        >
-          Góp ý bot
-        </button>
-        <button
-          onClick={() => setView('admin')}
-          style={{
-            background: view === 'admin' ? '#7137ea' : '#f6f9fc',
-            color: view === 'admin' ? '#fff' : '#333',
-            border: "1px solid #7137ea",
-            borderRadius: 8,
-            padding: "8px 16px"
-          }}
-        >
-          Admin (Duyệt góp ý)
-        </button> */}
-        <button
-          onClick={() => setView('knowledgeadmin')}
-          style={{
-            background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
-            color: view === 'knowledgeadmin' ? '#fff' : '#333',
-            border: "1px solid #7137ea",
-            borderRadius: 8,
-            padding: "8px 16px"
-          }}
-        >
-          Knowledge Admin
-        </button>
+        {role === "admin" && (
+          <button
+            onClick={() => setView('knowledgeadmin')}
+            style={{
+              background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
+              color: view === 'knowledgeadmin' ? '#fff' : '#333',
+              border: "1px solid #7137ea",
+              borderRadius: 8,
+              padding: "8px 16px"
+            }}
+          >
+            Knowledge Admin
+          </button>
+        )}
       </nav>
+
       {toast && (
         <div style={{
           background: "#4BB543",
@@ -130,11 +143,9 @@ export default function App() {
           {toast}
         </div>
       )}
+
       {view === 'chat' && <Chat darkMode={darkMode} />}
-      {/* {view === 'mywords' && <MyWords darkMode={darkMode} />} */}
       {view === 'highlights' && <Highlights darkMode={darkMode} />}
-      {/* {view === 'feedback' && <Feedback darkMode={darkMode} />} */}
-      {/* {view === 'admin' && <Admin darkMode={darkMode} />} */}
       {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
     </>
   );

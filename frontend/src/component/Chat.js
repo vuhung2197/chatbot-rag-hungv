@@ -69,10 +69,12 @@ export default function Chat() {
       return;
     }
 
+    const token = localStorage.getItem("token");
+
     try {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         // Gửi cả chế độ luyện giao tiếp xuống backend
         body: JSON.stringify({ message: input, mode, modeChat })
       });
@@ -115,28 +117,30 @@ export default function Chat() {
       </button>
       {showGuide && <HelpGuide />}
 
-      <button
-        onClick={() => {
-          if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?")) {
-            setHistory([]);
-            localStorage.removeItem("chatbot_history");
-            localStorage.removeItem("chatbot_cache");
-            setConversationCount(0);
-          }
-        }}
-        style={{
-          marginTop: 8,
-          marginBottom: 12,
-          backgroundColor: "#f44336",
-          color: "white",
-          border: "none",
-          borderRadius: "6px",
-          padding: "6px 12px",
-          cursor: "pointer"
-        }}
-      >
-        🗑 Xóa toàn bộ lịch sử
-      </button>
+      {history.length > 0 && (
+        <button
+          onClick={() => {
+            if (window.confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?")) {
+              setHistory([]);
+              localStorage.removeItem("chatbot_history");
+              localStorage.removeItem("chatbot_cache");
+              setConversationCount(0);
+            }
+          }}
+          style={{
+            marginTop: 8,
+            marginBottom: 12,
+            backgroundColor: "#f44336",
+            color: "white",
+            border: "none",
+            borderRadius: "6px",
+            padding: "6px 12px",
+            cursor: "pointer"
+          }}
+        >
+          🗑 Xóa toàn bộ lịch sử
+        </button>
+      )}
 
       {/* Chọn chế độ chat */}
       <label style={{ marginTop: 16, display: "block", fontWeight: "bold", color: "#000" }}>

@@ -2,20 +2,7 @@ require("dotenv").config();
 const pool = require("../db");
 const axios = require("axios");
 const { splitIntoChunks } = require("../utils/chunking");
-
-/**
- * Gọi OpenAI API để lấy embedding cho một đoạn văn bản.
- * @param {string} text - Đoạn văn bản cần embedding
- * @returns {Promise<number[]>} - Mảng embedding vector
- */
-async function getEmbedding(text) {
-  const res = await axios.post(
-    "https://api.openai.com/v1/embeddings",
-    { input: text, model: "text-embedding-3-small" },
-    { headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` } }
-  );
-  return res.data.data[0].embedding;
-}
+const { getEmbedding } = require("./embeddingVector");
 
 /**
  * Chạy toàn bộ quá trình:

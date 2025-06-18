@@ -19,6 +19,7 @@ export default function Login({ onLogin }) {
       if (res.ok) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role);
+        localStorage.setItem("userId", data.userId);
         onLogin(data.role);
       } else {
         setError(data.message || "Đăng nhập thất bại");

@@ -27,18 +27,20 @@ export default function Chat() {
   };
 
   useEffect(() => {
-    const saved = localStorage.getItem("chatbot_history");
+    const userId = localStorage.getItem("userId");
+    const saved = localStorage.getItem(`chatbot_history_${userId}`);
     if (saved) {
       try {
         setHistory(JSON.parse(saved));
       } catch (e) {
-        console.error("Lỗi khi parse history từ localStorage:", e);
+        console.error("Lỗi khi parse history:", e);
       }
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("chatbot_history", JSON.stringify(history));
+    const userId = localStorage.getItem("userId");
+    localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
   }, [history]);
 
   useEffect(() => {

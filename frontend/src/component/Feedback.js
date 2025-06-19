@@ -7,7 +7,7 @@ function Feedback() {
   const [suggested, setSuggested] = useState('');
   const [explanation, setExplanation] = useState('');
   const [noti, setNoti] = useState('');
-  const [notiType, setNotiType] = useState(''); // "error" hoặc "success"
+  const [notiType, setNotiType] = useState('');
   const [loading, setLoading] = useState(false);
 
   const sendFeedback = async () => {

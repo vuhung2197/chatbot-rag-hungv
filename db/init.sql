@@ -2,43 +2,6 @@
 CREATE DATABASE IF NOT EXISTS chatbot CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE chatbot;
 
--- Bảng từ điển Anh-Việt
-DROP TABLE IF EXISTS dictionary;
-CREATE TABLE dictionary (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    word_en VARCHAR(100) NOT NULL,
-    word_vi VARCHAR(255) NOT NULL,
-    type VARCHAR(20),         -- ví dụ: noun, verb, adj, adv
-    example_en VARCHAR(255),
-    example_vi VARCHAR(255)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Bảng câu ví dụ
-DROP TABLE IF EXISTS sentence_examples;
-CREATE TABLE sentence_examples (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    word_en VARCHAR(255) NOT NULL,
-    sentence_en TEXT NOT NULL,
-    sentence_vi TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Log các câu/từ chưa hiểu
-DROP TABLE IF EXISTS unknown_queries;
-CREATE TABLE unknown_queries (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_message TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- Lịch sử chat
-DROP TABLE IF EXISTS chat_history;
-CREATE TABLE chat_history (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    message TEXT NOT NULL,
-    reply TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 -- Góp ý/training
 DROP TABLE IF EXISTS feedbacks;
 CREATE TABLE feedbacks (
@@ -54,7 +17,7 @@ DROP TABLE IF EXISTS user_words;
 -- Bảng từ vựng của người dùng (nếu cần)
 CREATE TABLE user_words (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT, -- nếu muốn đa user, không thì bỏ
+    user_id INT,
     word_en VARCHAR(100) NOT NULL,
     word_vi VARCHAR(255),
     type VARCHAR(20),
@@ -64,6 +27,7 @@ CREATE TABLE user_words (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 DROP TABLE IF EXISTS user_highlighted_text;
+-- Bảng lưu trữ đoạn văn bản được người dùng đánh dấu
 CREATE TABLE user_highlighted_text (
     id INT AUTO_INCREMENT PRIMARY KEY,
     text TEXT NOT NULL,
@@ -75,6 +39,7 @@ ALTER TABLE user_highlighted_text ADD COLUMN translated_text TEXT;
 ALTER TABLE user_highlighted_text ADD COLUMN approved TINYINT(1) DEFAULT 0;
 
 DROP TABLE IF EXISTS knowledge_base;
+-- Bảng cơ sở tri thức, lưu trữ các bài viết, tài liệu
 CREATE TABLE knowledge_base (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(255),
@@ -86,15 +51,20 @@ ADD FULLTEXT(title, content);
 
 ALTER TABLE knowledge_base ADD COLUMN embedding JSON NULL;
 
+DROP TABLE IF EXISTS important_keywords;
+-- Bảng từ khóa quan trọng, lưu trữ các từ khóa cần thiết cho việc tìm
 CREATE TABLE important_keywords (
   id INT AUTO_INCREMENT PRIMARY KEY,
   keyword VARCHAR(100) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS knowledge_chunks;
+-- Bảng lưu trữ các đoạn văn bản nhỏ hơn từ cơ sở tri thức, có thể là các đoạn trích dẫn, câu hỏi thường gặp, v.v.
+-- Mỗi chunk có thể liên kết với một bài viết trong knowledge_base
 CREATE TABLE knowledge_chunks (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  parent_id INT, -- trỏ về bảng knowledge_base nếu cần
+  parent_id INT,
   title TEXT,
   content TEXT,
   embedding JSON,
@@ -105,6 +75,8 @@ CREATE TABLE knowledge_chunks (
 
 CREATE UNIQUE INDEX idx_chunk_hash ON knowledge_chunks(hash);
 
+DROP TABLE IF EXISTS unanswered_questions;
+-- Bảng lưu trữ các câu hỏi chưa được trả lời, có thể là câu hỏi từ người dùng hoặc từ hệ thống
 CREATE TABLE unanswered_questions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   question TEXT NOT NULL,
@@ -114,6 +86,8 @@ CREATE TABLE unanswered_questions (
 
 ALTER TABLE unanswered_questions ADD COLUMN hash CHAR(64) NOT NULL UNIQUE AFTER question;
 
+DROP TABLE IF EXISTS conversation_sessions;
+-- Bảng lưu trữ các phiên trò chuyện, mỗi phiên có thể chứa nhiều tin nhắn và phản hồi
 CREATE TABLE conversation_sessions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     message TEXT,
@@ -122,6 +96,8 @@ CREATE TABLE conversation_sessions (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS users;
+-- Bảng người dùng, lưu trữ thông tin người dùng, có thể là người dùng thường hoặc quản trị viên
 CREATE TABLE users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
@@ -131,6 +107,8 @@ CREATE TABLE users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS user_questions;
+-- Bảng lưu trữ các câu hỏi của người dùng, có thể là câu hỏi chưa được trả lời hoặc đã được trả lời
 CREATE TABLE user_questions (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,

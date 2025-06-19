@@ -1,13 +1,26 @@
 const levenshtein = require('fast-levenshtein');
 
-function normalizeText(str) {
-  return str
+/**
+ * Chuẩn hóa văn bản: chuyển về chữ thường, loại bỏ dấu câu và khoảng trắng thừa.
+ * Giúp so sánh và trích xuất từ khóa chính xác hơn.
+ * @param {string} text - Văn bản cần chuẩn hóa
+ * @returns {string} - Văn bản đã chuẩn hóa
+ */
+function normalizeText(text) {
+  return text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ");
 }
 
+/**
+ * Tính điểm số mức độ liên quan giữa một context và câu hỏi dựa trên số lượng từ khóa trùng khớp.
+ * Ưu tiên các cụm từ quan trọng, phạt nếu độ dài context quá lớn.
+ * @param {string} context - Đoạn văn bản kiến thức
+ * @param {string} question - Câu hỏi người dùng
+ * @returns {number} - Điểm số mức độ liên quan
+ */
 function scoreContext(question, context, title, questionKeywords, importantKeywords) {
   let score = 0;
   const normTitle = normalizeText(title);
@@ -49,6 +62,14 @@ function scoreContext(question, context, title, questionKeywords, importantKeywo
   return score;
 }
 
+/**
+ * Chọn ra các context (đoạn kiến thức) liên quan nhất đến câu hỏi dựa trên điểm số.
+ * Sắp xếp các context theo điểm số giảm dần và trả về top N context phù hợp nhất.
+ * @param {string} question - Câu hỏi người dùng
+ * @param {Array<string>} contexts - Danh sách các đoạn kiến thức
+ * @param {number} topN - Số lượng context trả về (top N)
+ * @returns {Array<{context: string, score: number}>} - Danh sách context và điểm số
+ */
 function selectRelevantContexts(message, allKnowledge, importantKeywords, topN = 3) {
   const normQ = normalizeText(message);
   const questionKeywords = normQ.split(" ").filter(w => w.length > 2);

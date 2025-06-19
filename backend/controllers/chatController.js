@@ -9,24 +9,18 @@
 
 require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 const pool = require('../db');
-const { askChatGPT } = require('../rules'); // Cần nhận thêm systemPrompt
-const levenshtein = require('fast-levenshtein');
-const axios = require("axios");
-const { getEmbedding, getTopEmbeddingMatches } = require("../services/embeddingVector");
+const { askChatGPT } = require('../rules');
+const { getEmbedding } = require("../services/embeddingVector");
 const { selectRelevantContexts } = require("../services/scoreContext");
 const { retrieveTopChunks } = require("../services/rag_retrieve");
-const { answerWithCoT } = require("../services/rag_cot");
-const crypto = require("crypto");
-
-/**
- * Tạo hash SHA256 cho câu hỏi (dùng để kiểm tra trùng lặp).
- */
-function hashQuestion(text) {
-  return crypto.createHash("sha256").update(text.trim().toLowerCase()).digest("hex");
-}
+const { hashQuestion } = require("../utils/hash");
 
 /**
  * Chuyển đổi văn bản trả lời thành định dạng Markdown đẹp mắt.
+ * - Câu đầu tiên in đậm.
+ * - Các luận điểm sau chuyển thành bullet hoặc giữ nguyên nếu là ví dụ/cụ thể.
+ * @param {string} text - Văn bản trả lời từ AI
+ * @returns {string} - Văn bản đã format Markdown
  */
 function toMarkdown(text) {
   const sentences = text.split(/(?<=\.)\s+/);
@@ -58,10 +52,13 @@ function toMarkdown(text) {
 
 /**
  * Xử lý API chat chính.
- * - mode = "context": Lấy context dựa trên keyword.
- * - mode = "rag" (default): Lấy context bằng embedding/vector (RAG).
- * - Gọi OpenAI để sinh câu trả lời.
- * - Tích hợp chế độ luyện giao tiếp (conversation).
+ * - Nhận message từ người dùng và mode truy xuất context.
+ * - Nếu mode là "context": lấy context dựa trên keyword và scoring.
+ * - Nếu mode là "rag" (hoặc mặc định): lấy context dựa trên embedding/vector (RAG).
+ * - Gọi OpenAI để sinh câu trả lời dựa trên context đã chọn.
+ * - Ghi log các câu hỏi chưa trả lời được.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
  */
 exports.chat = async (req, res) => {
   const { message, mode = "rag", modeChat = "normal" } = req.body;
@@ -160,6 +157,8 @@ exports.chat = async (req, res) => {
 
 /**
  * Ghi log các câu hỏi chưa trả lời được vào bảng unanswered_questions.
+ * Nếu câu hỏi đã tồn tại (theo hash), sẽ không ghi trùng.
+ * @param {string} question - Câu hỏi chưa trả lời được từ người dùng
  */
 async function logUnanswered(question) {
   try {
@@ -180,13 +179,30 @@ async function logUnanswered(question) {
 }
 
 /**
- * API lấy lịch sử chat gần nhất (50 bản ghi).
+ * API lấy lịch sử chat gần nhất.
+ * Trả về 50 bản ghi mới nhất từ bảng chat_history.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
  */
 exports.history = async (req, res) => {
-  const [rows] = await pool.execute(
-      "SELECT message, reply, created_at FROM chat_history ORDER BY id DESC LIMIT 50"
-  );
-  res.json(rows);
+  const userId = req.user?.id; // đã xác thực qua middleware (nếu có)
+
+  if (!userId) return res.status(401).json({ error: "Chưa đăng nhập" });
+
+  try {
+    const [rows] = await pool.execute(
+      `SELECT question, bot_reply, is_answered, created_at 
+       FROM user_questions 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 50`,
+      [userId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy lịch sử câu hỏi:", err);
+    res.status(500).json({ error: "Lỗi server" });
+  }
 };
 
 /**
@@ -211,6 +227,9 @@ exports.conversationCount = async (req, res) => {
 
 /**
  * API gợi ý từ tiếng Anh cho autocomplete.
+ * Trả về tối đa 10 từ bắt đầu bằng query từ bảng dictionary.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
  */
 exports.suggest = async (req, res) => {
   const query = req.query.query?.trim().toLowerCase();

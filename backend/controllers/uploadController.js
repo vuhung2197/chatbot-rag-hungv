@@ -5,6 +5,15 @@ const mammoth = require("mammoth");
 const { updateChunksForKnowledge } = require("../services/updateChunks");
 const pool = require("../db");
 
+/**
+ * Xử lý upload file kiến thức và huấn luyện tự động.
+ * - Nhận file upload từ request (multipart/form-data).
+ * - Đọc nội dung file, trích xuất và lưu vào hệ thống kiến thức.
+ * - Tự động chia nhỏ (chunk) và tính embedding cho từng đoạn.
+ * - Trả về kết quả thành công hoặc lỗi cho client.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
+ */
 exports.uploadAndTrain = async (req, res) => {
   const file = req.file;
   if (!file) return res.status(400).json({ error: "Không có file được tải lên." });

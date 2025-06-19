@@ -1,6 +1,13 @@
 require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 const axios = require("axios");
 
+/**
+ * Gợi ý từ tiếp theo cho người dùng dựa trên prompt đã nhập.
+ * Nhận prompt (câu hỏi hoặc đoạn văn bản) từ request body,
+ * trả về từ/cụm từ tiếp theo mà AI dự đoán phù hợp.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
+ */
 exports.suggestNextWord = async (req, res) => {
   const { prompt } = req.body;
   if (!prompt || typeof prompt !== "string") return res.json({ suggest: "" });

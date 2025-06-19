@@ -12,6 +12,7 @@ export default function Chat() {
   const [showGuide, setShowGuide] = useState(true);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("embedding");
+  const [questionHistory, setQuestionHistory] = useState([]);
   // Chế độ luyện giao tiếp (normal hoặc conversation)
   const [modeChat, setModeChat] = useState(
     localStorage.getItem("chat_mode") || "normal"
@@ -50,6 +51,24 @@ export default function Chat() {
   useEffect(() => {
     localStorage.setItem("conversation_count", conversationCount);
   }, [conversationCount]);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      try {
+        const res = await fetch(`${API_URL}/chat/history`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        const data = await res.json();
+        setQuestionHistory(data);
+      } catch (err) {
+        console.error("Lỗi khi lấy lịch sử câu hỏi:", err);
+      }
+    }
+
+    fetchHistory();
+  }, []);
 
   const hashQuestion = (text) => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
@@ -118,6 +137,27 @@ export default function Chat() {
         {showGuide ? "Ẩn hướng dẫn" : "Hiện hướng dẫn"}
       </button>
       {showGuide && <HelpGuide />}
+
+      {questionHistory.length > 0 && (
+        <div style={{ marginTop: 16, marginBottom: 24 }}>
+          <h3 style={{ fontSize: "1.1em", marginBottom: 8, color: "#333" }}>🕘 Câu hỏi gần đây của bạn:</h3>
+          <ul style={{ paddingLeft: 20 }}>
+            {questionHistory.map((item, index) => (
+              <li
+                key={index}
+                style={{ marginBottom: 8, cursor: "pointer", color: "#1e40af" }}
+                onClick={() => setInput(item.question)}
+                title="Click để chat lại"
+              >
+                ❓ {item.question}
+                <div style={{ fontSize: "0.85em", color: "#666", marginTop: 2 }}>
+                  🗓 {new Date(item.created_at).toLocaleString("vi-VN")}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {history.length > 0 && (
         <button

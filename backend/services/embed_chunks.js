@@ -1,6 +1,5 @@
 require("dotenv").config();
 const pool = require("../db");
-const axios = require("axios");
 const { splitIntoChunks } = require("../utils/chunking");
 const { getEmbedding } = require("./embeddingVector");
 

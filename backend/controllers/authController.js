@@ -2,6 +2,12 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../db");
 
+/**
+ * Đăng ký tài khoản người dùng mới.
+ * Nhận thông tin username, password từ request body và tạo tài khoản mới nếu chưa tồn tại.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
+ */
 exports.register = async (req, res) => {
   const { name, email, password, role = "user" } = req.body;
 
@@ -23,6 +29,12 @@ exports.register = async (req, res) => {
   }
 };
 
+/**
+ * Đăng nhập tài khoản người dùng.
+ * Kiểm tra username, password từ request body, trả về token hoặc thông báo lỗi nếu sai thông tin.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
+ */
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   const [rows] = await pool.execute("SELECT * FROM users WHERE email = ?", [email]);

@@ -61,7 +61,7 @@ function toMarkdown(text) {
  * @param {object} res - Đối tượng response Express
  */
 exports.chat = async (req, res) => {
-  const { message, mode = "rag", modeChat = "normal" } = req.body;
+  const { message, mode = "rag"} = req.body;
   const userId = req.user?.id;
 
   if (!message) return res.status(400).json({ reply: "No message!" });
@@ -122,22 +122,11 @@ exports.chat = async (req, res) => {
     }
 
     let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
-    if (modeChat === "conversation") {
-      systemPrompt = "Bạn là bạn đồng hành luyện giao tiếp tiếng Anh. Hãy trả lời tự nhiên, thân thiện, hỏi lại hoặc chia sẻ cảm xúc để tiếp tục cuộc hội thoại.";
-    }
 
     const t0 = Date.now();
     const reply = await askChatGPT(message, context, systemPrompt);
     const t1 = Date.now();
     console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
-
-    // Lưu vào bảng conversation_sessions nếu đang luyện giao tiếp
-    if (modeChat === "conversation") {
-      await pool.execute(
-        "INSERT INTO conversation_sessions (message, reply, mode_chat, created_at) VALUES (?, ?, ?, NOW())",
-        [message, reply, modeChat]
-      );
-    }
 
     // ✅ Ghi lại lịch sử vào user_questions
     if (userId) {
@@ -185,13 +174,13 @@ async function logUnanswered(question) {
  * @param {object} res - Đối tượng response Express
  */
 exports.history = async (req, res) => {
-  const userId = req.user?.id; // đã xác thực qua middleware (nếu có)
+  const userId = req.user?.id;
 
   if (!userId) return res.status(401).json({ error: "Chưa đăng nhập" });
 
   try {
     const [rows] = await pool.execute(
-      `SELECT question, bot_reply, is_answered, created_at 
+      `SELECT id, question, bot_reply, is_answered, created_at 
        FROM user_questions 
        WHERE user_id = ? 
        ORDER BY created_at DESC 
@@ -239,4 +228,35 @@ exports.suggest = async (req, res) => {
       [`${query}%`]
   );
   res.json(rows.map(row => row.word_en));
+};
+
+/**
+ * Xóa một câu hỏi khỏi lịch sử chat của người dùng hiện tại theo id.
+ * Chỉ xóa nếu câu hỏi thuộc về user đang đăng nhập.
+ * @param {object} req - Đối tượng request Express
+ * @param {object} res - Đối tượng response Express
+ */
+exports.deleteHistoryItem = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  if (!id || !userId) {
+    return res.status(400).json({ message: "Thiếu ID hoặc thông tin người dùng." });
+  }
+
+  try {
+    const [result] = await pool.execute(
+      "DELETE FROM user_questions WHERE id = ? AND user_id = ?",
+      [id, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Không tìm thấy câu hỏi hoặc không có quyền xóa." });
+    }
+
+    return res.json({ message: "Đã xóa thành công." });
+  } catch (error) {
+    console.error("❌ Lỗi khi xóa câu hỏi:", error);
+    return res.status(500).json({ message: "Lỗi server." });
+  }
 };

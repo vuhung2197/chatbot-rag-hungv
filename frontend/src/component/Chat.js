@@ -13,14 +13,7 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState("embedding");
   const [questionHistory, setQuestionHistory] = useState([]);
-  // Chế độ luyện giao tiếp (normal hoặc conversation)
-  const [modeChat, setModeChat] = useState(
-    localStorage.getItem("chat_mode") || "normal"
-  );
-  // Đếm số lượt luyện giao tiếp
-  const [conversationCount, setConversationCount] = useState(
-    parseInt(localStorage.getItem("conversation_count") || "0", 10)
-  );
+  const [showRecentModal, setShowRecentModal] = useState(false);
 
   const algorithmDescriptions = {
     embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
@@ -43,14 +36,6 @@ export default function Chat() {
     const userId = localStorage.getItem("userId");
     localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
   }, [history]);
-
-  useEffect(() => {
-    localStorage.setItem("chat_mode", modeChat);
-  }, [modeChat]);
-
-  useEffect(() => {
-    localStorage.setItem("conversation_count", conversationCount);
-  }, [conversationCount]);
 
   useEffect(() => {
     async function fetchHistory() {
@@ -79,14 +64,12 @@ export default function Chat() {
     setLoading(true);
     const timestamp = new Date().toISOString();
     const hash = hashQuestion(input);
-
-    // Kiểm tra cache
     const cached = JSON.parse(localStorage.getItem("chatbot_cache") || "{}");
+
     if (cached[hash]) {
       setHistory([{ user: input, bot: cached[hash], createdAt: timestamp }, ...history]);
       setInput("");
       setLoading(false);
-      if (modeChat === "conversation") setConversationCount(c => c + 1);
       return;
     }
 
@@ -96,8 +79,7 @@ export default function Chat() {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        // Gửi cả chế độ luyện giao tiếp xuống backend
-        body: JSON.stringify({ message: input, mode, modeChat })
+        body: JSON.stringify({ message: input, mode })
       });
       const data = await res.json();
       setHistory([{ user: input, bot: data.reply, createdAt: timestamp }, ...history]);
@@ -112,7 +94,6 @@ export default function Chat() {
       if (!isNoAnswer) {
         cached[hash] = data.reply;
         localStorage.setItem("chatbot_cache", JSON.stringify(cached));
-        if (modeChat === "conversation") setConversationCount(c => c + 1);
       }
 
       setInput("");
@@ -128,7 +109,7 @@ export default function Chat() {
       background: "rgba(255,255,255,0.92)",
       borderRadius: "2em",
       padding: "2em 2.5em",
-      maxWidth: 620, // rộng hơn
+      maxWidth: 620,
       boxShadow: "0 8px 32px 0 rgba(31,38,135,0.18)",
       border: "1px solid #bcbcbc",
       margin: "0 auto"
@@ -139,25 +120,127 @@ export default function Chat() {
       {showGuide && <HelpGuide />}
 
       {questionHistory.length > 0 && (
-        <div style={{ marginTop: 16, marginBottom: 24 }}>
-          <h3 style={{ fontSize: "1.1em", marginBottom: 8, color: "#333" }}>🕘 Câu hỏi gần đây của bạn:</h3>
-          <ul style={{ paddingLeft: 20 }}>
-            {questionHistory.map((item, index) => (
-              <li
-                key={index}
-                style={{ marginBottom: 8, cursor: "pointer", color: "#1e40af" }}
-                onClick={() => setInput(item.question)}
-                title="Click để chat lại"
-              >
-                ❓ {item.question}
-                <div style={{ fontSize: "0.85em", color: "#666", marginTop: 2 }}>
-                  🗓 {new Date(item.created_at).toLocaleString("vi-VN")}
+        <button
+          style={{
+            marginTop: 16,
+            marginBottom: 16,
+            backgroundColor: "#2563eb",
+            color: "white",
+            padding: "8px 16px",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer"
+          }}
+          onClick={() => setShowRecentModal(true)}
+        >
+          🕘 Xem câu hỏi gần đây
+        </button>
+      )}
+
+      {showRecentModal && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+          backgroundColor: "rgba(0,0,0,0.4)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center"
+        }}>
+          <div style={{
+            backgroundColor: "#fff", width: "90%", maxWidth: 800,
+            maxHeight: "80%", overflowY: "auto",
+            borderRadius: 12, padding: "24px 32px", position: "relative",
+            boxShadow: "0 12px 32px rgba(0,0,0,0.25)"
+          }}>
+            <h2 style={{ marginTop: 0, color: "#222", marginBottom: 16 }}>🕘 Câu hỏi & trả lời gần đây</h2>
+
+            <button
+              onClick={() => setShowRecentModal(false)}
+              style={{
+                position: "absolute", top: 16, right: 20,
+                background: "#ef4444", color: "#fff", border: "none",
+                borderRadius: 6, padding: "6px 12px", cursor: "pointer"
+              }}
+            >
+              Đóng
+            </button>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {questionHistory.map((item, index) => (
+                <div key={index} style={{
+                  background: "#f9fafb", borderRadius: 10, padding: "16px 20px",
+                  border: "1px solid #e5e7eb", boxShadow: "0 1px 3px rgba(0,0,0,0.06)"
+                }}>
+                  <div style={{ marginBottom: 8 }}>
+                    <span style={{ color: "#6b7280", fontSize: "0.85em" }}>
+                      🗓 {new Date(item.created_at).toLocaleString("vi-VN")}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    background: "#eef2ff", padding: "10px 14px",
+                    borderRadius: 8, color: "#1e3a8a", fontSize: "1em",
+                    marginBottom: 10
+                  }}>
+                    <b>Bạn:</b> {item.question}
+                  </div>
+
+                  <div style={{
+                    background: "#ecfdf5", padding: "10px 14px",
+                    borderRadius: 8, color: "#065f46", fontSize: "1em",
+                    whiteSpace: "pre-wrap"
+                  }}>
+                    <b>Bot:</b>
+                    <div style={{ marginTop: 6 }}>
+                      <ReactMarkdown>{item.bot_reply}</ReactMarkdown>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setInput(item.question);
+                      setShowRecentModal(false);
+                    }}
+                    style={{
+                      marginTop: 12, background: "#3b82f6", color: "#fff",
+                      border: "none", padding: "6px 12px", borderRadius: 6,
+                      cursor: "pointer", fontSize: "0.95em"
+                    }}
+                  >
+                    🔁 Gửi lại câu hỏi này
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) return;
+                      try {
+                        const res = await fetch(`${API_URL}/chat/history/${item.id}`, {
+                          method: "DELETE",
+                          headers: {
+                            Authorization: `Bearer ${localStorage.getItem("token")}`
+                          }
+                        });
+                        if (res.ok) {
+                          setQuestionHistory(prev => prev.filter(q => q.id !== item.id));
+                        } else {
+                          alert("Xóa thất bại!");
+                        }
+                      } catch (err) {
+                        console.error("Lỗi khi xóa câu hỏi:", err);
+                        alert("Đã xảy ra lỗi khi xóa!");
+                      }
+                    }}
+                    style={{
+                      background: "#ef4444", color: "#fff",
+                      border: "none", padding: "6px 12px", borderRadius: 6,
+                      cursor: "pointer", fontSize: "0.95em"
+                    }}
+                  >
+                    🗑 Xóa
+                  </button>
                 </div>
-              </li>
-            ))}
-          </ul>
+              ))}
+            </div>
+          </div>
         </div>
       )}
+
 
       {history.length > 0 && (
         <button
@@ -166,11 +249,9 @@ export default function Chat() {
               setHistory([]);
               localStorage.removeItem("chatbot_history");
               localStorage.removeItem("chatbot_cache");
-              setConversationCount(0);
             }
           }}
           style={{
-            marginTop: 8,
             marginBottom: 12,
             backgroundColor: "#f44336",
             color: "white",
@@ -182,20 +263,6 @@ export default function Chat() {
         >
           🗑 Xóa toàn bộ lịch sử
         </button>
-      )}
-
-      {/* Chọn chế độ chat */}
-      <label style={{ marginTop: 16, display: "block", fontWeight: "bold", color: "#000" }}>
-        Chọn chế độ:
-      </label>
-      <select value={modeChat} onChange={e => setModeChat(e.target.value)} style={{ marginBottom: 12 }}>
-        <option value="normal">✨ Chế độ thông thường</option>
-        <option value="conversation">💬 Luyện giao tiếp</option>
-      </select>
-      {modeChat === "conversation" && (
-        <div style={{ marginBottom: 8, color: "#2943a5", fontWeight: "bold" }}>
-          Đã luyện giao tiếp: <span style={{ color: "#7c3aed" }}>{conversationCount}</span> lượt
-        </div>
       )}
 
       <label style={{ marginTop: 16, display: "block", fontWeight: "bold", color: "#000" }}>

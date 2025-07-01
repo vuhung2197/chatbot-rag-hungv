@@ -61,7 +61,7 @@ function toMarkdown(text) {
  * @param {object} res - Đối tượng response Express
  */
 exports.chat = async (req, res) => {
-  const { message, mode = "rag"} = req.body;
+  const { message, mode = "rag", model } = req.body;
   const userId = req.user?.id;
 
   if (!message) return res.status(400).json({ reply: "No message!" });
@@ -124,7 +124,7 @@ exports.chat = async (req, res) => {
     let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
 
     const t0 = Date.now();
-    const reply = await askChatGPT(message, context, systemPrompt);
+    const reply = await askChatGPT(message, context, systemPrompt, model);
     const t1 = Date.now();
     console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
 

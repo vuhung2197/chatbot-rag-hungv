@@ -108,7 +108,7 @@ export default function KnowledgeAdmin() {
       <h2 style={{ color: "#4f3ed7", textAlign: "center", marginBottom: 28, fontWeight: 800, letterSpacing: 1 }}>🧠 Quản Lý Kiến Thức</h2>
 
       <div style={{ marginBottom: 20 }}>
-        <label style={{ fontWeight: 600, marginBottom: 6, display: "block" }}>📤 Upload file kiến thức:</label>
+        <label style={{ fontWeight: 600, marginBottom: 6, display: "block", color: "#333" }}>📤 Upload file kiến thức:</label>
         <input type="file" accept=".txt,.md,.csv,.json" onChange={handleFileUpload} />
       </div>
 

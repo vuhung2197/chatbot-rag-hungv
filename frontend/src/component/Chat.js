@@ -3,6 +3,7 @@ import HelpGuide from "./HelpGuide";
 import ChatInputSuggest from "./ChatInputSuggest";
 import CryptoJS from "crypto-js";
 import ReactMarkdown from 'react-markdown';
+import ModelSelector from './ModelSelector';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -14,6 +15,7 @@ export default function Chat() {
   const [mode, setMode] = useState("embedding");
   const [questionHistory, setQuestionHistory] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
+  const [model, setModel] = useState("gpt-4o");
 
   const algorithmDescriptions = {
     embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
@@ -79,7 +81,7 @@ export default function Chat() {
       const res = await fetch(`${API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: input, mode })
+        body: JSON.stringify({ message: input, mode, model })
       });
       const data = await res.json();
       setHistory([{ user: input, bot: data.reply, createdAt: timestamp }, ...history]);
@@ -114,6 +116,7 @@ export default function Chat() {
       border: "1px solid #bcbcbc",
       margin: "0 auto"
     }}>
+      <ModelSelector selectedModel={model} onChange={setModel} />
       <button onClick={() => setShowGuide(v => !v)}>
         {showGuide ? "Ẩn hướng dẫn" : "Hiện hướng dẫn"}
       </button>

@@ -3,16 +3,14 @@ const pool = require('../db');
 const axios = require("axios");
 const { updateChunksForKnowledge } = require("../services/updateChunks");
 
-// Hàm lấy embedding từ OpenAI
+// Hàm lấy embedding từ Local
 async function getEmbedding(text) {
-  const apiKey = process.env.OPENAI_API_KEY;
   const response = await axios.post(
-    "https://api.openai.com/v1/embeddings",
+    "http://localhost:1234/v1/embeddings",
     {
       input: text,
-      model: "text-embedding-3-small" // hoặc text-embedding-3-large nếu muốn mạnh hơn
-    },
-    { headers: { Authorization: `Bearer ${apiKey}` } }
+      model: "text-embedding-nomic-embed-text-v1.5" // hoặc text-embedding-3-large nếu muốn mạnh hơn
+    }
   );
   return response.data.data[0].embedding; // trả về mảng số
 }

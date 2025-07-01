@@ -1,4 +1,3 @@
-// llm.config.js
 module.exports = {
   providers: {
     "gpt-4o": {

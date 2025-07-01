@@ -18,9 +18,9 @@ exports.suggestNextWord = async (req, res) => {
       {
         model: "gpt-3.5-turbo-instruct",
         prompt: prompt,
-        max_tokens: 3,      // chỉ lấy 3 từ tiếp theo
+        max_tokens: 3,      
         temperature: 0.7,
-        logprobs: 5,         // lấy top 5 từ (nếu cần)
+        logprobs: 5,
         stop: null,
       },
       {

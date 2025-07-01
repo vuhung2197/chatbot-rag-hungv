@@ -3,25 +3,17 @@ const Fuse = require('fuse.js');
 const OpenAI = require('openai');
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const axios = require('axios');
+const config = require('./llm.config');
 
-// Trả về toàn bộ dictionary với type, example (giúp tra theo loại từ)
-async function getVocabulary() {
-    const [rows] = await pool.execute(
-        'SELECT word_en, word_vi, type, example_en, example_vi FROM dictionary'
-    );
-    return rows;
-}
-
-async function getSentences(word) {
-    const [rows] = await pool.execute(
-        'SELECT sentence_en, sentence_vi FROM sentence_examples WHERE word_en = ? LIMIT 3', [word]);
-    return rows;
-}
-
-async function logUnknownQuery(message) {
-    await pool.execute('INSERT INTO unknown_queries (user_message) VALUES (?)', [message]);
-}
-
+/**
+ * Dịch từng từ trong câu tiếng Anh sang tiếng Việt.
+ * - Tách câu thành từng từ, loại bỏ dấu câu.
+ * - Dịch từng từ riêng biệt bằng hàm translateSingleWord.
+ * - Trả về mảng các object dạng { en, vi } cho từng từ đã dịch.
+ * - Loại bỏ các từ không dịch được hoặc không có nghĩa tiếng Việt.
+ * @param {string} sentence - Câu tiếng Anh cần dịch từng từ
+ * @returns {Promise<Array<{en: string, vi: string}>>} - Mảng các từ và nghĩa tiếng Việt
+ */
 async function translateWordByWord(sentence) {
   // Tách từng từ, loại bỏ dấu câu
   const words = sentence
@@ -43,6 +35,13 @@ async function translateWordByWord(sentence) {
   return translations.filter(item => item.vi && item.vi.length > 0);
 }
 
+/**
+ * Dịch một từ hoặc một câu tiếng Anh sang tiếng Việt sử dụng OpenAI GPT.
+ * - Nếu là một từ, chỉ trả về bản dịch ngắn gọn, không giải thích.
+ * - Nếu là một câu, dịch tự nhiên, rõ nghĩa, không thêm chú thích.
+ * @param {string} word - Từ hoặc câu tiếng Anh cần dịch
+ * @returns {Promise<string>} - Nghĩa tiếng Việt hoặc "(lỗi)" nếu thất bại
+ */
 async function translateSingleWord(word) {
   const isWord = /^[\p{L}\p{N}]+$/u.test(word.trim());
 
@@ -64,7 +63,14 @@ async function translateSingleWord(word) {
   }
 }
 
-// Helper: Format kết quả tra từ Anh-Việt
+/**
+ * Định dạng kết quả tra cứu Anh-Việt thành HTML chi tiết.
+ * - Hiển thị loại từ, nghĩa, ví dụ minh họa cho từng nghĩa của từ.
+ * - Nếu không có ví dụ, tự động lấy thêm ví dụ từ cơ sở dữ liệu.
+ * @param {string} word - Từ tiếng Anh được tra cứu
+ * @param {Array} founds - Danh sách các bản ghi nghĩa của từ (từ database)
+ * @returns {Promise<string>} - HTML trình bày kết quả tra cứu
+ */
 async function formatEnViResult(word, founds) {
     let html = `<div><b>Các loại từ và nghĩa của "<span style='color:#7137ea'>${word}</span>":</b><ul style="margin-left:1em;">`;
     for (const found of founds) {
@@ -97,7 +103,15 @@ async function formatEnViResult(word, founds) {
     return html;
 }
 
-// Helper: Fuzzy search
+/**
+ * Tìm kiếm từ gần đúng (fuzzy search) trong danh sách từ vựng.
+ * - Sử dụng Fuse.js để tìm từ gần giống nhất với từ cần tra.
+ * - Trả về bản ghi từ vựng phù hợp nhất hoặc null nếu không tìm thấy.
+ * @param {string} word - Từ cần tìm kiếm gần đúng
+ * @param {Array} vocabRows - Danh sách các bản ghi từ vựng
+ * @param {string} field - Trường cần so khớp (word_en hoặc word_vi)
+ * @returns {object|null} - Bản ghi từ vựng gần đúng hoặc null
+ */
 function getFuzzyResult(word, vocabRows, field = 'word_en') {
     const fuse = new Fuse(vocabRows.map(r => r[field]), { threshold: 0.4 });
     const fuzzy = fuse.search(word);
@@ -108,7 +122,14 @@ function getFuzzyResult(word, vocabRows, field = 'word_en') {
     return null;
 }
 
-// ----- Hàm mã hóa (mask) và giải mã (unmask) thông tin -----
+/**
+ * Ẩn (mã hóa tạm thời) các thông tin nhạy cảm trong văn bản như số điện thoại, email, địa chỉ.
+ * Thay thế các thông tin này bằng các placeholder (ví dụ: [PHONE_1], [EMAIL_2], ...).
+ * Lưu lại mapping giữa placeholder và giá trị gốc để có thể khôi phục sau.
+ * @param {string} text - Văn bản cần xử lý
+ * @param {object} mapping - Đối tượng dùng để lưu mapping giữa placeholder và giá trị gốc
+ * @returns {string} - Văn bản đã được thay thế thông tin nhạy cảm bằng placeholder
+ */
 function maskSensitiveInfo(text, mapping = {}) {
   let counter = 1;
   // Số điện thoại
@@ -132,6 +153,13 @@ function maskSensitiveInfo(text, mapping = {}) {
   return text;
 }
 
+/**
+ * Khôi phục lại các thông tin nhạy cảm đã bị mã hóa tạm thời trong văn bản.
+ * Thay thế các placeholder (ví dụ: [PHONE_1], [EMAIL_2], ...) bằng giá trị gốc từ mapping.
+ * @param {string} text - Văn bản chứa các placeholder
+ * @param {object} mapping - Đối tượng mapping giữa placeholder và giá trị gốc
+ * @returns {string} - Văn bản đã được khôi phục thông tin nhạy cảm
+ */
 function unmaskSensitiveInfo(text, mapping) {
   for (const [key, value] of Object.entries(mapping)) {
     text = text.replaceAll(key, value);
@@ -140,49 +168,75 @@ function unmaskSensitiveInfo(text, mapping) {
 }
 
 /**
- * Gọi OpenAI ChatGPT, cho phép truyền prompt hệ thống (systemPrompt).
- * Hỗ trợ mã hóa thông tin nhạy cảm.
+ * Gọi API mô hình ngôn ngữ (OpenAI hoặc local), trả về kết quả phản hồi.
+ * @param {string} model - Tên mô hình (gpt-4o, gpt-3.5, mistral, v.v.)
+ * @param {Array} messages - Danh sách messages theo định dạng ChatML
+ * @param {number} temperature - Độ sáng tạo
+ * @param {number} maxTokens - Giới hạn tokens
+ * @returns {string} - Nội dung phản hồi
+ */
+async function callLLM(model, messages, temperature = 0.2, maxTokens = 512) {
+  const providerKey = model;
+  const provider = config.providers[providerKey];
+
+  const response = await axios.post(
+    `${provider.baseURL}/chat/completions`,
+    {
+      model: model,
+      messages,
+      temperature: provider.temperature || temperature,
+      max_tokens: provider.maxTokens || maxTokens,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${provider.apiKey}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  return response.data.choices[0].message.content.trim();
+}
+
+/**
+ * Gọi OpenAI ChatGPT, cho phép truyền prompt hệ thống (systemPrompt) và chọn model.
+ * Hỗ trợ mã hóa thông tin nhạy cảm trước khi gửi lên AI và giải mã sau khi nhận kết quả.
  * @param {string} question - Câu hỏi từ user
  * @param {string} context - Context kiến thức tham khảo
  * @param {string} systemPrompt - Prompt hệ thống (tùy chế độ: trả lời chuẩn, luyện giao tiếp, v.v.)
- * @returns {string} - Nội dung trả lời của AI
+ * @param {string} model - Tên model AI muốn sử dụng (mặc định: 'gpt-4o')
+ * @returns {Promise<string>} - Nội dung trả lời của AI
  */
-async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.") {
-  const apiKey = process.env.OPENAI_API_KEY;
+async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.", model = 'gpt-4o') {
   if (!context || context.trim().length === 0) {
     return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
   }
 
-  // ----- Mã hóa thông tin nhạy cảm -----
   const mapping = {};
   const maskedContext = maskSensitiveInfo(context, mapping);
   const maskedQuestion = maskSensitiveInfo(question, mapping);
-
-  // ----- Tạo prompt -----
   const prompt = `Thông tin tham khảo:\n${maskedContext}\n\nCâu hỏi: ${maskedQuestion}`;
 
-  // ----- Gọi OpenAI -----
-  const response = await axios.post(
-    'https://api.openai.com/v1/chat/completions',
-    {
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.2,
-      max_tokens: 512,
-    },
-    { headers: { Authorization: `Bearer ${apiKey}` } }
-  );
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: prompt },
+  ];
 
-  // ----- Giải mã kết quả trả về -----
-  let reply = response.data.choices[0].message.content.trim();
+  let reply = await callLLM(model, messages, 0.2, 512);
   reply = unmaskSensitiveInfo(reply, mapping);
 
   return reply;
 }
 
+/**
+ * Xử lý truy vấn tiếng Anh của người dùng, nhận diện ý định dịch từ/câu Anh-Việt hoặc Việt-Anh.
+ * - Phân tích intent từ message (dịch Anh-Việt, Việt-Anh, hoặc hỏi nghĩa).
+ * - Tra cứu từ điển nội bộ, trả về kết quả chi tiết (nghĩa, loại từ, ví dụ).
+ * - Nếu không tìm thấy, sử dụng fuzzy search để gợi ý từ gần đúng.
+ * - Nếu vẫn không có kết quả, ghi log câu hỏi chưa biết và trả về thông báo cho người dùng.
+ * @param {string} message - Câu hỏi hoặc từ tiếng Anh/Việt của người dùng
+ * @returns {Promise<string>} - HTML kết quả tra cứu hoặc thông báo lỗi/gợi ý
+ */
 async function getEnglishBotReply(message) {
     const msg = message.toLowerCase().trim();
     const vocabRows = await getVocabulary();

@@ -202,26 +202,6 @@ exports.history = async (req, res) => {
 };
 
 /**
- * API lấy lịch sử luyện giao tiếp (50 bản ghi).
- */
-exports.conversationHistory = async (req, res) => {
-  const [rows] = await pool.execute(
-      "SELECT message, reply, created_at FROM conversation_sessions ORDER BY id DESC LIMIT 50"
-  );
-  res.json(rows);
-};
-
-/**
- * API thống kê tổng số lượt luyện giao tiếp.
- */
-exports.conversationCount = async (req, res) => {
-  const [[{ count }]] = await pool.execute(
-    "SELECT COUNT(*) AS count FROM conversation_sessions"
-  );
-  res.json({ count });
-};
-
-/**
  * API gợi ý từ tiếng Anh cho autocomplete.
  * Trả về tối đa 10 từ bắt đầu bằng query từ bảng dictionary.
  * @param {object} req - Đối tượng request Express

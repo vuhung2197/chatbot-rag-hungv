@@ -31,7 +31,6 @@ exports.approve = async (req, res) => {
 
   const { message, suggested_reply } = feedbackRows[0];
 
-  // Kiểm tra trùng từ điển
   const [exist] = await pool.execute(
     "SELECT id FROM dictionary WHERE word_en = ?", [message.trim().toLowerCase()]
   );

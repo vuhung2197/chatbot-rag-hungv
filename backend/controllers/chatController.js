@@ -69,6 +69,9 @@ exports.chat = async (req, res) => {
   try {
     let context = "";
     let isAnswered = true;
+    let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
+    
+    const { message, mode, model } = req.body;
 
     if (mode === "context") {
       const [rows] = await pool.execute("SELECT * FROM knowledge_base");
@@ -90,6 +93,8 @@ exports.chat = async (req, res) => {
 
       context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
 
+    } else if (mode === "direct") {
+      systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời trực tiếp câu hỏi mà không cần truy xuất ngữ nghĩa.";
     } else {
       let embedding;
       try {
@@ -120,8 +125,6 @@ exports.chat = async (req, res) => {
 
       context = chunks.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
     }
-
-    let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
 
     const t0 = Date.now();
     const reply = await askChatGPT(message, context, systemPrompt, model);

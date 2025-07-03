@@ -212,10 +212,14 @@ async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý
     return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
   }
 
-  const mapping = {};
-  const maskedContext = maskSensitiveInfo(context, mapping);
-  const maskedQuestion = maskSensitiveInfo(question, mapping);
-  const prompt = `Thông tin tham khảo:\n${maskedContext}\n\nCâu hỏi: ${maskedQuestion}`;
+  if (context) {
+    const mapping = {};
+    const maskedContext = maskSensitiveInfo(context, mapping);
+    const maskedQuestion = maskSensitiveInfo(question, mapping);
+    const prompt = `Thông tin tham khảo:\n${maskedContext}\n\nCâu hỏi: ${maskedQuestion}`;
+  } else {
+    const prompt = question;
+  }
 
   const messages = [
     { role: 'system', content: systemPrompt },

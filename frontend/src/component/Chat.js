@@ -20,7 +20,8 @@ export default function Chat() {
 
   const algorithmDescriptions = {
     embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
-    context: "🧠 Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau."
+    context: "🧠 Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau.",
+    direct: "Direct mode: Trả lời trực tiếp mà không cần truy xuất ngữ nghĩa. Chỉ sử dụng khi câu hỏi đơn giản hoặc đã có kiến thức cụ thể.",
   };
 
   useEffect(() => {
@@ -285,6 +286,7 @@ export default function Chat() {
       <select value={mode} onChange={e => setMode(e.target.value)} style={{ marginBottom: 8 }}>
         <option value="embedding">📚 RAG + Chunk</option>
         <option value="context">🧠 Score context</option>
+        <option value="direct">Direct mode</option>
       </select>
       <div style={{ fontSize: "0.95em", color: "#666", marginBottom: 16 }}>
         {algorithmDescriptions[mode]}

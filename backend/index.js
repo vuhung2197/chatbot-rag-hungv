@@ -10,13 +10,13 @@ require('dotenv').config();
 // Import routes
 app.use('/chat', require('./routes/chat'));
 app.use('/feedback', require('./routes/feedback'));
-app.use('/dictionary', require('./routes/dictionary'));
 app.use('/highlights', require('./routes/highlights'));
 app.use('/knowledge', require('./routes/knowledge'));
 app.use("/suggest-next-word", require("./routes/suggest"));
 app.use("/unanswered", require("./routes/unanswered"));
 app.use("/upload", require("./routes/upload"));
 app.use('/auth', require('./routes/auth'));
+app.use('/writing', require('./routes/writing'));
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`Backend running at http://localhost:${PORT}`));

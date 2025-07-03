@@ -208,17 +208,19 @@ async function callLLM(model, messages, temperature = 0.2, maxTokens = 512) {
  * @returns {Promise<string>} - Nội dung trả lời của AI
  */
 async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.", model = 'gpt-4o') {
-  if (!context || context.trim().length === 0) {
-    return "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.";
-  }
+  const mapping = {};
 
-  if (context) {
-    const mapping = {};
+  // Mask thông tin nhạy cảm trong câu hỏi
+  const maskedQuestion = maskSensitiveInfo(question, mapping);
+
+  let prompt = "";
+  if (context && context.trim().length > 0) {
+    // Có context → dạng RAG hoặc context-based
     const maskedContext = maskSensitiveInfo(context, mapping);
-    const maskedQuestion = maskSensitiveInfo(question, mapping);
-    const prompt = `Thông tin tham khảo:\n${maskedContext}\n\nCâu hỏi: ${maskedQuestion}`;
+    prompt = `Thông tin tham khảo:\n${maskedContext}\n\nCâu hỏi: ${maskedQuestion}`;
   } else {
-    const prompt = question;
+    // Không có context → chế độ "direct"
+    prompt = maskedQuestion;
   }
 
   const messages = [
@@ -227,6 +229,8 @@ async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý
   ];
 
   let reply = await callLLM(model, messages, 0.2, 512);
+
+  // Unmask nội dung trước khi trả về
   reply = unmaskSensitiveInfo(reply, mapping);
 
   return reply;

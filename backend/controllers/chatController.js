@@ -61,7 +61,7 @@ function toMarkdown(text) {
  * @param {object} res - Đối tượng response Express
  */
 exports.chat = async (req, res) => {
-  const { message, mode = "rag", model } = req.body;
+  const { message, mode = "embedding", model } = req.body;
   const userId = req.user?.id;
 
   if (!message) return res.status(400).json({ reply: "No message!" });
@@ -70,10 +70,9 @@ exports.chat = async (req, res) => {
     let context = "";
     let isAnswered = true;
     let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
-    
-    const { message, mode, model } = req.body;
 
     if (mode === "context") {
+      // 📌 Truy xuất ngữ cảnh dựa trên keyword
       const [rows] = await pool.execute("SELECT * FROM knowledge_base");
       const [kwRows] = await pool.execute("SELECT keyword FROM important_keywords");
       const importantKeywords = kwRows.map(r => r.keyword);
@@ -84,8 +83,8 @@ exports.chat = async (req, res) => {
         await logUnanswered(message);
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
-            [userId, message, false]
+            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            [userId, message, false, mode]
           );
         }
         return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
@@ -94,8 +93,12 @@ exports.chat = async (req, res) => {
       context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
 
     } else if (mode === "direct") {
-      systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời trực tiếp câu hỏi mà không cần truy xuất ngữ nghĩa.";
+      // 💬 Gửi trực tiếp vào mô hình, không có context
+      context = "";
+      systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp. Hãy trả lời trực tiếp câu hỏi bên dưới một cách chính xác, ngắn gọn và dễ hiểu.";
+
     } else {
+      // 📚 Mặc định là embedding (RAG)
       let embedding;
       try {
         embedding = await getEmbedding(message);
@@ -103,8 +106,8 @@ exports.chat = async (req, res) => {
         isAnswered = false;
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
-            [userId, message, false]
+            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            [userId, message, false, mode]
           );
         }
         return res.json({ reply: "Không thể tính embedding câu hỏi!" });
@@ -116,8 +119,8 @@ exports.chat = async (req, res) => {
         await logUnanswered(message);
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
-            [userId, message, false]
+            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            [userId, message, false, mode]
           );
         }
         return res.json({ reply: "Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
@@ -126,12 +129,13 @@ exports.chat = async (req, res) => {
       context = chunks.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
     }
 
+    // 🧠 Gọi GPT
     const t0 = Date.now();
     const reply = await askChatGPT(message, context, systemPrompt, model);
     const t1 = Date.now();
     console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
 
-    // ✅ Ghi lại lịch sử vào user_questions
+    // ✅ Ghi lịch sử
     if (userId) {
       await pool.execute(
         "INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)",

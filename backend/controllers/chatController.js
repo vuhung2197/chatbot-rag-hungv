@@ -14,6 +14,7 @@ const { getEmbedding } = require("../services/embeddingVector");
 const { selectRelevantContexts } = require("../services/scoreContext");
 const { retrieveTopChunks } = require("../services/rag_retrieve");
 const { hashQuestion } = require("../utils/hash");
+const { StatusCodes } = require("http-status-codes");
 
 /**
  * Chuyển đổi văn bản trả lời thành định dạng Markdown đẹp mắt.
@@ -64,7 +65,7 @@ exports.chat = async (req, res) => {
   const { message, mode = "embedding", model } = req.body;
   const userId = req.user?.id;
 
-  if (!message) return res.status(400).json({ reply: "No message!" });
+  if (!message) return res.status(StatusCodes.BAD_REQUEST).json({ reply: "No message!" });
 
   try {
     let context = "";
@@ -93,10 +94,26 @@ exports.chat = async (req, res) => {
       context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
 
     } else if (mode === "direct") {
-      // 💬 Gửi trực tiếp vào mô hình, không có context
-      context = "";
-      systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp. Hãy trả lời trực tiếp câu hỏi bên dưới một cách chính xác, ngắn gọn và dễ hiểu.";
+      systemPrompt = "Bạn là một trợ lý AI thông minh, hãy trả lời câu hỏi một cách ngắn gọn, chính xác, dễ hiểu, có thể tham khảo các hội thoại gần đây.";
 
+      // 🔁 Thêm lịch sử hội thoại gần nhất của user
+      let historyContext = "";
+      if (userId) {
+        const [historyRows] = await pool.execute(
+          `SELECT question, bot_reply FROM user_questions 
+          WHERE user_id = ? AND bot_reply IS NOT NULL 
+          ORDER BY created_at DESC LIMIT 3`,
+          [userId]
+        );
+
+        if (historyRows.length) {
+          historyContext = historyRows
+            .map(r => `Người dùng: ${r.question}\nBot: ${r.bot_reply}`)
+            .join("\n\n");
+        }
+      }
+
+      context = historyContext ? `Lịch sử hội thoại:\n${historyContext}` : "";
     } else {
       // 📚 Mặc định là embedding (RAG)
       let embedding;
@@ -183,7 +200,7 @@ async function logUnanswered(question) {
 exports.history = async (req, res) => {
   const userId = req.user?.id;
 
-  if (!userId) return res.status(401).json({ error: "Chưa đăng nhập" });
+  if (!userId) return res.status(StatusCodes.UNAUTHORIZED).json({ error: "Chưa đăng nhập" });
 
   try {
     const [rows] = await pool.execute(

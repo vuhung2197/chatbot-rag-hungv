@@ -53,7 +53,7 @@ export default function ChatInputSuggest({ value, onChange, onSend, disabled }) 
             disabled={disabled}
             style={{
             width: "100%",
-            padding: "10px 48px 10px 16px", // padding right lớn hơn width của button
+            padding: "10px 48px 10px 16px",
             fontSize: 17,
             borderRadius: 15,
             border: "1.5px solid #e3e0fd",

@@ -1,8 +1,9 @@
-const express = require("express");
+import express from "express";
+import { getUnansweredQuestions, deleteUnanswered } from "../controllers/unansweredController.js";
+
 const router = express.Router();
-const { getUnansweredQuestions, deleteUnanswered, getChunksByKnowledgeId } = require("../controllers/unansweredController");
 
 router.get("/", getUnansweredQuestions);
 router.delete("/:id", deleteUnanswered);
 
-module.exports = router;
+export default router;

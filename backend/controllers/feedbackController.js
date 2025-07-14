@@ -1,25 +1,34 @@
-const pool = require('../db');
+import pool from '../db.js';
 
-exports.feedback = async (req, res) => {
+/**
+ * Ghi nhận góp ý từ người dùng.
+ */
+export async function feedback(req, res) {
   const { message, suggested_reply, explanation } = req.body;
   if (!message || !suggested_reply) {
-      return res.status(400).json({ message: "Thiếu thông tin góp ý!" });
+    return res.status(400).json({ message: "Thiếu thông tin góp ý!" });
   }
   await pool.execute(
-      "INSERT INTO feedbacks (message, suggested_reply, explanation) VALUES (?, ?, ?)",
-      [message, suggested_reply, explanation]
+    "INSERT INTO feedbacks (message, suggested_reply, explanation) VALUES (?, ?, ?)",
+    [message, suggested_reply, explanation]
   );
   res.json({ message: "Đã ghi nhận góp ý! Admin sẽ kiểm duyệt sớm." });
-};
+}
 
-exports.list = async (req, res) => {
+/**
+ * Lấy danh sách góp ý.
+ */
+export async function list(req, res) {
   const [rows] = await pool.execute(
-      "SELECT id, message, suggested_reply, explanation, approved, created_at FROM feedbacks ORDER BY id DESC"
+    "SELECT id, message, suggested_reply, explanation, approved, created_at FROM feedbacks ORDER BY id DESC"
   );
   res.json(rows);
-};
+}
 
-exports.approve = async (req, res) => {
+/**
+ * Duyệt góp ý và lưu vào từ điển nếu chưa có.
+ */
+export async function approve(req, res) {
   const { id } = req.body;
   // Lấy dữ liệu góp ý
   const [feedbackRows] = await pool.execute(
@@ -31,7 +40,6 @@ exports.approve = async (req, res) => {
 
   const { message, suggested_reply } = feedbackRows[0];
 
-  // Kiểm tra trùng từ điển
   const [exist] = await pool.execute(
     "SELECT id FROM dictionary WHERE word_en = ?", [message.trim().toLowerCase()]
   );
@@ -54,5 +62,5 @@ exports.approve = async (req, res) => {
   } else {
     res.status(404).json({ message: "Không tìm thấy góp ý!" });
   }
-};
+}
 

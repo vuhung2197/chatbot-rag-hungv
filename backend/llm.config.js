@@ -1,5 +1,6 @@
-// llm.config.js
-module.exports = {
+import './bootstrap/env.js';
+
+export default {
   providers: {
     "gpt-4o": {
       baseURL: 'https://api.openai.com/v1',

@@ -3,7 +3,7 @@ import HelpGuide from "./HelpGuide";
 import ChatInputSuggest from "./ChatInputSuggest";
 import CryptoJS from "crypto-js";
 import ReactMarkdown from 'react-markdown';
-import ModelSelector from './ModelSelector';
+import ModelManager from './ModelManager';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -15,11 +15,13 @@ export default function Chat() {
   const [mode, setMode] = useState("embedding");
   const [questionHistory, setQuestionHistory] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
-  const [model, setModel] = useState("gpt-4o");
+  const [showModelPopup, setShowModelPopup] = useState(false);
+  const [model, setModel] = useState("");
 
   const algorithmDescriptions = {
     embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
-    context: "🧠 Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau."
+    context: "🧠 Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau.",
+    direct: "💬 Direct Mode: Trả lời trực tiếp mà không cần truy xuất ngữ nghĩa. Phù hợp với câu hỏi đơn giản hoặc đã có kiến thức nền từ mô hình.",
   };
 
   useEffect(() => {
@@ -107,16 +109,26 @@ export default function Chat() {
   }
 
   return (
-    <div style={{
-      background: "rgba(255,255,255,0.92)",
-      borderRadius: "2em",
-      padding: "2em 2.5em",
-      maxWidth: 620,
-      boxShadow: "0 8px 32px 0 rgba(31,38,135,0.18)",
-      border: "1px solid #bcbcbc",
-      margin: "0 auto"
-    }}>
-      <ModelSelector selectedModel={model} onChange={setModel} />
+        <div style={{
+          background: "rgba(255,255,255,0.92)",
+          borderRadius: "2em",
+          padding: "2em 2.5em",
+          maxWidth: 620,
+          boxShadow: "0 8px 32px 0 rgba(31,38,135,0.18)",
+          border: "1px solid #bcbcbc",
+          margin: "0 auto",
+          color: "#333",
+        }}>
+          <div className="mb-3 flex items-center gap-2">
+          <span className="text-sm text-gray-700">🧠 Đang dùng:</span>
+          <strong className="text-blue-700 text-sm">{model}</strong>
+          <button
+            onClick={() => setShowModelPopup(true)}
+            className="text-sm underline text-blue-600 hover:text-blue-800"
+          >
+            🔧 Đổi mô hình
+          </button>
+        </div>
       <button onClick={() => setShowGuide(v => !v)}>
         {showGuide ? "Ẩn hướng dẫn" : "Hiện hướng dẫn"}
       </button>
@@ -274,6 +286,7 @@ export default function Chat() {
       <select value={mode} onChange={e => setMode(e.target.value)} style={{ marginBottom: 8 }}>
         <option value="embedding">📚 RAG + Chunk</option>
         <option value="context">🧠 Score context</option>
+        <option value="direct">💬 Direct Mode</option>
       </select>
       <div style={{ fontSize: "0.95em", color: "#666", marginBottom: 16 }}>
         {algorithmDescriptions[mode]}
@@ -335,6 +348,18 @@ export default function Chat() {
           );
         })}
       </div>
+
+      {showModelPopup && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <ModelManager
+            onSelectModel={(m) => {
+              setModel(m.name);
+              setShowModelPopup(false);
+            }}
+            onClose={() => setShowModelPopup(false)}
+          />
+        </div>
+      )}
     </div>
   );
 }

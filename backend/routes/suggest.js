@@ -1,7 +1,8 @@
-const express = require("express");
+import express from "express";
+import { suggestNextWord } from "../controllers/suggestController.js";
+
 const router = express.Router();
-const { suggestNextWord } = require("../controllers/suggestController");
 
 router.post("/", suggestNextWord);
 
-module.exports = router;
+export default router;

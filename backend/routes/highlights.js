@@ -1,12 +1,11 @@
-const express = require('express');
+import express from "express";
+import { saveHighlight, getHighlights, highlightsRoutes, deleteHighlight } from "../controllers/highlightsController.js";
+
 const router = express.Router();
-const {
-  saveHighlight, getHighlights, highlightsRoutes, deleteHighlight
-} = require('../controllers/highlightsController');
 
 router.post('/save', saveHighlight);
 router.get('/', getHighlights);
 router.post('/approve', highlightsRoutes);
 router.post('/delete', deleteHighlight);
 
-module.exports = router;
+export default router;

@@ -1,9 +1,10 @@
-const express = require('express');
+import express from "express";
+import { feedback, list, approve } from "../controllers/feedbackController.js";
+
 const router = express.Router();
-const { feedback, list, approve } = require('../controllers/feedbackController');
 
-router.post('/', feedback);           // POST /feedback
-router.get('/', list);                // GET /feedback
-router.post('/approve', approve);     // POST /feedback/approve
+router.post('/', feedback);
+router.get('/', list);
+router.post('/approve', approve);
 
-module.exports = router;
+export default router;

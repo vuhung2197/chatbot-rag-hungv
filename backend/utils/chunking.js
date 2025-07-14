@@ -1,12 +1,10 @@
-const { split } = require("sentence-splitter");
-
 /**
  * Chia nội dung thành các chunk theo đoạn văn, giữ ngữ nghĩa trọn vẹn.
  * @param {string} content - nội dung toàn bộ văn bản
  * @param {number} maxWords - số từ tối đa mỗi chunk
  * @returns {string[]} danh sách các chunk
  */
-function splitIntoSemanticChunks(content, maxWords = 100) {
+export function splitIntoSemanticChunks(content, maxWords = 100) {
   const paragraphs = content
     .split(/\n\s*\n/)  // Tách đoạn văn theo dòng trống
     .map(p => p.trim())
@@ -48,5 +46,3 @@ function splitIntoSemanticChunks(content, maxWords = 100) {
   if (currentChunk.trim()) chunks.push(currentChunk.trim());
   return chunks;
 }
-
-module.exports = { splitIntoSemanticChunks };

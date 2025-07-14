@@ -1,19 +1,12 @@
-/**
- * Controller chính cho các API chat, gợi ý, lịch sử của chatbot.
- * - Hỗ trợ nhiều chế độ context (keyword, embedding/vector).
- * - Tích hợp chế độ luyện giao tiếp (conversation mode).
- * - Giao tiếp với OpenAI để sinh câu trả lời.
- * - Ghi log các câu hỏi chưa trả lời và các lượt luyện giao tiếp.
- * - API lấy lịch sử chat, lịch sử luyện giao tiếp, thống kê lượt giao tiếp.
- */
-
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
-const pool = require('../db');
-const { askChatGPT } = require('../rules');
-const { getEmbedding } = require("../services/embeddingVector");
-const { selectRelevantContexts } = require("../services/scoreContext");
-const { retrieveTopChunks } = require("../services/rag_retrieve");
-const { hashQuestion } = require("../utils/hash");
+import path from "path";
+import pool from "../db.js";
+import { askChatGPT } from "../rules.js";
+import { getEmbedding } from "../services/embeddingVector.js";
+import { selectRelevantContexts } from "../services/scoreContext.js";
+import { retrieveTopChunks } from "../services/rag_retrieve.js";
+import { hashQuestion } from "../utils/hash.js";
+import { StatusCodes } from "http-status-codes";
+import '../bootstrap/env.js';
 
 /**
  * Chuyển đổi văn bản trả lời thành định dạng Markdown đẹp mắt.
@@ -60,17 +53,19 @@ function toMarkdown(text) {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.chat = async (req, res) => {
-  const { message, mode = "rag", model } = req.body;
+export async function chat(req, res) {
+  const { message, mode = "embedding", model } = req.body;
   const userId = req.user?.id;
 
-  if (!message) return res.status(400).json({ reply: "No message!" });
+  if (!message) return res.status(StatusCodes.BAD_REQUEST).json({ reply: "No message!" });
 
   try {
     let context = "";
     let isAnswered = true;
+    let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
 
     if (mode === "context") {
+      // 📌 Truy xuất ngữ cảnh dựa trên keyword
       const [rows] = await pool.execute("SELECT * FROM knowledge_base");
       const [kwRows] = await pool.execute("SELECT keyword FROM important_keywords");
       const importantKeywords = kwRows.map(r => r.keyword);
@@ -81,8 +76,8 @@ exports.chat = async (req, res) => {
         await logUnanswered(message);
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
-            [userId, message, false]
+            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            [userId, message, false, mode]
           );
         }
         return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
@@ -90,7 +85,29 @@ exports.chat = async (req, res) => {
 
       context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
 
+    } else if (mode === "direct") {
+      systemPrompt = "Bạn là một trợ lý AI thông minh, hãy trả lời câu hỏi một cách ngắn gọn, chính xác, dễ hiểu, có thể tham khảo các hội thoại gần đây.";
+
+      // 🔁 Thêm lịch sử hội thoại gần nhất của user
+      let historyContext = "";
+      if (userId) {
+        const [historyRows] = await pool.execute(
+          `SELECT question, bot_reply FROM user_questions 
+          WHERE user_id = ? AND bot_reply IS NOT NULL 
+          ORDER BY created_at DESC LIMIT 3`,
+          [userId]
+        );
+
+        if (historyRows.length) {
+          historyContext = historyRows
+            .map(r => `Người dùng: ${r.question}\nBot: ${r.bot_reply}`)
+            .join("\n\n");
+        }
+      }
+
+      context = historyContext ? `Lịch sử hội thoại:\n${historyContext}` : "";
     } else {
+      // 📚 Mặc định là embedding (RAG)
       let embedding;
       try {
         embedding = await getEmbedding(message);
@@ -98,8 +115,8 @@ exports.chat = async (req, res) => {
         isAnswered = false;
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
-            [userId, message, false]
+            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            [userId, message, false, mode]
           );
         }
         return res.json({ reply: "Không thể tính embedding câu hỏi!" });
@@ -111,8 +128,8 @@ exports.chat = async (req, res) => {
         await logUnanswered(message);
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered) VALUES (?, ?, ?)",
-            [userId, message, false]
+            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            [userId, message, false, mode]
           );
         }
         return res.json({ reply: "Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
@@ -121,14 +138,13 @@ exports.chat = async (req, res) => {
       context = chunks.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
     }
 
-    let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
-
+    // 🧠 Gọi GPT
     const t0 = Date.now();
     const reply = await askChatGPT(message, context, systemPrompt, model);
     const t1 = Date.now();
     console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
 
-    // ✅ Ghi lại lịch sử vào user_questions
+    // ✅ Ghi lịch sử
     if (userId) {
       await pool.execute(
         "INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)",
@@ -142,7 +158,7 @@ exports.chat = async (req, res) => {
     console.error("❌ Lỗi xử lý:", err);
     res.json({ reply: "Bot đang bận, vui lòng thử lại sau!" });
   }
-};
+}
 
 /**
  * Ghi log các câu hỏi chưa trả lời được vào bảng unanswered_questions.
@@ -173,10 +189,10 @@ async function logUnanswered(question) {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.history = async (req, res) => {
+export async function history(req, res) {
   const userId = req.user?.id;
 
-  if (!userId) return res.status(401).json({ error: "Chưa đăng nhập" });
+  if (!userId) return res.status(StatusCodes.UNAUTHORIZED).json({ error: "Chưa đăng nhập" });
 
   try {
     const [rows] = await pool.execute(
@@ -192,27 +208,7 @@ exports.history = async (req, res) => {
     console.error("❌ Lỗi khi lấy lịch sử câu hỏi:", err);
     res.status(500).json({ error: "Lỗi server" });
   }
-};
-
-/**
- * API lấy lịch sử luyện giao tiếp (50 bản ghi).
- */
-exports.conversationHistory = async (req, res) => {
-  const [rows] = await pool.execute(
-      "SELECT message, reply, created_at FROM conversation_sessions ORDER BY id DESC LIMIT 50"
-  );
-  res.json(rows);
-};
-
-/**
- * API thống kê tổng số lượt luyện giao tiếp.
- */
-exports.conversationCount = async (req, res) => {
-  const [[{ count }]] = await pool.execute(
-    "SELECT COUNT(*) AS count FROM conversation_sessions"
-  );
-  res.json({ count });
-};
+}
 
 /**
  * API gợi ý từ tiếng Anh cho autocomplete.
@@ -220,7 +216,7 @@ exports.conversationCount = async (req, res) => {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.suggest = async (req, res) => {
+export async function suggest(req, res) {
   const query = req.query.query?.trim().toLowerCase();
   if (!query) return res.json([]);
   const [rows] = await pool.execute(
@@ -228,7 +224,7 @@ exports.suggest = async (req, res) => {
       [`${query}%`]
   );
   res.json(rows.map(row => row.word_en));
-};
+}
 
 /**
  * Xóa một câu hỏi khỏi lịch sử chat của người dùng hiện tại theo id.
@@ -236,7 +232,7 @@ exports.suggest = async (req, res) => {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.deleteHistoryItem = async (req, res) => {
+export async function deleteHistoryItem(req, res) {
   const { id } = req.params;
   const userId = req.user.id;
 

@@ -1,19 +1,20 @@
-const express = require('express');
-const router = express.Router();
-const {
+import express from 'express';
+import {
   addKnowledge,
   getAllKnowledge,
   updateKnowledge,
   deleteKnowledge,
   getKnowledgeById,
   getChunksByKnowledgeId
-} = require('../controllers/knowledgeController');
+} from '../controllers/knowledgeController.js';
+
+const router = express.Router();
 
 router.post('/', addKnowledge);
 router.get('/', getAllKnowledge);
 router.put('/:id', updateKnowledge);
 router.delete('/:id', deleteKnowledge);
 router.get('/:id', getKnowledgeById);
-router.get("/:id/chunks", getChunksByKnowledgeId);
+router.get('/:id/chunks', getChunksByKnowledgeId);
 
-module.exports = router;
+export default router;

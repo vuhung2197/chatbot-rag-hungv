@@ -1,7 +1,7 @@
-require("dotenv").config();
-const pool = require("../db");
-const { splitIntoChunks } = require("../utils/chunking");
-const { getEmbedding } = require("./embeddingVector");
+import pool from "../db.js";
+import { splitIntoChunks } from "../utils/chunking.js";
+import { getEmbedding } from "./embeddingVector.js";
+import '../bootstrap/env.js';
 
 /**
  * Chạy toàn bộ quá trình:

@@ -110,20 +110,18 @@ export default function App() {
         >
           Highlights
         </button>
-        {role === "admin" && (
-          <button
-            onClick={() => setView('knowledgeadmin')}
-            style={{
-              background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
-              color: view === 'knowledgeadmin' ? '#fff' : '#333',
-              border: "1px solid #7137ea",
-              borderRadius: 8,
-              padding: "8px 16px"
-            }}
-          >
-            Knowledge Admin
-          </button>
-        )}
+        <button
+          onClick={() => setView('knowledgeadmin')}
+          style={{
+            background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
+            color: view === 'knowledgeadmin' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
+        >
+          Knowledge Admin
+        </button>
       </nav>
 
       {toast && (

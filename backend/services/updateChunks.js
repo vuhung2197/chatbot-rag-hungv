@@ -1,8 +1,8 @@
 // services/updateChunks.js
-const { splitIntoSemanticChunks } = require("../utils/chunking");
-const { createHash } = require("../utils/hash");
-const pool = require("../db");
-const { getEmbedding } = require("./embeddingVector");
+import { splitIntoSemanticChunks } from "../utils/chunking.js";
+import { createHash } from "../utils/hash.js";
+import pool from "../db.js";
+import { getEmbedding } from "./embeddingVector.js";
 
 /**
  * Cập nhật các chunk cho một bản ghi kiến thức.
@@ -14,7 +14,7 @@ const { getEmbedding } = require("./embeddingVector");
  * @param {string} title - Tiêu đề kiến thức
  * @param {string} content - Nội dung kiến thức
  */
-async function updateChunksForKnowledge(id, title, content) {
+export async function updateChunksForKnowledge(id, title, content) {
   // 100 context words per chunk
   const chunks = splitIntoSemanticChunks(content, 100);
 
@@ -39,5 +39,3 @@ async function updateChunksForKnowledge(id, title, content) {
     );
   }
 }
-
-module.exports = { updateChunksForKnowledge };

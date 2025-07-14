@@ -1,9 +1,10 @@
-const fs = require("fs");
-const path = require("path");
-const pdfParse = require("pdf-parse");
-const mammoth = require("mammoth");
-const { updateChunksForKnowledge } = require("../services/updateChunks");
-const pool = require("../db");
+import fs from "fs";
+import path from "path";
+// import pdfParse from "pdf-parse";
+import mammoth from "mammoth";
+import { updateChunksForKnowledge } from "../services/updateChunks.js";
+import pool from "../db.js";
+import { StatusCodes } from "http-status-codes";
 
 /**
  * Xử lý upload file kiến thức và huấn luyện tự động.
@@ -14,25 +15,25 @@ const pool = require("../db");
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.uploadAndTrain = async (req, res) => {
+export async function uploadAndTrain(req, res) {
   const file = req.file;
-  if (!file) return res.status(400).json({ error: "Không có file được tải lên." });
+  if (!file) return res.status(StatusCodes.BAD_REQUEST).json({ error: "Không có file được tải lên." });
 
   const ext = path.extname(file.originalname).toLowerCase();
   let content = "";
 
   try {
-    if (ext === ".pdf") {
-      const dataBuffer = fs.readFileSync(file.path);
-      const pdf = await pdfParse(dataBuffer);
-      content = pdf.text;
-    } else if (ext === ".docx") {
+    // if (ext === ".pdf") {
+    //   const dataBuffer = fs.readFileSync(file.path);
+    //   const pdf = await pdfParse(dataBuffer);
+    //   content = pdf.text;
+    if (ext === ".docx") {
       const result = await mammoth.extractRawText({ path: file.path });
       content = result.value;
     } else if (ext === ".txt") {
       content = fs.readFileSync(file.path, "utf-8");
     } else {
-      return res.status(400).json({ error: "Định dạng file không hỗ trợ." });
+      return res.status(StatusCodes.BAD_REQUEST).json({ error: "Định dạng file không hỗ trợ." });
     }
 
     // Chuyển đổi tiêu đề có dấu tiếng Việt
@@ -45,7 +46,7 @@ exports.uploadAndTrain = async (req, res) => {
       [title]
     );
     if (rows.length > 0) {
-      return res.status(409).json({ error: "❗️ File đã được upload và huấn luyện trước đó." });
+      return res.status(StatusCodes.CONFLICT).json({ error: "❗️ File đã được upload và huấn luyện trước đó." });
     }
 
     // ✅ Lưu vào DB nếu chưa tồn tại
@@ -62,4 +63,4 @@ exports.uploadAndTrain = async (req, res) => {
   } finally {
     fs.unlink(file.path, () => {});
   }
-};
+}

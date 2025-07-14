@@ -119,4 +119,15 @@ CREATE TABLE user_questions (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS writing_sessions;
+-- Bảng lưu trữ các phiên viết của người dùng, có thể là các bài viết, đoạn văn bản, v.v.
+CREATE TABLE writing_sessions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  topic VARCHAR(255),
+  content TEXT NOT NULL,
+  feedback TEXT,            -- phản hồi của bot
+  score TINYINT,            -- điểm từ 1 đến 10
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 

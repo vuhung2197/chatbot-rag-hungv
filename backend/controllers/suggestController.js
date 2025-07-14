@@ -1,5 +1,5 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
-const axios = require("axios");
+import '../bootstrap/env.js';
+import axios from "axios";
 
 /**
  * Gợi ý từ tiếp theo cho người dùng dựa trên prompt đã nhập.
@@ -8,7 +8,7 @@ const axios = require("axios");
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.suggestNextWord = async (req, res) => {
+export async function suggestNextWord(req, res) {
   const { prompt } = req.body;
   if (!prompt || typeof prompt !== "string") return res.json({ suggest: "" });
 
@@ -18,9 +18,9 @@ exports.suggestNextWord = async (req, res) => {
       {
         model: "gpt-3.5-turbo-instruct",
         prompt: prompt,
-        max_tokens: 3,      // chỉ lấy 3 từ tiếp theo
+        max_tokens: 3,
         temperature: 0.7,
-        logprobs: 5,         // lấy top 5 từ (nếu cần)
+        logprobs: 5,
         stop: null,
       },
       {

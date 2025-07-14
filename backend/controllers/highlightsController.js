@@ -1,7 +1,7 @@
-const pool = require('../db');
-const { translateWordByWord } = require('../rules');
+import pool from '../db.js';
+import { translateWordByWord } from '../rules.js';
 
-exports.saveHighlight = async (req, res) => {
+export async function saveHighlight(req, res) {
   const { text } = req.body;
   if (!text || text.trim().length === 0)
     return res.status(400).json({ message: "Thiếu đoạn văn bản!" });
@@ -11,27 +11,27 @@ exports.saveHighlight = async (req, res) => {
 
   try {
     translatedPairs = await translateWordByWord(text);
-    cleanedText = translatedPairs.map(item => item.en).join(' ');
+    const cleanedText = translatedPairs.map(item => item.en).join(' ');
     translatedText = translatedPairs.map(item => item.vi).join(' ');
+
+    await pool.execute(
+      "INSERT INTO user_highlighted_text (text, translated_text) VALUES (?, ?)",
+      [cleanedText, translatedText]
+    );
+    res.json({ message: "Đã lưu và dịch từng từ!", translatedText, translatedPairs });
   } catch (e) {
     return res.status(500).json({ message: "Lỗi dịch AI!" });
   }
+}
 
-  await pool.execute(
-    "INSERT INTO user_highlighted_text (text, translated_text) VALUES (?, ?)",
-    [cleanedText, translatedText]
-  );
-  res.json({ message: "Đã lưu và dịch từng từ!", translatedText, translatedPairs });
-};
-
-exports.getHighlights = async (req, res) => {
+export async function getHighlights(req, res) {
   const [rows] = await pool.execute(
     "SELECT id, text, translated_text, created_at FROM user_highlighted_text WHERE approved = 0 ORDER BY id DESC"
   );
   res.json(rows);
-};
+}
 
-exports.highlightsRoutes = async (req, res) => {
+export async function highlightsRoutes(req, res) {
   const { id } = req.body;
   // Lấy bản ghi highlight
   const [rows] = await pool.execute('SELECT * FROM user_highlighted_text WHERE id = ?', [id]);
@@ -46,13 +46,11 @@ exports.highlightsRoutes = async (req, res) => {
   // Kiểm tra trùng trong dictionary
   const [exist] = await pool.execute('SELECT id FROM dictionary WHERE word_en = ?', [text.trim().toLowerCase()]);
   if (exist.length > 0) {
-
     // Xoá highlight nếu đã có trong dictionary
     await pool.execute(
       "DELETE FROM user_highlighted_text WHERE id = ?",
       [id]
     );
-
     return res.status(400).json({ message: "Từ này đã có trong từ điển!" });
   }
 
@@ -69,9 +67,9 @@ exports.highlightsRoutes = async (req, res) => {
   );
 
   res.json({ message: "Đã duyệt vào từ điển!" });
-};
+}
 
-exports.deleteHighlight = async (req, res) => {
+export async function deleteHighlight(req, res) {
   const { id } = req.body;
   try {
     await pool.execute("DELETE FROM user_highlighted_text WHERE id = ?", [id]);
@@ -80,4 +78,4 @@ exports.deleteHighlight = async (req, res) => {
     console.error(err);
     res.status(500).json({ message: "Lỗi khi xóa đoạn văn." });
   }
-};
+}

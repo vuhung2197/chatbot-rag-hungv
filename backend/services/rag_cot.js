@@ -1,7 +1,5 @@
-const OpenAI = require("openai");
-const dotenv = require("dotenv");
-
-dotenv.config();
+import '../bootstrap/env.js'; // Đảm bảo biến môi trường được nạp
+import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -50,10 +48,8 @@ async function callGPTWithCoT(prompt) {
 /**
  * Hàm xử lý RAG + CoT đầy đủ
  */
-async function answerWithCoT(question, contextChunks) {
+export async function answerWithCoT(question, contextChunks) {
   const prompt = generatePromptCoT(question, contextChunks);
   const answer = await callGPTWithCoT(prompt);
   return answer;
 }
-
-module.exports = { answerWithCoT };

@@ -1,7 +1,8 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
-const pool = require('../db');
-const axios = require("axios");
-const { updateChunksForKnowledge } = require("../services/updateChunks");
+import '../bootstrap/env.js';
+import path from "path";
+import pool from "../db.js";
+import axios from "axios";
+import { updateChunksForKnowledge } from "../services/updateChunks.js";
 
 // Hàm lấy embedding từ Local
 async function getEmbedding(text) {
@@ -44,7 +45,7 @@ async function updateImportantKeywords(title, content) {
 }
 
 // Thêm mới kiến thức
-exports.addKnowledge = async (req, res) => {
+export async function addKnowledge(req, res) {
   const { title, content } = req.body;
   if (!title || !content)
     return res.status(400).json({ message: "Thiếu tiêu đề hoặc nội dung!" });
@@ -64,18 +65,18 @@ exports.addKnowledge = async (req, res) => {
   // const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [insertedId]);
   await updateChunksForKnowledge(insertedId, title, content);
   res.json({ message: "Đã thêm kiến thức và cập nhật embedding!" });
-};
+}
 
 // Lấy toàn bộ kiến thức
-exports.getAllKnowledge = async (req, res) => {
+export async function getAllKnowledge(req, res) {
   const [rows] = await pool.execute(
     "SELECT * FROM knowledge_base ORDER BY id DESC"
   );
   res.json(rows);
-};
+}
 
 // Sửa kiến thức
-exports.updateKnowledge = async (req, res) => {
+export async function updateKnowledge(req, res) {
   const { id } = req.params;
   const { title, content } = req.body;
   if (!title || !content)
@@ -95,10 +96,10 @@ exports.updateKnowledge = async (req, res) => {
   // const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [id]);
   await updateChunksForKnowledge(id, title, content);
   res.json({ message: "Đã cập nhật kiến thức!" });
-};
+}
 
 // Xóa kiến thức và các chunk liên quan
-exports.deleteKnowledge = async (req, res) => {
+export async function deleteKnowledge(req, res) {
   const { id } = req.params;
 
   try {
@@ -113,18 +114,18 @@ exports.deleteKnowledge = async (req, res) => {
     console.error("❌ Lỗi khi xóa kiến thức:", err);
     res.status(500).json({ error: "Lỗi trong quá trình xóa kiến thức." });
   }
-};
+}
 
 // Lấy kiến thức theo ID
-exports.getKnowledgeById = async (req, res) => {
+export async function getKnowledgeById(req, res) {
   const { id } = req.params;
   const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [id]);
   if (rows.length === 0) return res.status(404).json({ message: "Không tìm thấy!" });
   res.json(rows[0]);
-};
+}
 
 // Lấy tất cả chunks của kiến thức theo ID
-exports.getChunksByKnowledgeId = async (req, res) => {
+export async function getChunksByKnowledgeId(req, res) {
   const { id } = req.params;
   try {
     const [rows] = await pool.execute(
@@ -136,4 +137,4 @@ exports.getChunksByKnowledgeId = async (req, res) => {
     console.error("Lỗi khi lấy chunk:", err);
     res.status(500).json({ error: "Lỗi khi lấy chunk" });
   }
-};
+}

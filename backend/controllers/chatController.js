@@ -1,20 +1,12 @@
-/**
- * Controller chính cho các API chat, gợi ý, lịch sử của chatbot.
- * - Hỗ trợ nhiều chế độ context (keyword, embedding/vector).
- * - Tích hợp chế độ luyện giao tiếp (conversation mode).
- * - Giao tiếp với OpenAI để sinh câu trả lời.
- * - Ghi log các câu hỏi chưa trả lời và các lượt luyện giao tiếp.
- * - API lấy lịch sử chat, lịch sử luyện giao tiếp, thống kê lượt giao tiếp.
- */
-
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
-const pool = require('../db');
-const { askChatGPT } = require('../rules');
-const { getEmbedding } = require("../services/embeddingVector");
-const { selectRelevantContexts } = require("../services/scoreContext");
-const { retrieveTopChunks } = require("../services/rag_retrieve");
-const { hashQuestion } = require("../utils/hash");
-const { StatusCodes } = require("http-status-codes");
+import path from "path";
+import pool from "../db.js";
+import { askChatGPT } from "../rules.js";
+import { getEmbedding } from "../services/embeddingVector.js";
+import { selectRelevantContexts } from "../services/scoreContext.js";
+import { retrieveTopChunks } from "../services/rag_retrieve.js";
+import { hashQuestion } from "../utils/hash.js";
+import { StatusCodes } from "http-status-codes";
+import '../bootstrap/env.js';
 
 /**
  * Chuyển đổi văn bản trả lời thành định dạng Markdown đẹp mắt.
@@ -61,7 +53,7 @@ function toMarkdown(text) {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.chat = async (req, res) => {
+export async function chat(req, res) {
   const { message, mode = "embedding", model } = req.body;
   const userId = req.user?.id;
 
@@ -166,7 +158,7 @@ exports.chat = async (req, res) => {
     console.error("❌ Lỗi xử lý:", err);
     res.json({ reply: "Bot đang bận, vui lòng thử lại sau!" });
   }
-};
+}
 
 /**
  * Ghi log các câu hỏi chưa trả lời được vào bảng unanswered_questions.
@@ -197,7 +189,7 @@ async function logUnanswered(question) {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.history = async (req, res) => {
+export async function history(req, res) {
   const userId = req.user?.id;
 
   if (!userId) return res.status(StatusCodes.UNAUTHORIZED).json({ error: "Chưa đăng nhập" });
@@ -216,7 +208,7 @@ exports.history = async (req, res) => {
     console.error("❌ Lỗi khi lấy lịch sử câu hỏi:", err);
     res.status(500).json({ error: "Lỗi server" });
   }
-};
+}
 
 /**
  * API gợi ý từ tiếng Anh cho autocomplete.
@@ -224,7 +216,7 @@ exports.history = async (req, res) => {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.suggest = async (req, res) => {
+export async function suggest(req, res) {
   const query = req.query.query?.trim().toLowerCase();
   if (!query) return res.json([]);
   const [rows] = await pool.execute(
@@ -232,7 +224,7 @@ exports.suggest = async (req, res) => {
       [`${query}%`]
   );
   res.json(rows.map(row => row.word_en));
-};
+}
 
 /**
  * Xóa một câu hỏi khỏi lịch sử chat của người dùng hiện tại theo id.
@@ -240,7 +232,7 @@ exports.suggest = async (req, res) => {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.deleteHistoryItem = async (req, res) => {
+export async function deleteHistoryItem(req, res) {
   const { id } = req.params;
   const userId = req.user.id;
 

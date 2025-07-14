@@ -1,5 +1,3 @@
-const levenshtein = require('fast-levenshtein');
-
 /**
  * Chuẩn hóa văn bản: chuyển về chữ thường, loại bỏ dấu câu và khoảng trắng thừa.
  * Giúp so sánh và trích xuất từ khóa chính xác hơn.
@@ -70,7 +68,7 @@ function scoreContext(question, context, title, questionKeywords, importantKeywo
  * @param {number} topN - Số lượng context trả về (top N)
  * @returns {Array<{context: string, score: number}>} - Danh sách context và điểm số
  */
-function selectRelevantContexts(message, allKnowledge, importantKeywords, topN = 3) {
+export function selectRelevantContexts(message, allKnowledge, importantKeywords, topN = 3) {
   const normQ = normalizeText(message);
   const questionKeywords = normQ.split(" ").filter(w => w.length > 2);
 
@@ -86,5 +84,3 @@ function selectRelevantContexts(message, allKnowledge, importantKeywords, topN =
 
   return scored;
 }
-
-module.exports = { selectRelevantContexts };

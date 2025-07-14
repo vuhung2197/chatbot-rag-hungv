@@ -1,22 +1,32 @@
-const express = require('express');
-const cors = require('cors');
+import express from 'express';
+import cors from 'cors';
+import './bootstrap/env.js'; // Ensure environment variables are loaded
+
+import chatRoutes from './routes/chat.js';
+import feedbackRoutes from './routes/feedback.js';
+import highlightsRoutes from './routes/highlights.js';
+import knowledgeRoutes from './routes/knowledge.js';
+import suggestRoutes from './routes/suggest.js';
+import unansweredRoutes from './routes/unanswered.js';
+import uploadRoutes from './routes/upload.js';
+import authRoutes from './routes/auth.js';
+import writingRoutes from './routes/writing.js';
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-require('dotenv').config();
-
 // Import routes
-app.use('/chat', require('./routes/chat'));
-app.use('/feedback', require('./routes/feedback'));
-app.use('/highlights', require('./routes/highlights'));
-app.use('/knowledge', require('./routes/knowledge'));
-app.use("/suggest-next-word", require("./routes/suggest"));
-app.use("/unanswered", require("./routes/unanswered"));
-app.use("/upload", require("./routes/upload"));
-app.use('/auth', require('./routes/auth'));
-app.use('/writing', require('./routes/writing'));
+app.use('/chat', chatRoutes);
+app.use('/feedback', feedbackRoutes);
+app.use('/highlights', highlightsRoutes);
+app.use('/knowledge', knowledgeRoutes);
+app.use('/suggest-next-word', suggestRoutes);
+app.use('/unanswered', unansweredRoutes);
+app.use('/upload', uploadRoutes);
+app.use('/auth', authRoutes);
+app.use('/writing', writingRoutes);
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`Backend running at http://localhost:${PORT}`));

@@ -1,9 +1,9 @@
-const pool = require("../db");
+import pool from "../db.js";
 
 /**
  * Trả về danh sách các câu hỏi chưa được trả lời để admin huấn luyện lại bot
  */
-exports.getUnansweredQuestions = async (req, res) => {
+export async function getUnansweredQuestions(req, res) {
   try {
     const [rows] = await pool.execute(
       "SELECT id, question FROM unanswered_questions ORDER BY created_at DESC"
@@ -13,12 +13,12 @@ exports.getUnansweredQuestions = async (req, res) => {
     console.error("Lỗi lấy danh sách unanswered_questions:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
-};
+}
 
 /**
  * Xoá 1 câu hỏi đã huấn luyện xong
  */
-exports.deleteUnanswered = async (req, res) => {
+export async function deleteUnanswered(req, res) {
   const { id } = req.params;
   try {
     await pool.execute("DELETE FROM unanswered_questions WHERE id = ?", [id]);
@@ -27,4 +27,4 @@ exports.deleteUnanswered = async (req, res) => {
     console.error("Lỗi xóa unanswered_questions:", err);
     res.status(500).json({ message: "Lỗi máy chủ" });
   }
-};
+}

@@ -1,6 +1,6 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const pool = require("../db");
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import pool from "../db.js";
 
 /**
  * Đăng ký tài khoản người dùng mới.
@@ -8,7 +8,7 @@ const pool = require("../db");
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.register = async (req, res) => {
+export async function register(req, res) {
   const { name, email, password, role = "user" } = req.body;
 
   // ✅ Chỉ cho phép 'user' hoặc 'admin'
@@ -27,7 +27,7 @@ exports.register = async (req, res) => {
     console.error("❌ Lỗi khi đăng ký:", err);
     res.status(500).json({ message: "Lỗi server khi đăng ký" });
   }
-};
+}
 
 /**
  * Đăng nhập tài khoản người dùng.
@@ -35,7 +35,7 @@ exports.register = async (req, res) => {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.login = async (req, res) => {
+export async function login(req, res) {
   const { email, password } = req.body;
   const [rows] = await pool.execute("SELECT * FROM users WHERE email = ?", [email]);
   const user = rows[0];
@@ -44,4 +44,4 @@ exports.login = async (req, res) => {
   }
   const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
   res.json({ token, role: user.role });
-};
+}

@@ -1,4 +1,4 @@
-const pool = require("../db");
+import pool from "../db.js";
 
 /**
  * Tính cosine similarity giữa hai vector số.
@@ -20,7 +20,7 @@ const cosineSimilarity = (a, b) => {
  * @param {number} topK - Số lượng chunk muốn lấy (default: 3)
  * @returns {Promise<Array>} - Danh sách các chunk phù hợp nhất
  */
-async function retrieveTopChunks(questionEmbedding, topK = 3) {
+export async function retrieveTopChunks(questionEmbedding, topK = 3) {
   const [rows] = await pool.execute("SELECT id, title, content, embedding FROM knowledge_chunks");
   const scored = rows.map(row => {
     let emb;
@@ -39,5 +39,3 @@ async function retrieveTopChunks(questionEmbedding, topK = 3) {
 
   return scored.sort((a, b) => b.score - a.score).slice(0, topK);
 }
-
-module.exports = { retrieveTopChunks };

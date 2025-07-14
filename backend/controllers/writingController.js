@@ -1,4 +1,5 @@
-const pool = require('../db');
+import pool from '../db.js';
+import { StatusCodes } from 'http-status-codes';
 
 /**
  * Lưu bài viết mới của người dùng vào cơ sở dữ liệu.
@@ -8,12 +9,12 @@ const pool = require('../db');
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.submitWriting = async (req, res) => {
+export async function submitWriting(req, res) {
   const userId = req.user?.id;
   const { topic, content, feedback = null, score = null } = req.body;
 
   if (!userId || !content) {
-    return res.status(400).json({ error: "Thiếu user hoặc nội dung bài viết" });
+    return res.status(StatusCodes.BAD_REQUEST).json({ error: "Thiếu user hoặc nội dung bài viết" });
   }
 
   try {
@@ -27,7 +28,7 @@ exports.submitWriting = async (req, res) => {
     console.error("❌ Lỗi khi lưu bài viết:", err);
     res.status(500).json({ error: "Lỗi khi lưu bài viết" });
   }
-};
+}
 
 /**
  * Lấy lịch sử 50 bài viết gần nhất của người dùng.
@@ -36,9 +37,9 @@ exports.submitWriting = async (req, res) => {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
-exports.getUserWritingHistory = async (req, res) => {
+export async function getUserWritingHistory(req, res) {
   const userId = req.user?.id;
-  if (!userId) return res.status(401).json({ error: "Chưa đăng nhập" });
+  if (!userId) return res.status(StatusCodes.UNAUTHORIZED).json({ error: "Chưa đăng nhập" });
 
   try {
     const [rows] = await pool.execute(
@@ -54,4 +55,4 @@ exports.getUserWritingHistory = async (req, res) => {
     console.error("❌ Lỗi lấy bài viết:", err);
     res.status(500).json({ error: "Không thể lấy lịch sử viết" });
   }
-};
+}

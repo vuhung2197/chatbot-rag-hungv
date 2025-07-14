@@ -18,10 +18,12 @@
     "http-status-codes": "^2.3.0",
     "jsonwebtoken": "^9.0.2",
     "mammoth": "^1.9.1",
+    "markitdown": "^0.0.4",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
     "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",
     "sentence-splitter": "^5.0.0"
-  }
+  },
+  "type": "module"
 }

@@ -16,7 +16,7 @@ export default function Chat() {
   const [questionHistory, setQuestionHistory] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState(null);
 
   const algorithmDescriptions = {
     embedding: "📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.",
@@ -121,7 +121,7 @@ export default function Chat() {
         }}>
           <div className="mb-3 flex items-center gap-2">
           <span className="text-sm text-gray-700">🧠 Đang dùng:</span>
-          <strong className="text-blue-700 text-sm">{model}</strong>
+          <strong className="text-blue-700 text-sm">{model?.name || "Chưa chọn"}</strong>
           <button
             onClick={() => setShowModelPopup(true)}
             className="text-sm underline text-blue-600 hover:text-blue-800"
@@ -353,7 +353,7 @@ export default function Chat() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <ModelManager
             onSelectModel={(m) => {
-              setModel(m.name);
+              setModel(m);
               setShowModelPopup(false);
             }}
             onClose={() => setShowModelPopup(false)}

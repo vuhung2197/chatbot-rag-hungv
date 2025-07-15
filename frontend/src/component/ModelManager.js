@@ -61,9 +61,8 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
           <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Tên model" name="name" value={form.name} onChange={handleChange} required />
-          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="API Key" name="key" value={form.key} onChange={handleChange} required />
           <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="URL Endpoint" name="url" value={form.url} onChange={handleChange} required />
-          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Temperature (0-1)" type="number" step="0.01" min="0" max="1" name="temperature" value={form.temperature} onChange={handleChange} required />
+          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Temperature (0-1)" type="number" step="0.01" min="-1" max="1" name="temperature" value={form.temperature} onChange={handleChange} required />
           <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Max Tokens" type="number" name="maxTokens" value={form.maxTokens} onChange={handleChange} required />
           <button style={{ backgroundColor: '#2563eb', color: '#fff', padding: '10px', borderRadius: 6, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
             {editingIndex !== null ? 'Cập nhật' : 'Thêm mô hình'}

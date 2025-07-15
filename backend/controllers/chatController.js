@@ -1,4 +1,3 @@
-import path from "path";
 import pool from "../db.js";
 import { askChatGPT } from "../rules.js";
 import { getEmbedding } from "../services/embeddingVector.js";

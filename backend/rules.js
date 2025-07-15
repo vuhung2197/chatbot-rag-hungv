@@ -2,7 +2,6 @@ import './bootstrap/env.js';
 import Fuse from 'fuse.js';
 import OpenAI from 'openai';
 import axios from 'axios';
-import config from './llm.config.js';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -173,21 +172,22 @@ export function unmaskSensitiveInfo(text, mapping) {
  * @returns {string} - Nội dung phản hồi
  */
 export async function callLLM(model, messages, temperature = 0.2, maxTokens = 512) {
-  const providerKey = model;
-  const provider = config.providers[providerKey];
+  const baseUrl = model?.url;
+  const nameModel = model?.name;
+  const temperatureModel = model?.temperature;
+  const maxTokensModel = model?.maxTokens;
 
   const response = await axios.post(
-    `${provider.baseURL}/chat/completions`,
+    `${baseUrl}/chat/completions`,
     {
-      model: model,
+      model: nameModel,
       messages,
-      temperature: provider.temperature || temperature,
-      max_tokens: provider.maxTokens || maxTokens,
+      temperature: temperatureModel,
+      max_tokens: maxTokensModel
     },
     {
       headers: {
-        Authorization: `Bearer ${provider.apiKey}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       },
     }
   );
@@ -204,7 +204,7 @@ export async function callLLM(model, messages, temperature = 0.2, maxTokens = 51
  * @param {string} model - Tên model AI muốn sử dụng (mặc định: 'gpt-4o')
  * @returns {Promise<string>} - Nội dung trả lời của AI
  */
-export async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.", model = 'gpt-4o') {
+export async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.", model) {
   const mapping = {};
 
   // Mask thông tin nhạy cảm trong câu hỏi

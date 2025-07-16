@@ -1,5 +1,5 @@
 import mysql from 'mysql2/promise';
-import './bootstrap/env.js'; // Ensure environment variables are loaded
+import './bootstrap/env.js';
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',

@@ -11,6 +11,7 @@ import unansweredRoutes from './routes/unanswered.js';
 import uploadRoutes from './routes/upload.js';
 import authRoutes from './routes/auth.js';
 import writingRoutes from './routes/writing.js';
+import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
 
@@ -27,6 +28,12 @@ app.use('/unanswered', unansweredRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/auth', authRoutes);
 app.use('/writing', writingRoutes);
+app.use('/test', (req, res, next) => {
+  const error = new Error('Test error');
+  next(error);
+});
+
+app.use(errorHandler);
 
 const PORT = 3001;
 app.listen(PORT, () => console.log(`Backend running at http://localhost:${PORT}`));

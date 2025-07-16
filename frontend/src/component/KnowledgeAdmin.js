@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -16,15 +17,13 @@ export default function KnowledgeAdmin() {
   }, []);
 
   const fetchList = async () => {
-    const res = await fetch(`${API_URL}/knowledge`);
-    const data = await res.json();
-    setList(data);
+    const res = await axios.get(`${API_URL}/knowledge`);
+    setList(res.data);
   };
 
   const fetchUnanswered = async () => {
-    const res = await fetch(`${API_URL}/unanswered`);
-    const data = await res.json();
-    setUnanswered(data);
+    const res = await axios.get(`${API_URL}/unanswered`);
+    setUnanswered(res.data);
   };
 
   const handleSubmit = async (e) => {
@@ -32,21 +31,22 @@ export default function KnowledgeAdmin() {
     const url = form.id
       ? `${API_URL}/knowledge/${form.id}`
       : `${API_URL}/knowledge`;
-    const method = form.id ? "PUT" : "POST";
-    await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: form.title, content: form.content }),
+    const method = form.id ? "put" : "post";
+
+    await axios[method](url, {
+      title: form.title,
+      content: form.content,
     });
+
     setForm({ title: "", content: "", id: null });
-    fetchList();
-    fetchUnanswered();
-    if (formRef.current) formRef.current.scrollIntoView({ behavior: "smooth" });
+    await fetchList();
+    await fetchUnanswered();
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa kiến thức này?")) {
-      await fetch(`${API_URL}/knowledge/${id}`, { method: "DELETE" });
+      await axios.delete(`${API_URL}/knowledge/${id}`);
       setList(list.filter(item => item.id !== id));
       if (form.id === id) setForm({ title: "", content: "", id: null });
     }
@@ -62,9 +62,8 @@ export default function KnowledgeAdmin() {
   const fetchChunks = async (id) => {
     console.log("🔍 Chunk button clicked with id:", id);
     try {
-      const res = await fetch(`${API_URL}/knowledge/${id}/chunks`);
-      const data = await res.json();
-      setChunkPreview({ id, chunks: data });
+      const res = await axios.get(`${API_URL}/knowledge/${id}/chunks`);
+      setChunkPreview({ id, chunks: res.data });
       setShowChunkModal(true);
     } catch (err) {
       console.error("❌ Lỗi khi lấy chunks:", err);
@@ -76,6 +75,13 @@ export default function KnowledgeAdmin() {
     if (formRef.current) formRef.current.scrollIntoView({ behavior: "smooth" });
   };
 
+  const handleDeleteUnanswered = async (id) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) {
+      await axios.delete(`${API_URL}/unanswered/${id}`);
+      setUnanswered(unanswered.filter(item => item.id !== id));
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -84,19 +90,14 @@ export default function KnowledgeAdmin() {
     formData.append("file", file);
 
     try {
-      const res = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await axios.post(`${API_URL}/upload`, formData);
 
       if (res.status === 409) {
-        const data = await res.json();
-        alert(data.error); // 👉 Show: "File đã được upload và huấn luyện trước đó."
+        alert(res.data.error);
         return;
       }
 
-      const result = await res.json();
-      alert(result.message || "Tải lên thành công");
+      alert(res.data.message || "Tải lên thành công");
       fetchList();
     } catch (err) {
       alert("Lỗi khi tải lên file: " + err.message);
@@ -150,6 +151,7 @@ export default function KnowledgeAdmin() {
               <li key={q.id} style={{ marginBottom: 8 }}>
                 <span>{q.question}</span>
                 <button onClick={() => handleUseUnanswered(q.question)} style={{ marginLeft: 10, padding: "2px 8px", fontSize: 13, borderRadius: 6, cursor: "pointer", border: "1px solid #aaa" }}>Dùng để huấn luyện</button>
+                <button onClick={() => handleDeleteUnanswered(q.id)} style={{ marginLeft: 10, padding: "2px 8px", fontSize: 13, borderRadius: 6, cursor: "pointer", border: "1px solid #aaa" }}>Xóa</button>
               </li>
             ))}
           </ul>

@@ -4,6 +4,7 @@ import ChatInputSuggest from "./ChatInputSuggest";
 import CryptoJS from "crypto-js";
 import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
+import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -44,12 +45,12 @@ export default function Chat() {
   useEffect(() => {
     async function fetchHistory() {
       try {
-        const res = await fetch(`${API_URL}/chat/history`, {
+        const res = await axios.get(`${API_URL}/chat/history`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`
           }
         });
-        const data = await res.json();
+        const data = res.data;
         setQuestionHistory(data);
       } catch (err) {
         console.error("Lỗi khi lấy lịch sử câu hỏi:", err);
@@ -80,12 +81,17 @@ export default function Chat() {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${API_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: input, mode, model })
-      });
-      const data = await res.json();
+      const res = await axios.post(
+        `${API_URL}/chat`,
+        { message: input, mode, model },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = res.data;
       setHistory([{ user: input, bot: data.reply, createdAt: timestamp }, ...history]);
 
       const isNoAnswer = [
@@ -225,13 +231,12 @@ export default function Chat() {
                     onClick={async () => {
                       if (!window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) return;
                       try {
-                        const res = await fetch(`${API_URL}/chat/history/${item.id}`, {
-                          method: "DELETE",
+                        const res = await axios.delete(`${API_URL}/chat/history/${item.id}`, {
                           headers: {
                             Authorization: `Bearer ${localStorage.getItem("token")}`
                           }
                         });
-                        if (res.ok) {
+                        if (res.status === 200) {
                           setQuestionHistory(prev => prev.filter(q => q.id !== item.id));
                         } else {
                           alert("Xóa thất bại!");

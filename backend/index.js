@@ -27,7 +27,6 @@ app.use('/suggest-next-word', suggestRoutes);
 app.use('/unanswered', unansweredRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/auth', authRoutes);
-app.use('/writing', writingRoutes);
 app.use('/test', (req, res, next) => {
   const error = new Error('Test error');
   next(error);

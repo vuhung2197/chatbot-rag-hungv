@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -12,12 +13,13 @@ export default function FileUploader() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await fetch(`${API_URL}/upload`, {
-      method: "POST",
-      body: formData
+    const res = await axios.post(`${API_URL}/upload`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data"
+      }
     });
 
-    const data = await res.json();
+    const data = res.data;
     setMsg(data.message || data.error);
     setFile(null);
   };

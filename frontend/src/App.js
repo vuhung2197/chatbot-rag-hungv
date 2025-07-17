@@ -98,7 +98,7 @@ export default function App() {
         >
           Tra cứu kiến thức
         </button>
-        <button
+        {/* <button
           onClick={() => setView('highlights')}
           style={{
             background: view === 'highlights' ? '#7137ea' : '#f6f9fc',
@@ -109,7 +109,7 @@ export default function App() {
           }}
         >
           Highlights
-        </button>
+        </button> */}
         <button
           onClick={() => setView('knowledgeadmin')}
           style={{
@@ -143,7 +143,7 @@ export default function App() {
       )}
 
       {view === 'chat' && <Chat darkMode={darkMode} />}
-      {view === 'highlights' && <Highlights darkMode={darkMode} />}
+      {/* {view === 'highlights' && <Highlights darkMode={darkMode} />} */}
       {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
     </>
   );

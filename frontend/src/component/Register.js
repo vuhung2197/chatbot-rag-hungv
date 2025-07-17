@@ -1,5 +1,7 @@
 // 📁 src/components/Register.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
+
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function Register({ onRegister }) {
@@ -12,13 +14,14 @@ export default function Register({ onRegister }) {
   async function handleRegister(e) {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role })
+      const res = await axios.post(`${API_URL}/auth/register`, {
+        name,
+        email,
+        password,
+        role
       });
-      const data = await res.json();
-      if (res.ok) {
+      const data = res.data;
+      if (res.status === 200) {
         alert("Đăng ký thành công. Hãy đăng nhập.");
         onRegister();
       } else {

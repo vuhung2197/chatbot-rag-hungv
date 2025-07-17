@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -6,9 +7,9 @@ export default function Highlights() {
   const [highlights, setHighlights] = useState([]);
 
   function fetchHighlights() {
-    fetch(`${API_URL}/highlights`)
-      .then(res => res.json())
-      .then(setHighlights);
+    axios.get(`${API_URL}/highlights`)
+      .then(res => setHighlights(res.data))
+      .catch(err => console.error("Lỗi khi lấy đoạn văn:", err));
   }
 
   useEffect(() => {
@@ -16,31 +17,23 @@ export default function Highlights() {
   }, []);
 
   function approveHighlight(id) {
-    fetch(`${API_URL}/highlights/approve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
+    axios.post(`${API_URL}/highlights/approve`, { id })
+      .then(res => {
+        alert(res.data.message);
         setHighlights(prev => prev.filter(h => h.id !== id));
-      });
+      })
+      .catch(err => console.error("Lỗi khi duyệt đoạn văn:", err));
   }
 
   function deleteHighlight(id) {
     if (!window.confirm("Bạn có chắc chắn muốn xóa đoạn này?")) return;
 
-    fetch(`${API_URL}/highlights/delete`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
+    axios.post(`${API_URL}/highlights/delete`, { id })
+      .then(res => {
+        alert(res.data.message);
         setHighlights(prev => prev.filter(h => h.id !== id));
-      });
+      })
+      .catch(err => console.error("Lỗi khi xóa đoạn văn:", err));
   }
 
   return (

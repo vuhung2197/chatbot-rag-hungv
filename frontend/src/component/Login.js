@@ -1,5 +1,7 @@
 // 📁 src/components/Login.jsx
 import React, { useState } from 'react';
+import axios from 'axios';
+
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function Login({ onLogin }) {
@@ -10,16 +12,15 @@ export default function Login({ onLogin }) {
   async function handleLogin(e) {
     e.preventDefault();
     try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+      const res = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password
       });
-      const data = await res.json();
-      if (res.ok) {
+      const data = res.data;
+      if (res.status === 200) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("role", data.role);
-        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("userId", data.id);
         onLogin(data.role);
       } else {
         setError(data.message || "Đăng nhập thất bại");

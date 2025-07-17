@@ -25,6 +25,7 @@ export default function Chat() {
     direct: "💬 Direct Mode: Trả lời trực tiếp mà không cần truy xuất ngữ nghĩa. Phù hợp với câu hỏi đơn giản hoặc đã có kiến thức nền từ mô hình.",
   };
 
+  // Render lần đầu tiên khi component mount
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     const saved = localStorage.getItem(`chatbot_history_${userId}`);
@@ -35,8 +36,18 @@ export default function Chat() {
         console.error("Lỗi khi parse history:", e);
       }
     }
+
+    const savedModel = localStorage.getItem("chatbot_selected_model");
+    if (savedModel) {
+      try {
+        setModel(JSON.parse(savedModel));
+      } catch (e) {
+        console.error("Lỗi khi parse model đã lưu:", e);
+      }
+    }
   }, []);
 
+  // Render lại khi history thay đổi
   useEffect(() => {
     const userId = localStorage.getItem("userId");
     localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
@@ -269,6 +280,7 @@ export default function Chat() {
               setHistory([]);
               localStorage.removeItem("chatbot_history");
               localStorage.removeItem("chatbot_cache");
+              localStorage.removeItem("chatbot_selected_model");
             }
           }}
           style={{
@@ -359,6 +371,7 @@ export default function Chat() {
           <ModelManager
             onSelectModel={(m) => {
               setModel(m);
+              localStorage.setItem("chatbot_selected_model", JSON.stringify(m));
               setShowModelPopup(false);
             }}
             onClose={() => setShowModelPopup(false)}

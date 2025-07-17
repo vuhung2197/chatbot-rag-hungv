@@ -8,37 +8,54 @@ import { StatusCodes } from "http-status-codes";
 import '../bootstrap/env.js';
 
 /**
- * Chuyển đổi văn bản trả lời thành định dạng Markdown đẹp mắt.
+ * Chuyển đổi văn bản AI trả lời thành Markdown giống ChatGPT.
  * - Câu đầu tiên in đậm.
- * - Các luận điểm sau chuyển thành bullet hoặc giữ nguyên nếu là ví dụ/cụ thể.
- * @param {string} text - Văn bản trả lời từ AI
- * @returns {string} - Văn bản đã format Markdown
+ * - Giữ nguyên đoạn văn nếu dài.
+ * - Danh sách chỉ áp dụng nếu văn bản rõ ràng là liệt kê.
  */
 function toMarkdown(text) {
-  const sentences = text.split(/(?<=\.)\s+/);
-  let opening = sentences[0].trim();
-  if (opening.length > 0) opening = `**${opening}**\n\n`;
-  const rest = sentences.slice(1).map(s => s.trim()).filter(s => s.length > 0);
-  const bulletStarters = ['Cụ thể', 'Ví dụ', 'Ngoài ra', 'Điều này', 'Đặc biệt', 'Thêm vào đó'];
-  let markdown = opening;
-  rest.forEach(sentence => {
-    const isBullet = bulletStarters.some(kw => sentence.startsWith(kw)) || sentence.startsWith('-') || sentence.startsWith('+');
-    if (isBullet) {
-      const colonIdx = sentence.indexOf(':');
-      if (colonIdx > -1) {
-        markdown += sentence.slice(0, colonIdx + 1) + '\n';
-        let afterColon = sentence.slice(colonIdx + 1).trim();
-        let points = afterColon.split(/;\s+|,\s+|\. /).map(p => p.trim()).filter(p => p.length > 0);
-        points.forEach(point => {
-          markdown += `- ${point}\n`;
-        });
-      } else {
-        markdown += `- ${sentence}\n`;
-      }
-    } else {
-      markdown += `- ${sentence}\n`;
+  if (!text) return '';
+
+  const paragraphs = text.split(/\n{2,}/); // Tách các đoạn
+  const firstPara = paragraphs.shift()?.trim();
+  let markdown = '';
+
+  // B1: Câu đầu tiên in đậm
+  if (firstPara) {
+    const sentences = firstPara.split(/(?<=\.)\s+/);
+    const firstSentence = sentences.shift();
+    markdown += `**${firstSentence.trim()}**\n\n`;
+    if (sentences.length) {
+      markdown += sentences.join(' ') + '\n\n';
     }
-  });
+  }
+
+  // B2: Duyệt các đoạn còn lại
+  for (let para of paragraphs) {
+    para = para.trim();
+    if (!para) continue;
+
+    const isList =
+      para.startsWith('- ') ||
+      para.startsWith('* ') ||
+      /^[•\-+]\s/.test(para) ||
+      /(,|\.)\s/.test(para) && para.length < 200;
+
+    if (isList) {
+      // Tách theo dấu chấm, phẩy nếu là danh sách rời rạc
+      const points = para
+        .split(/(?:^|\n)[•\-+*]?\s*/)
+        .map(p => p.trim())
+        .filter(p => p.length > 0);
+      points.forEach(point => {
+        markdown += `- ${point}\n`;
+      });
+      markdown += '\n';
+    } else {
+      markdown += `${para}\n\n`;
+    }
+  }
+
   return markdown.trim();
 }
 

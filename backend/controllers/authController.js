@@ -43,5 +43,5 @@ export async function login(req, res) {
     return res.status(401).json({ message: "Login failed" });
   }
   const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
-  res.json({ token, role: user.role });
+  res.json({ token, role: user.role, id: user.id });
 }

@@ -10,7 +10,6 @@ import suggestRoutes from './routes/suggest.js';
 import unansweredRoutes from './routes/unanswered.js';
 import uploadRoutes from './routes/upload.js';
 import authRoutes from './routes/auth.js';
-import writingRoutes from './routes/writing.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();

@@ -13,7 +13,7 @@ export default function Chat() {
   const [history, setHistory] = useState([]);
   const [showGuide, setShowGuide] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState("embedding");
+  const [mode, setMode] = useState("direct");
   const [questionHistory, setQuestionHistory] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);

@@ -1,6 +1,41 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db.js";
+import { google } from 'googleapis';
+import { saveTokens } from '../helpers/tokenStore.js';
+import crypto from 'crypto';
+import '../bootstrap/env.js';
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'https://chatbotai2197.com/oauth/google/callback'
+);
+
+export function authGoogle(req, res) {
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+    state: crypto.randomUUID()
+  });
+  req.session.oauthState = url.match(/state=([^&]+)/)[1];
+  res.redirect(url);
+}
+
+export async function googleCallback(req, res) {
+  const { code, state } = req.query;
+  if (state !== req.session.oauthState) return res.status(400).send('CSRF');
+  const { tokens } = await oauth2Client.getToken(code);
+  oauth2Client.setCredentials(tokens);
+
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+  const { data: profile } = await gmail.users.getProfile({ userId: 'me' });
+
+  await saveTokens(profile.emailAddress, tokens);
+  req.session.userEmail = profile.emailAddress; // để các route khác dùng
+  res.redirect('/chat');
+}
 
 /**
  * Đăng ký tài khoản người dùng mới.

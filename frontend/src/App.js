@@ -1,7 +1,7 @@
 // 📁 src/App.jsx
 import React, { useState, useEffect } from 'react';
 import Chat from './component/Chat';
-import Highlights from './component/Highlights';
+// import Highlights from './component/Highlights';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
 import Login from './component/Login';
 import Register from './component/Register';

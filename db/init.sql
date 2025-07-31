@@ -131,3 +131,11 @@ CREATE TABLE writing_sessions (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE google_tokens (
+  email            VARCHAR(320) NOT NULL PRIMARY KEY,        -- RFC-5321 max
+  tokens_encrypted BLOB         NOT NULL,                    -- ~65 KB, dư cho token
+  updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+                                ON UPDATE CURRENT_TIMESTAMP
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+
+

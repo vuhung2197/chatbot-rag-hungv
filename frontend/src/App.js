@@ -1,8 +1,9 @@
 // 📁 src/App.jsx
 import React, { useState, useEffect } from 'react';
 import Chat from './component/Chat';
-import Highlights from './component/Highlights';
+// import Highlights from './component/Highlights';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
+import Email from './component/Email';
 import Login from './component/Login';
 import Register from './component/Register';
 import { useDarkMode } from './component/DarkModeContext';
@@ -122,6 +123,18 @@ export default function App() {
         >
           Knowledge Admin
         </button>
+        <button
+          onClick={() => setView('email')}
+          style={{
+            background: view === 'email' ? '#7137ea' : '#f6f9fc',
+            color: view === 'email' ? '#fff' : '#333',
+            border: "1px solid #7137ea",
+            borderRadius: 8,
+            padding: "8px 16px"
+          }}
+        >
+          Email Subscription
+        </button>
       </nav>
 
       {toast && (
@@ -141,7 +154,7 @@ export default function App() {
           {toast}
         </div>
       )}
-
+      {view === 'email' && <Email darkMode={darkMode} />}
       {view === 'chat' && <Chat darkMode={darkMode} />}
       {/* {view === 'highlights' && <Highlights darkMode={darkMode} />} */}
       {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}

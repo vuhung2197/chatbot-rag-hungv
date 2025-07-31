@@ -1,6 +1,53 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../db.js";
+import { google } from 'googleapis';
+import { saveTokens } from '../helpers/tokenStore.js';
+import '../bootstrap/env.js';
+import { makeStateCookie, verifyStateCookie } from '../helpers/cookieState.js';
+
+const oauth2Client = new google.auth.OAuth2(
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  'http://localhost:3001/auth/google/callback'
+);
+
+export function authGoogle(req, res) {
+  // sinh CSRF token & set cookie
+  const state = makeStateCookie(res);
+
+  const url = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: ['https://www.googleapis.com/auth/gmail.readonly'],
+    state
+  });
+  // redirect tới trang Google OAuth
+  res.redirect(url);
+}
+
+export async function googleCallback(req, res) {
+  const { code, state } = req.query;
+
+  // 1️⃣ Xác thực state bằng cookie chống CSRF
+  if (!verifyStateCookie(req, state)) return res.status(400).send('CSRF');
+  res.clearCookie('oauth_state');
+
+  // 2️⃣ Đổi code ⇢ tokens
+  const { tokens } = await oauth2Client.getToken(code);
+  oauth2Client.setCredentials(tokens);
+
+  // 3️⃣ Lấy thông tin người dùng Gmail
+  const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+  const { data: profile } = await gmail.users.getProfile({ userId: 'me' });
+
+  // 4️⃣ Lưu tokens + tạo JWT trả về
+  await saveTokens(profile.emailAddress, tokens);
+  const jwtToken = jwt.sign({ email: profile.emailAddress }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+  // 5️⃣ Redirect sang frontend (có thể trả JWT qua cookie hoặc query string)
+  res.redirect(`/chat?token=${jwtToken}`);
+}
 
 /**
  * Đăng ký tài khoản người dùng mới.

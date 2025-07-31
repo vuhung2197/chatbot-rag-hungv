@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import './bootstrap/env.js'; // Ensure environment variables are loaded
+import './bootstrap/env.js';
+import cookieParser from 'cookie-parser';
 
 import chatRoutes from './routes/chat.js';
 import feedbackRoutes from './routes/feedback.js';
@@ -10,12 +11,14 @@ import suggestRoutes from './routes/suggest.js';
 import unansweredRoutes from './routes/unanswered.js';
 import uploadRoutes from './routes/upload.js';
 import authRoutes from './routes/auth.js';
+import emailRoutes from './routes/email.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 // Import routes
 app.use('/chat', chatRoutes);
@@ -26,10 +29,7 @@ app.use('/suggest-next-word', suggestRoutes);
 app.use('/unanswered', unansweredRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/auth', authRoutes);
-app.use('/test', (req, res, next) => {
-  const error = new Error('Test error');
-  next(error);
-});
+app.use('/email', emailRoutes);
 
 app.use(errorHandler);
 

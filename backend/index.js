@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import './bootstrap/env.js'; // Ensure environment variables are loaded
+import './bootstrap/env.js';
+import cookieParser from 'cookie-parser';
 
 import chatRoutes from './routes/chat.js';
 import feedbackRoutes from './routes/feedback.js';
@@ -17,6 +18,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
 
 // Import routes
 app.use('/chat', chatRoutes);

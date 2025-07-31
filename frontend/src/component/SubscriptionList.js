@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 // import DOMPurify from "dompurify";
+import axios from "axios";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 function sanitizeUnsubscribeLink(raw) {
   if (!raw) return null;

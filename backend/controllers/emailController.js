@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 import { loadTokens } from '../helpers/tokenStore.js';
+import axios from 'axios';
 
 async function listSubscriptions(storedTokens) {
   const oauth2Client = new google.auth.OAuth2(
@@ -97,7 +98,10 @@ export async function unsubscribeSelected(req, res) {
 
   try {
     const tokens = await loadTokens(userEmail);
-    const oauth2Client = new google.auth.OAuth2();
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET
+    );
     oauth2Client.setCredentials(tokens);
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 

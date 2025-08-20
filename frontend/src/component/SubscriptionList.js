@@ -30,19 +30,28 @@ export default function SubscriptionList({ subs }) {
     if (selected.length === 0) return;
     setLoading(true);
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/email/gmail/unsubscribe`,
-        { emails: selected },
+        { 
+          emails: selected,
+          userEmail: "hung97vu@gmail.com" // TODO: Get from user context/auth
+        },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
-      alert("✅ Đã gửi yêu cầu hủy các bản tin.");
+      
+      const { message, summary } = response.data;
+      alert(`${message}\n✅ Thành công: ${summary.success}\n❌ Thất bại: ${summary.failed}`);
+      
+      // Reset selection after successful unsubscribe
+      setSelected([]);
     } catch (err) {
       console.error("❌ Lỗi unsubscribe:", err);
-      alert("Hủy đăng ký thất bại.");
+      const errorMessage = err.response?.data?.message || "Hủy đăng ký thất bại.";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }

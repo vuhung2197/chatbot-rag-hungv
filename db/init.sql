@@ -138,4 +138,14 @@ CREATE TABLE google_tokens (
                                 ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
+ALTER TABLE google_tokens 
+ADD COLUMN access_token_expires_at TIMESTAMP NULL AFTER tokens_encrypted,
+ADD COLUMN refresh_token_encrypted BLOB NULL AFTER access_token_expires_at,
+ADD INDEX idx_token_expiry (access_token_expires_at);
+
+-- Optional: Add column to track refresh attempts for monitoring
+ALTER TABLE google_tokens 
+ADD COLUMN refresh_attempts INT DEFAULT 0 AFTER refresh_token_encrypted,
+ADD COLUMN last_refresh_at TIMESTAMP NULL AFTER refresh_attempts;
+
 

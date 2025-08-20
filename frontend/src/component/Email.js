@@ -16,7 +16,14 @@ export default function EmailPage() {
         },
       })
       .then((res) => {
-        setSubs(res.data); // ✅ axios trả về JSON đã parse ở res.data
+        // Handle new response format with data and tokenInfo
+        if (res.data.data) {
+          setSubs(res.data.data);
+          console.log('🔐 Token expires in:', res.data.tokenInfo?.timeUntilExpiry, 'seconds');
+        } else {
+          // Fallback for old format
+          setSubs(res.data);
+        }
       })
       .catch((err) => {
         console.error("Lỗi khi tải email:", err);

@@ -1,6 +1,25 @@
 import { google } from 'googleapis';
-import { loadTokens } from '../helpers/tokenStore.js';
+import { loadTokens, checkTokenExpiry, refreshAccessToken } from '../helpers/tokenStore.js';
 import axios from 'axios';
+
+// Helper function to ensure we have a valid access token
+async function ensureValidToken(userEmail) {
+  try {
+    // Check token expiry status first
+    const expiryCheck = await checkTokenExpiry(userEmail);
+    
+    if (expiryCheck.needsRefresh) {
+      console.log(`🔄 Token refresh needed for ${userEmail}: ${expiryCheck.reason}`);
+      return await refreshAccessToken(userEmail);
+    }
+    
+    // Load existing valid token
+    return await loadTokens(userEmail);
+  } catch (error) {
+    console.error(`❌ Token validation failed for ${userEmail}:`, error.message);
+    throw new Error(`Token validation failed: ${error.message}`);
+  }
+}
 
 async function listSubscriptions(storedTokens) {
   const oauth2Client = new google.auth.OAuth2(
@@ -75,63 +94,261 @@ function decodeBase64(b64) {
 }
 
 export async function getEmail(req, res) {
-  const email = 'hung97vu@gmail.com';
+  const email = 'hung97vu@gmail.com'; // TODO: Get from authenticated user
   if (!email) return res.status(400).json({ error: 'Missing user email' });
 
-  const storedTokens = await loadTokens(email);
-  if (!storedTokens) {
-    return res.status(401).json({ error: 'User has not connected Gmail' });
-  }
-
   try {
-    const subs = await listSubscriptions(storedTokens);
-    res.json(subs);
+    // Ensure we have a valid token (with automatic refresh if needed)
+    const validTokens = await ensureValidToken(email);
+    if (!validTokens) {
+      return res.status(401).json({ error: 'User has not connected Gmail' });
+    }
+
+    const subs = await listSubscriptions(validTokens);
+    res.json({
+      data: subs,
+      tokenInfo: {
+        expiresAt: validTokens.expires_at,
+        timeUntilExpiry: Math.floor((validTokens.expires_at - Date.now()) / 1000)
+      }
+    });
   } catch (err) {
+    console.error('❌ getEmail error:', err);
+    
+    // Handle specific token errors
+    if (err.message.includes('Token') || err.message.includes('refresh')) {
+      return res.status(401).json({ 
+        error: 'Authentication failed', 
+        message: 'Please reconnect your Gmail account',
+        details: err.message
+      });
+    }
+    
     res.status(500).json({ error: err.message });
   }
 }
 
+function isValidUnsubscribeUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const allowedProtocols = ['http:', 'https:'];
+    const blockedDomains = ['localhost', '127.0.0.1', '0.0.0.0'];
+    
+    if (!allowedProtocols.includes(parsed.protocol)) return false;
+    if (blockedDomains.some(domain => parsed.hostname.includes(domain))) return false;
+    
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function processUnsubscribeUrl(url, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.get(url, {
+        timeout: 10000,
+        maxRedirects: 5,
+        validateStatus: (status) => status < 500,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      
+      return {
+        success: response.status < 400,
+        status: response.status,
+        attempt
+      };
+    } catch (error) {
+      if (attempt === retries) {
+        return {
+          success: false,
+          error: error.message,
+          attempt
+        };
+      }
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+}
+
+async function sendUnsubscribeEmail(gmail, mailtoLink, fromEmail) {
+  try {
+    const emailAddress = mailtoLink.replace('mailto:', '').split('?')[0];
+    const subject = 'Unsubscribe Request';
+    const body = `Please unsubscribe ${fromEmail} from your mailing list.`;
+    
+    const message = [
+      `To: ${emailAddress}`,
+      `Subject: ${subject}`,
+      '',
+      body
+    ].join('\n');
+
+    const encodedMessage = Buffer.from(message).toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+    
+    await gmail.users.messages.send({
+      userId: 'me',
+      requestBody: {
+        raw: encodedMessage
+      }
+    });
+    
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
 export async function unsubscribeSelected(req, res) {
-  const userEmail = 'hung97vu@gmail.com';
-  const { emails } = req.body;
-  if (!Array.isArray(emails)) return res.status(400).json({ message: 'emails phải là mảng.' });
+  const { emails, userEmail } = req.body;
+  
+  if (!Array.isArray(emails)) {
+    return res.status(400).json({ message: 'emails phải là mảng.' });
+  }
+  
+  if (!userEmail) {
+    return res.status(400).json({ message: 'userEmail là bắt buộc.' });
+  }
+
+  const results = [];
 
   try {
-    const tokens = await loadTokens(userEmail);
+    // Ensure we have a valid token (with automatic refresh if needed)
+    const validTokens = await ensureValidToken(userEmail);
+    if (!validTokens) {
+      return res.status(401).json({ message: 'Không tìm thấy tokens cho user.' });
+    }
+
     const oauth2Client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET
     );
-    oauth2Client.setCredentials(tokens);
+    oauth2Client.setCredentials(validTokens);
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
 
     for (const msgId of emails) {
-      const { data: msg } = await gmail.users.messages.get({
-        userId: 'me',
-        id: msgId,
-        format: 'metadata',
-        metadataHeaders: ['List-Unsubscribe']
-      });
+      try {
+        const { data: msg } = await gmail.users.messages.get({
+          userId: 'me',
+          id: msgId,
+          format: 'metadata',
+          metadataHeaders: ['List-Unsubscribe', 'From']
+        });
 
-      const headers = Object.fromEntries((msg.payload.headers || []).map(h => [h.name.toLowerCase(), h.value]));
-      const lu = headers['list-unsubscribe'];
-      if (!lu) continue;
+        const headers = Object.fromEntries(
+          (msg.payload.headers || []).map(h => [h.name.toLowerCase(), h.value])
+        );
+        
+        const unsubscribeHeader = headers['list-unsubscribe'];
+        const fromEmail = headers.from || '';
 
-      const links = lu.split(',').map(s => s.trim().replace(/[<>]/g, ''));
-      const httpLink = links.find(l => l.startsWith('http'));
-      const mailtoLink = links.find(l => l.startsWith('mailto:'));
+        if (!unsubscribeHeader) {
+          results.push({
+            messageId: msgId,
+            success: false,
+            reason: 'Không có List-Unsubscribe header'
+          });
+          continue;
+        }
 
-      if (httpLink) {
-        await axios.get(httpLink);
-      } else if (mailtoLink) {
-        console.log(`📩 Gửi email tới ${mailtoLink}`);
-        // Optional: Gửi email hủy đăng ký bằng Gmail API nếu cần
+        const links = unsubscribeHeader
+          .split(',')
+          .map(s => s.trim().replace(/[<>]/g, ''));
+        
+        const httpLink = links.find(l => l.startsWith('http'));
+        const mailtoLink = links.find(l => l.startsWith('mailto:'));
+
+        let result = {
+          messageId: msgId,
+          from: fromEmail,
+          success: false
+        };
+
+        if (httpLink && isValidUnsubscribeUrl(httpLink)) {
+          const urlResult = await processUnsubscribeUrl(httpLink);
+          result = {
+            ...result,
+            success: urlResult.success,
+            method: 'HTTP',
+            url: httpLink,
+            status: urlResult.status,
+            attempts: urlResult.attempt,
+            error: urlResult.error
+          };
+        } else if (mailtoLink) {
+          const emailResult = await sendUnsubscribeEmail(gmail, mailtoLink, userEmail);
+          result = {
+            ...result,
+            success: emailResult.success,
+            method: 'EMAIL',
+            mailto: mailtoLink,
+            error: emailResult.error
+          };
+        } else {
+          result.reason = 'Không có URL hợp lệ để hủy đăng ký';
+        }
+
+        results.push(result);
+
+      } catch (error) {
+        results.push({
+          messageId: msgId,
+          success: false,
+          error: error.message,
+          reason: 'Lỗi khi xử lý email'
+        });
       }
     }
 
-    res.json({ message: '✅ Đã xử lý hủy đăng ký' });
+    const successCount = results.filter(r => r.success).length;
+    const totalCount = results.length;
+
+    res.json({
+      message: `Đã xử lý ${successCount}/${totalCount} yêu cầu hủy đăng ký`,
+      results,
+      summary: {
+        total: totalCount,
+        success: successCount,
+        failed: totalCount - successCount
+      }
+    });
+
   } catch (err) {
-    console.error('❌ Lỗi khi hủy:', err);
-    res.status(500).json({ message: 'Hủy đăng ký thất bại' });
+    console.error('❌ Lỗi khi hủy đăng ký:', err);
+    
+    // Handle specific token errors
+    if (err.message.includes('Token') || err.message.includes('refresh')) {
+      return res.status(401).json({ 
+        message: 'Authentication failed',
+        error: 'Please reconnect your Gmail account',
+        details: err.message,
+        results 
+      });
+    }
+    
+    res.status(500).json({ 
+      message: 'Hủy đăng ký thất bại',
+      error: err.message,
+      results 
+    });
+  }
+}
+
+// New endpoint to check token status
+export async function checkTokenStatus(req, res) {
+  const userEmail = req.query.email || 'hung97vu@gmail.com'; // TODO: Get from auth
+  
+  try {
+    const expiryCheck = await checkTokenExpiry(userEmail);
+    
+    res.json({
+      email: userEmail,
+      tokenStatus: expiryCheck,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }

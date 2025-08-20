@@ -30,19 +30,28 @@ export default function SubscriptionList({ subs }) {
     if (selected.length === 0) return;
     setLoading(true);
     try {
-      await axios.post(
+      const response = await axios.post(
         `${API_URL}/email/gmail/unsubscribe`,
-        { emails: selected },
+        { 
+          emails: selected,
+          userEmail: "hung97vu@gmail.com" // TODO: Get from user context/auth
+        },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
-      alert("✅ Đã gửi yêu cầu hủy các bản tin.");
+      
+      const { message, summary } = response.data;
+      alert(`${message}\n✅ Thành công: ${summary.success}\n❌ Thất bại: ${summary.failed}`);
+      
+      // Reset selection after successful unsubscribe
+      setSelected([]);
     } catch (err) {
       console.error("❌ Lỗi unsubscribe:", err);
-      alert("Hủy đăng ký thất bại.");
+      const errorMessage = err.response?.data?.message || "Hủy đăng ký thất bại.";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -92,7 +101,6 @@ export default function SubscriptionList({ subs }) {
 
 function EmailCard({ item, isSelected, onToggle }) {
   const [expanded, setExpanded] = useState(false);
-
   const link = sanitizeUnsubscribeLink(item.unsubscribe);
 
   return (
@@ -107,6 +115,7 @@ function EmailCard({ item, isSelected, onToggle }) {
         display: "flex",
         gap: "12px",
         alignItems: "flex-start",
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
       }}
     >
       <input
@@ -116,7 +125,7 @@ function EmailCard({ item, isSelected, onToggle }) {
         style={{ marginTop: "6px" }}
       />
 
-      <div>
+      <div style={{ flex: 1 }}>
         <p style={{ fontSize: "14px", color: "#333", marginBottom: "4px" }}>
           <strong style={{ color: "#1d4ed8" }}>Người gửi:</strong> {item.from}
         </p>
@@ -136,6 +145,38 @@ function EmailCard({ item, isSelected, onToggle }) {
           </a>
         ) : (
           <p style={{ fontSize: "14px", color: "#888" }}>🚫 Không có link hủy</p>
+        )}
+
+        {item.body && (
+          <div style={{ marginTop: "12px", fontSize: "14px", color: "#333" }}>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#1d4ed8",
+                cursor: "pointer",
+                padding: 0,
+                marginBottom: "8px",
+              }}
+            >
+              {expanded ? "🔼 Thu gọn nội dung" : "🔽 Xem nội dung"}
+            </button>
+
+            {expanded && (
+              <div
+                style={{
+                  maxHeight: "400px",
+                  overflowY: "auto",
+                  border: "1px solid #eee",
+                  padding: "8px",
+                  backgroundColor: "#fafafa",
+                  borderRadius: "4px",
+                }}
+                dangerouslySetInnerHTML={{ __html: item.body }}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>

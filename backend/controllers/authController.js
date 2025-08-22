@@ -15,14 +15,14 @@ const oauth2Client = new google.auth.OAuth2(
 export function authGoogle(req, res) {
   // sinh CSRF token & set cookie
   const state = makeStateCookie(res);
-  
+
   // Lưu redirect URL vào session cookie nếu có
   const redirectBack = req.query.redirect;
   if (redirectBack) {
     res.cookie('oauth_redirect', redirectBack, {
       maxAge: 10 * 60 * 1000, // 10 minutes
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: 'lax',
     });
   }
 
@@ -30,7 +30,7 @@ export function authGoogle(req, res) {
     access_type: 'offline',
     prompt: 'consent',
     scope: ['https://www.googleapis.com/auth/gmail.readonly'],
-    state
+    state,
   });
   // redirect tới trang Google OAuth
   res.redirect(url);
@@ -53,12 +53,16 @@ export async function googleCallback(req, res) {
 
   // 4️⃣ Lưu tokens + tạo JWT trả về
   await saveTokens(profile.emailAddress, tokens);
-  const jwtToken = jwt.sign({ email: profile.emailAddress }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const jwtToken = jwt.sign(
+    { email: profile.emailAddress },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
 
   // 5️⃣ Kiểm tra có redirect URL không, nếu không thì về /chat
   const redirectUrl = req.cookies.oauth_redirect || '/chat';
   res.clearCookie('oauth_redirect');
-  
+
   // Thêm token vào URL và redirect về trang được yêu cầu
   const separator = redirectUrl.includes('?') ? '&' : '?';
   res.redirect(`${redirectUrl}${separator}token=${jwtToken}`);
@@ -99,11 +103,16 @@ export async function register(req, res) {
  */
 export async function login(req, res) {
   const { email, password } = req.body;
-  const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+  const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [
+    email,
+  ]);
   const user = rows[0];
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ message: 'Login failed' });
   }
-  const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
+  const token = jwt.sign(
+    { id: user.id, role: user.role },
+    process.env.JWT_SECRET
+  );
   res.json({ token, role: user.role, id: user.id });
 }

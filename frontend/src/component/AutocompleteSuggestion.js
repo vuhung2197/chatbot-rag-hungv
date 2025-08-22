@@ -3,7 +3,13 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
-export default function AutocompleteSuggestion({ value, onChange, onSelect, onEnterKey, disabled }) {
+export default function AutocompleteSuggestion({
+  value,
+  onChange,
+  onSelect,
+  onEnterKey,
+  disabled,
+}) {
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [highlight, setHighlight] = useState(-1);
@@ -43,7 +49,7 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
     return () => clearTimeout(debounceTimeout.current);
   }, [value, isSelected]);
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = e => {
     if (showDropdown && suggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -73,15 +79,17 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
   };
 
   return (
-    <div style={{
-      position: 'relative',
-      display: 'flex',
-      alignItems: 'center',
-      width: '100%',
-      background: '#fff',
-      borderRadius: '1em',
-      border: '1px solid #bcbcbc'
-    }}>
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+        background: '#fff',
+        borderRadius: '1em',
+        border: '1px solid #bcbcbc',
+      }}
+    >
       <input
         ref={inputRef}
         style={{
@@ -95,7 +103,7 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
           outline: 'none',
         }}
         value={value}
-        placeholder="Nhập từ hoặc câu hỏi..."
+        placeholder='Nhập từ hoặc câu hỏi...'
         onChange={e => {
           onChange(e.target.value);
           setHighlight(-1);
@@ -106,7 +114,7 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
         }}
         onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
         onKeyDown={handleKeyDown}
-        autoComplete="off"
+        autoComplete='off'
         disabled={disabled}
       />
       {/* Nút gửi là mũi tên, bấm gọi onEnterKey */}
@@ -130,46 +138,56 @@ export default function AutocompleteSuggestion({ value, onChange, onSelect, onEn
           fontSize: '1.3em',
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.5 : 1,
-          boxShadow: '0 2px 8px #d2d2ff44'
+          boxShadow: '0 2px 8px #d2d2ff44',
         }}
         tabIndex={-1}
-        title="Gửi"
+        title='Gửi'
       >
-        <svg width="22" height="22" viewBox="0 0 20 20"
-          fill="none">
-          <path d="M10 16V4M10 4L4 10M10 4l6 6" stroke="white" strokeWidth="2"
-            strokeLinecap="round" strokeLinejoin="round"/>
+        <svg width='22' height='22' viewBox='0 0 20 20' fill='none'>
+          <path
+            d='M10 16V4M10 4L4 10M10 4l6 6'
+            stroke='white'
+            strokeWidth='2'
+            strokeLinecap='round'
+            strokeLinejoin='round'
+          />
         </svg>
       </button>
       {showDropdown && suggestions.length > 0 && (
-        <ul style={{
-          listStyle: 'none',
-          padding: 0,
-          margin: 0,
-          background: '#fff',
-          border: '1px solid #bcbcbc',
-          borderRadius: '0 0 8px 8px',
-          position: 'absolute',
-          left: 0,
-          width: '100%',
-          top: '44px',
-          zIndex: 10,
-          maxHeight: 180,
-          overflowY: 'auto'
-        }}>
-          {suggestions.map((word, idx) =>
-            <li key={idx}
+        <ul
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+            background: '#fff',
+            border: '1px solid #bcbcbc',
+            borderRadius: '0 0 8px 8px',
+            position: 'absolute',
+            left: 0,
+            width: '100%',
+            top: '44px',
+            zIndex: 10,
+            maxHeight: 180,
+            overflowY: 'auto',
+          }}
+        >
+          {suggestions.map((word, idx) => (
+            <li
+              key={idx}
               onClick={() => handleSelect(word)}
               style={{
                 padding: '8px 16px',
                 cursor: 'pointer',
                 background: highlight === idx ? '#e4e7ff' : '#fff',
                 color: highlight === idx ? '#5223a7' : '#222',
-                borderBottom: idx === suggestions.length - 1 ? 'none' : '1px solid #f2f2f2'
+                borderBottom:
+                  idx === suggestions.length - 1 ? 'none' : '1px solid #f2f2f2',
               }}
               onMouseEnter={() => setHighlight(idx)}
-            >{word}</li>
-          )}
+            >
+              {word}
+            </li>
+          ))}
         </ul>
       )}
     </div>

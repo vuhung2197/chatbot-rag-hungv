@@ -15,8 +15,8 @@ export default function FileUploader() {
 
     const res = await axios.post(`${API_URL}/upload`, formData, {
       headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+        'Content-Type': 'multipart/form-data',
+      },
     });
 
     const data = res.data;
@@ -25,10 +25,19 @@ export default function FileUploader() {
   };
 
   return (
-    <div style={{ margin: '1em 0', padding: '1em', border: '1px solid #ccc', borderRadius: 8 }}>
+    <div
+      style={{
+        margin: '1em 0',
+        padding: '1em',
+        border: '1px solid #ccc',
+        borderRadius: 8,
+      }}
+    >
       <h3>📄 Tải file để huấn luyện</h3>
-      <input type="file" onChange={e => setFile(e.target.files[0])} />
-      <button onClick={handleUpload} style={{ marginLeft: 10 }}>Upload</button>
+      <input type='file' onChange={e => setFile(e.target.files[0])} />
+      <button onClick={handleUpload} style={{ marginLeft: 10 }}>
+        Upload
+      </button>
       {msg && <p>{msg}</p>}
     </div>
   );

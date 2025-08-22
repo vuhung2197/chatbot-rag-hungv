@@ -32,7 +32,8 @@ export async function approve(req, res) {
   const { id } = req.body;
   // Lấy dữ liệu góp ý
   const [feedbackRows] = await pool.execute(
-    'SELECT message, suggested_reply FROM feedbacks WHERE id = ?', [id]
+    'SELECT message, suggested_reply FROM feedbacks WHERE id = ?',
+    [id]
   );
   if (feedbackRows.length === 0) {
     return res.status(404).json({ message: 'Không tìm thấy góp ý!' });
@@ -41,7 +42,8 @@ export async function approve(req, res) {
   const { message, suggested_reply } = feedbackRows[0];
 
   const [exist] = await pool.execute(
-    'SELECT id FROM dictionary WHERE word_en = ?', [message.trim().toLowerCase()]
+    'SELECT id FROM dictionary WHERE word_en = ?',
+    [message.trim().toLowerCase()]
   );
   if (exist.length === 0) {
     // Nếu chưa có thì lưu vào dictionary (bạn bổ sung type/example nếu muốn)
@@ -53,7 +55,8 @@ export async function approve(req, res) {
 
   // Duyệt góp ý (cập nhật trạng thái)
   const [result] = await pool.execute(
-    'UPDATE feedbacks SET approved = 1 WHERE id = ?', [id]
+    'UPDATE feedbacks SET approved = 1 WHERE id = ?',
+    [id]
   );
 
   // Nếu FE muốn xóa khỏi giao diện thì trả message phù hợp về cho FE
@@ -63,4 +66,3 @@ export async function approve(req, res) {
     res.status(404).json({ message: 'Không tìm thấy góp ý!' });
   }
 }
-

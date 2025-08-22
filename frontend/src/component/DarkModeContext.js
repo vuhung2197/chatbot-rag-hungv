@@ -3,8 +3,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const DarkModeContext = createContext();
 
 export function DarkModeProvider({ children }) {
-  const [darkMode, setDarkMode] = useState(() =>
-    localStorage.getItem('darkMode') === 'true'
+  const [darkMode, setDarkMode] = useState(
+    () => localStorage.getItem('darkMode') === 'true'
   );
 
   function toggleDarkMode() {
@@ -16,7 +16,9 @@ export function DarkModeProvider({ children }) {
 
   useEffect(() => {
     document.body.style.background = darkMode ? '#23272f' : '#fff';
-    return () => { document.body.style.background = ''; };
+    return () => {
+      document.body.style.background = '';
+    };
   }, [darkMode]);
 
   return (
@@ -30,7 +32,7 @@ export function DarkModeProvider({ children }) {
           color: darkMode ? '#fafafa' : '#222',
           minHeight: '100vh',
           position: 'relative',
-          transition: 'background 0.3s, color 0.3s'
+          transition: 'background 0.3s, color 0.3s',
         }}
       >
         {children}

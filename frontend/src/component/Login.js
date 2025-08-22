@@ -14,7 +14,7 @@ export default function Login({ onLogin }) {
     try {
       const res = await axios.post(`${API_URL}/auth/login`, {
         email,
-        password
+        password,
       });
       const data = res.data;
       if (res.status === 200) {
@@ -31,14 +31,44 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <form onSubmit={handleLogin} style={{ background: '#fff', padding: 24, borderRadius: 12, boxShadow: '0 2px 12px #ccc' }}>
+    <form
+      onSubmit={handleLogin}
+      style={{
+        background: '#fff',
+        padding: 24,
+        borderRadius: 12,
+        boxShadow: '0 2px 12px #ccc',
+      }}
+    >
       <h2 style={{ marginBottom: 16, color: '#333' }}>🔐 Đăng nhập</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email"
-        required style={{ width: '100%', marginBottom: 12, padding: 8 }} />
-      <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-        placeholder="Mật khẩu" required style={{ width: '100%', marginBottom: 16, padding: 8 }} />
-      <button type="submit" style={{ padding: '8px 16px', background: '#7137ea', color: '#fff', border: 'none', borderRadius: 6 }}>Đăng nhập</button>
+      <input
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder='Email'
+        required
+        style={{ width: '100%', marginBottom: 12, padding: 8 }}
+      />
+      <input
+        type='password'
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder='Mật khẩu'
+        required
+        style={{ width: '100%', marginBottom: 16, padding: 8 }}
+      />
+      <button
+        type='submit'
+        style={{
+          padding: '8px 16px',
+          background: '#7137ea',
+          color: '#fff',
+          border: 'none',
+          borderRadius: 6,
+        }}
+      >
+        Đăng nhập
+      </button>
     </form>
   );
 }

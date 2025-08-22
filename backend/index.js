@@ -34,4 +34,6 @@ app.use('/email', emailRoutes);
 app.use(errorHandler);
 
 const PORT = 3001;
-app.listen(PORT, () => console.log(`Backend running at http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Backend running at http://localhost:${PORT}`)
+);

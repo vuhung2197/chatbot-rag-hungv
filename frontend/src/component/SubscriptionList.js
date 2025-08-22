@@ -26,9 +26,9 @@ export default function SubscriptionList({ subs, authError }) {
   );
   const [verifying, setVerifying] = useState(false);
 
-  const toggleSelect = (id) => {
-    setSelected((prev) =>
-      prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]
+  const toggleSelect = id => {
+    setSelected(prev =>
+      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
     );
   };
 
@@ -67,8 +67,7 @@ export default function SubscriptionList({ subs, authError }) {
       // Phân tích lỗi từ backend
       const status = err.response?.status;
       const code = err.response?.data?.code || err.code;
-      const msg =
-        err.response?.data?.message || 'Hủy đăng ký thất bại.';
+      const msg = err.response?.data?.message || 'Hủy đăng ký thất bại.';
 
       // Nếu token Google hết hạn → bật banner + nút xác thực
       // Bạn có thể chuẩn hóa theo code backend, ví dụ: GOOGLE_TOKEN_EXPIRED
@@ -108,7 +107,7 @@ export default function SubscriptionList({ subs, authError }) {
 
         {/* Auth needed banner */}
         <div
-          role="alert"
+          role='alert'
           style={{
             backgroundColor: '#FEF3C7',
             border: '1px solid #F59E0B',
@@ -122,9 +121,7 @@ export default function SubscriptionList({ subs, authError }) {
           <div style={{ marginBottom: '12px' }}>
             <strong>⚠️ Cần xác thực Google</strong>
           </div>
-          <p style={{ marginBottom: '16px' }}>
-            {authError.message}
-          </p>
+          <p style={{ marginBottom: '16px' }}>{authError.message}</p>
           <button
             onClick={handleVerifyGoogle}
             disabled={verifying}
@@ -170,7 +167,7 @@ export default function SubscriptionList({ subs, authError }) {
       {/* NEW: Banner yêu cầu xác thực lại */}
       {authNeeded && (
         <div
-          role="alert"
+          role='alert'
           style={{
             backgroundColor: '#FEF3C7',
             border: '1px solid #F59E0B',
@@ -236,13 +233,13 @@ export default function SubscriptionList({ subs, authError }) {
             border: 'none',
             cursor: 'pointer',
           }}
-          title="Nếu gặp lỗi hết hạn token, bấm để xác thực lại Google"
+          title='Nếu gặp lỗi hết hạn token, bấm để xác thực lại Google'
         >
           {verifying ? 'Đang chuyển hướng...' : '🔐 Xác thực lại Google'}
         </button>
       </div>
 
-      {subs.map((item) => (
+      {subs.map(item => (
         <EmailCard
           key={item.id}
           item={item}
@@ -274,7 +271,7 @@ function EmailCard({ item, isSelected, onToggle }) {
       }}
     >
       <input
-        type="checkbox"
+        type='checkbox'
         checked={isSelected}
         onChange={onToggle}
         style={{ marginTop: '6px' }}
@@ -292,8 +289,8 @@ function EmailCard({ item, isSelected, onToggle }) {
         {item.unsubscribe ? (
           <a
             href={link}
-            target="_blank"
-            rel="noopener noreferrer"
+            target='_blank'
+            rel='noopener noreferrer'
             style={{
               fontSize: '14px',
               color: '#dc2626',
@@ -303,7 +300,9 @@ function EmailCard({ item, isSelected, onToggle }) {
             ❌ Hủy đăng ký thủ công
           </a>
         ) : (
-          <p style={{ fontSize: '14px', color: '#888' }}>🚫 Không có link hủy</p>
+          <p style={{ fontSize: '14px', color: '#888' }}>
+            🚫 Không có link hủy
+          </p>
         )}
 
         {item.body && (

@@ -5,7 +5,7 @@ import {
   updateKnowledge,
   deleteKnowledge,
   getKnowledgeById,
-  getChunksByKnowledgeId
+  getChunksByKnowledgeId,
 } from '../controllers/knowledgeController.js';
 
 const router = express.Router();

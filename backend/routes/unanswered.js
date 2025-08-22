@@ -1,5 +1,8 @@
 import express from 'express';
-import { getUnansweredQuestions, deleteUnanswered } from '../controllers/unansweredController.js';
+import {
+  getUnansweredQuestions,
+  deleteUnanswered,
+} from '../controllers/unansweredController.js';
 
 const router = express.Router();
 

@@ -1,6 +1,10 @@
 import express from 'express';
 // import { verifyToken } from "../middlewares/authMiddleware.js";
-import { getEmail, unsubscribeSelected, checkTokenStatus } from '../controllers/emailController.js';
+import {
+  getEmail,
+  unsubscribeSelected,
+  checkTokenStatus,
+} from '../controllers/emailController.js';
 
 const router = express.Router();
 

@@ -7,7 +7,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || '123456',
   database: process.env.DB_DATABASE || 'chatbot',
   port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
 });
 
 export default pool;

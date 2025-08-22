@@ -46,15 +46,15 @@ export async function translateSingleWord(word) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: prompt }],
       max_tokens: 100,
       temperature: 0.3,
     });
     return completion.choices[0].message.content.trim();
   } catch (err) {
-    console.error("OpenAI error:", err.response ? err.response.data : err);
-    return "(lỗi)";
+    console.error('OpenAI error:', err.response ? err.response.data : err);
+    return '(lỗi)';
   }
 }
 
@@ -144,13 +144,13 @@ export async function callLLM(model, messages, temperature = 0.2, maxTokens = 51
  * @param {string} model - Tên model AI muốn sử dụng (mặc định: 'gpt-4o')
  * @returns {Promise<string>} - Nội dung trả lời của AI
  */
-export async function askChatGPT(question, context, systemPrompt = "Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.", model) {
+export async function askChatGPT(question, context, systemPrompt = 'Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.', model) {
   const mapping = {};
 
   // Mask thông tin nhạy cảm trong câu hỏi
   const maskedQuestion = maskSensitiveInfo(question, mapping);
 
-  let prompt = "";
+  let prompt = '';
   if (context && context.trim().length > 0) {
     // Có context → dạng RAG hoặc context-based
     const maskedContext = maskSensitiveInfo(context, mapping);

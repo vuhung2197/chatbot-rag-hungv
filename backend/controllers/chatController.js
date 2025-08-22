@@ -1,10 +1,10 @@
-import pool from "../db.js";
-import { askChatGPT } from "../rules.js";
-import { getEmbedding } from "../services/embeddingVector.js";
-import { selectRelevantContexts } from "../services/scoreContext.js";
-import { retrieveTopChunks } from "../services/rag_retrieve.js";
-import { hashQuestion } from "../utils/hash.js";
-import { StatusCodes } from "http-status-codes";
+import pool from '../db.js';
+import { askChatGPT } from '../rules.js';
+import { getEmbedding } from '../services/embeddingVector.js';
+import { selectRelevantContexts } from '../services/scoreContext.js';
+import { retrieveTopChunks } from '../services/rag_retrieve.js';
+import { hashQuestion } from '../utils/hash.js';
+import { StatusCodes } from 'http-status-codes';
 import '../bootstrap/env.js';
 
 /**
@@ -26,7 +26,7 @@ function toMarkdown(text) {
     const firstSentence = sentences.shift();
     markdown += `**${firstSentence.trim()}**\n\n`;
     if (sentences.length) {
-      markdown += sentences.join(' ') + '\n\n';
+      markdown += `${sentences.join(' ')  }\n\n`;
     }
   }
 
@@ -70,20 +70,20 @@ function toMarkdown(text) {
  * @param {object} res - Đối tượng response Express
  */
 export async function chat(req, res) {
-  const { message, mode = "embedding", model } = req.body;
+  const { message, mode = 'embedding', model } = req.body;
   const userId = req.user?.id;
 
-  if (!message) return res.status(StatusCodes.BAD_REQUEST).json({ reply: "No message!" });
+  if (!message) return res.status(StatusCodes.BAD_REQUEST).json({ reply: 'No message!' });
 
   try {
-    let context = "";
+    let context = '';
     let isAnswered = true;
-    let systemPrompt = "Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.";
+    let systemPrompt = 'Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.';
 
-    if (mode === "context") {
+    if (mode === 'context') {
       // 📌 Truy xuất ngữ cảnh dựa trên keyword
-      const [rows] = await pool.execute("SELECT * FROM knowledge_base");
-      const [kwRows] = await pool.execute("SELECT keyword FROM important_keywords");
+      const [rows] = await pool.execute('SELECT * FROM knowledge_base');
+      const [kwRows] = await pool.execute('SELECT keyword FROM important_keywords');
       const importantKeywords = kwRows.map(r => r.keyword);
 
       const contexts = selectRelevantContexts(message, rows, importantKeywords);
@@ -92,20 +92,20 @@ export async function chat(req, res) {
         await logUnanswered(message);
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            'INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)',
             [userId, message, false, mode]
           );
         }
-        return res.json({ reply: "Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
+        return res.json({ reply: 'Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.' });
       }
 
-      context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
+      context = contexts.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join('\n---\n');
 
-    } else if (mode === "direct") {
-      systemPrompt = "Bạn là một trợ lý AI thông minh, hãy trả lời câu hỏi một cách ngắn gọn, chính xác, dễ hiểu, có thể tham khảo các hội thoại gần đây.";
+    } else if (mode === 'direct') {
+      systemPrompt = 'Bạn là một trợ lý AI thông minh, hãy trả lời câu hỏi một cách ngắn gọn, chính xác, dễ hiểu, có thể tham khảo các hội thoại gần đây.';
 
       // 🔁 Thêm lịch sử hội thoại gần nhất của user
-      let historyContext = "";
+      let historyContext = '';
       if (userId) {
         const [historyRows] = await pool.execute(
           `SELECT question, bot_reply FROM user_questions 
@@ -117,11 +117,11 @@ export async function chat(req, res) {
         if (historyRows.length) {
           historyContext = historyRows
             .map(r => `Người dùng: ${r.question}\nBot: ${r.bot_reply}`)
-            .join("\n\n");
+            .join('\n\n');
         }
       }
 
-      context = historyContext ? `Lịch sử hội thoại:\n${historyContext}` : "";
+      context = historyContext ? `Lịch sử hội thoại:\n${historyContext}` : '';
     } else {
       // 📚 Mặc định là embedding (RAG)
       let embedding;
@@ -131,11 +131,11 @@ export async function chat(req, res) {
         isAnswered = false;
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            'INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)',
             [userId, message, false, mode]
           );
         }
-        return res.json({ reply: "Không thể tính embedding câu hỏi!" });
+        return res.json({ reply: 'Không thể tính embedding câu hỏi!' });
       }
 
       const chunks = await retrieveTopChunks(embedding);
@@ -144,26 +144,26 @@ export async function chat(req, res) {
         await logUnanswered(message);
         if (userId) {
           await pool.execute(
-            "INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)",
+            'INSERT INTO user_questions (user_id, question, is_answered, mode) VALUES (?, ?, ?, ?)',
             [userId, message, false, mode]
           );
         }
-        return res.json({ reply: "Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này." });
+        return res.json({ reply: 'Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.' });
       }
 
-      context = chunks.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join("\n---\n");
+      context = chunks.map(c => `Tiêu đề: ${c.title}\nNội dung: ${c.content}`).join('\n---\n');
     }
 
     // 🧠 Gọi GPT
     const t0 = Date.now();
     const reply = await askChatGPT(message, context, systemPrompt, model);
     const t1 = Date.now();
-    console.log("⏱️ Thời gian gọi OpenAI:", (t1 - t0), "ms");
+    console.log('⏱️ Thời gian gọi OpenAI:', (t1 - t0), 'ms');
 
     // ✅ Ghi lịch sử
     if (userId) {
       await pool.execute(
-        "INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)",
+        'INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)',
         [userId, message, reply, isAnswered]
       );
     }
@@ -171,8 +171,8 @@ export async function chat(req, res) {
     res.json({ reply: toMarkdown(reply) });
 
   } catch (err) {
-    console.error("❌ Lỗi xử lý:", err);
-    res.json({ reply: "Bot đang bận, vui lòng thử lại sau!" });
+    console.error('❌ Lỗi xử lý:', err);
+    res.json({ reply: 'Bot đang bận, vui lòng thử lại sau!' });
   }
 }
 
@@ -185,17 +185,17 @@ async function logUnanswered(question) {
   try {
     const hash = hashQuestion(question);
     const [rows] = await pool.execute(
-      "SELECT 1 FROM unanswered_questions WHERE hash = ? LIMIT 1",
+      'SELECT 1 FROM unanswered_questions WHERE hash = ? LIMIT 1',
       [hash]
     );
     if (rows.length === 0) {
       await pool.execute(
-        "INSERT INTO unanswered_questions (question, hash, created_at) VALUES (?, ?, NOW())",
+        'INSERT INTO unanswered_questions (question, hash, created_at) VALUES (?, ?, NOW())',
         [question, hash]
       );
     }
   } catch (e) {
-    console.warn("⚠️ Không thể ghi log unanswered:", e.message);
+    console.warn('⚠️ Không thể ghi log unanswered:', e.message);
   }
 }
 
@@ -208,7 +208,7 @@ async function logUnanswered(question) {
 export async function history(req, res) {
   const userId = req.user?.id;
 
-  if (!userId) return res.status(StatusCodes.UNAUTHORIZED).json({ error: "Chưa đăng nhập" });
+  if (!userId) return res.status(StatusCodes.UNAUTHORIZED).json({ error: 'Chưa đăng nhập' });
 
   try {
     const [rows] = await pool.execute(
@@ -221,8 +221,8 @@ export async function history(req, res) {
     );
     res.json(rows);
   } catch (err) {
-    console.error("❌ Lỗi khi lấy lịch sử câu hỏi:", err);
-    res.status(500).json({ error: "Lỗi server" });
+    console.error('❌ Lỗi khi lấy lịch sử câu hỏi:', err);
+    res.status(500).json({ error: 'Lỗi server' });
   }
 }
 
@@ -236,7 +236,7 @@ export async function suggest(req, res) {
   const query = req.query.query?.trim().toLowerCase();
   if (!query) return res.json([]);
   const [rows] = await pool.execute(
-      "SELECT DISTINCT word_en FROM dictionary WHERE word_en LIKE ? ORDER BY word_en LIMIT 10",
+      'SELECT DISTINCT word_en FROM dictionary WHERE word_en LIKE ? ORDER BY word_en LIMIT 10',
       [`${query}%`]
   );
   res.json(rows.map(row => row.word_en));
@@ -253,22 +253,22 @@ export async function deleteHistoryItem(req, res) {
   const userId = req.user.id;
 
   if (!id || !userId) {
-    return res.status(400).json({ message: "Thiếu ID hoặc thông tin người dùng." });
+    return res.status(400).json({ message: 'Thiếu ID hoặc thông tin người dùng.' });
   }
 
   try {
     const [result] = await pool.execute(
-      "DELETE FROM user_questions WHERE id = ? AND user_id = ?",
+      'DELETE FROM user_questions WHERE id = ? AND user_id = ?',
       [id, userId]
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Không tìm thấy câu hỏi hoặc không có quyền xóa." });
+      return res.status(404).json({ message: 'Không tìm thấy câu hỏi hoặc không có quyền xóa.' });
     }
 
-    return res.json({ message: "Đã xóa thành công." });
+    return res.json({ message: 'Đã xóa thành công.' });
   } catch (error) {
-    console.error("❌ Lỗi khi xóa câu hỏi:", error);
-    return res.status(500).json({ message: "Lỗi server." });
+    console.error('❌ Lỗi khi xóa câu hỏi:', error);
+    return res.status(500).json({ message: 'Lỗi server.' });
   }
 };

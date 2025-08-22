@@ -6,10 +6,10 @@
  */
 function normalizeText(text) {
   return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ");
+    .replace(/[^a-z0-9\s]/g, ' ');
 }
 
 /**
@@ -70,7 +70,7 @@ function scoreContext(question, context, title, questionKeywords, importantKeywo
  */
 export function selectRelevantContexts(message, allKnowledge, importantKeywords, topN = 3) {
   const normQ = normalizeText(message);
-  const questionKeywords = normQ.split(" ").filter(w => w.length > 2);
+  const questionKeywords = normQ.split(' ').filter(w => w.length > 2);
 
   const scored = allKnowledge
     .map(k => ({

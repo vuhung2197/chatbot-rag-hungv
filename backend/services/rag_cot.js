@@ -1,5 +1,5 @@
 import '../bootstrap/env.js'; // Đảm bảo biến môi trường được nạp
-import OpenAI from "openai";
+import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -11,7 +11,7 @@ const openai = new OpenAI({
 function generatePromptCoT(userQuestion, contextChunks) {
   const contextText = contextChunks
     .map((chunk, i) => `Đoạn ${i + 1}:\n${chunk}`)
-    .join("\n\n");
+    .join('\n\n');
 
   return `
   Bạn là một trợ lý AI thông minh.
@@ -37,8 +37,8 @@ function generatePromptCoT(userQuestion, contextChunks) {
  */
 async function callGPTWithCoT(prompt) {
   const chatCompletion = await openai.chat.completions.create({
-    model: "gpt-4",
-    messages: [{ role: "user", content: prompt }],
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: prompt }],
     temperature: 0.3,
   });
 

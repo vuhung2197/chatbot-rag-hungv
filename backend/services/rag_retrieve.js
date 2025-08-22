@@ -1,4 +1,4 @@
-import pool from "../db.js";
+import pool from '../db.js';
 
 /**
  * Tính cosine similarity giữa hai vector số.
@@ -21,13 +21,13 @@ const cosineSimilarity = (a, b) => {
  * @returns {Promise<Array>} - Danh sách các chunk phù hợp nhất
  */
 export async function retrieveTopChunks(questionEmbedding, topK = 3) {
-  const [rows] = await pool.execute("SELECT id, title, content, embedding FROM knowledge_chunks");
+  const [rows] = await pool.execute('SELECT id, title, content, embedding FROM knowledge_chunks');
   const scored = rows.map(row => {
     let emb;
     try {
       emb = Array.isArray(row.embedding) ? row.embedding : JSON.parse(row.embedding);
     } catch (err) {
-      console.error("❌ Lỗi parse embedding:", err, "row id:", row.id);
+      console.error('❌ Lỗi parse embedding:', err, 'row id:', row.id);
       emb = null;
     }
 

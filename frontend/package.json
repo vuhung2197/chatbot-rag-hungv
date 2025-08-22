@@ -17,7 +17,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "build": "react-scripts build",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "check": "npm run lint && npm run format"
   },
   "browserslist": {
     "production": [
@@ -30,5 +33,14 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2"
   }
 }

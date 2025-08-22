@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "lint": "eslint . --fix",
+    "format": "prettier --write .",
+    "check": "npm run lint && npm run format",
+    "test:proactive": "node ../test/proactive_refresh_test.js",
+    "test:errors": "node ../test/error_scenarios_test.js",
+    "test:monitor": "node ../test/monitoring_tools.js monitor",
+    "test:report": "node ../test/monitoring_tools.js report",
+    "test:integrity": "node ../test/monitoring_tools.js integrity"
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.21",
@@ -27,5 +35,13 @@
     "pdf-parse": "^1.1.1",
     "sentence-splitter": "^5.0.0"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.33.0",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
+    "globals": "^16.3.0",
+    "prettier": "^3.6.2"
+  }
 }

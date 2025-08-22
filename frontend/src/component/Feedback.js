@@ -41,14 +41,14 @@ function Feedback() {
 
   return (
     <div style={{
-      background: "#fff",
+      background: '#fff',
       borderRadius: 12,
       padding: 20,
-      boxShadow: "0 2px 12px #ddd",
+      boxShadow: '0 2px 12px #ddd',
       maxWidth: 450,
-      margin: "0 auto"
+      margin: '0 auto'
     }}>
-      <h3 style={{ color: "#7137ea" }}>💬 Góp ý cải thiện bot</h3>
+      <h3 style={{ color: '#7137ea' }}>💬 Góp ý cải thiện bot</h3>
       <div>
         <input
           value={message}
@@ -82,24 +82,24 @@ function Feedback() {
         onClick={sendFeedback}
         disabled={!message || !suggested || loading}
         style={{
-          background: "#7137ea",
-          color: "#fff",
-          border: "none",
+          background: '#7137ea',
+          color: '#fff',
+          border: 'none',
           borderRadius: 8,
-          padding: "10px 24px",
+          padding: '10px 24px',
           fontWeight: 600,
-          cursor: (!message || !suggested || loading) ? "not-allowed" : "pointer",
+          cursor: (!message || !suggested || loading) ? 'not-allowed' : 'pointer',
           opacity: (!message || !suggested || loading) ? 0.6 : 1,
           marginTop: 4
         }}
       >
-        {loading ? "Đang gửi..." : "Gửi góp ý"}
+        {loading ? 'Đang gửi...' : 'Gửi góp ý'}
       </button>
       {noti && (
         <div style={{
           color: notiType === 'error' ? '#e84118' : '#44bd32',
           background: notiType === 'error' ? '#fdecec' : '#eafaf1',
-          padding: "9px 15px",
+          padding: '9px 15px',
           borderRadius: 8,
           marginTop: 12,
           fontWeight: 500

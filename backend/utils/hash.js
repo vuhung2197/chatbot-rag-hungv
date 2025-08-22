@@ -1,4 +1,4 @@
-import crypto from "crypto";
+import crypto from 'crypto';
 
 /**
  * Tạo mã băm (hash) MD5 cho một chuỗi văn bản.
@@ -8,7 +8,7 @@ import crypto from "crypto";
  * @returns {string} - Giá trị hash dạng hex
  */
 export function createHash(text) {
-  return crypto.createHash("md5").update(text).digest("hex");
+  return crypto.createHash('md5').update(text).digest('hex');
 }
 
 /**
@@ -17,5 +17,5 @@ export function createHash(text) {
  * @returns {string} - Giá trị hash dạng hex
  */
 export function hashQuestion(text) {
-  return crypto.createHash("sha256").update(text.trim().toLowerCase()).digest("hex");
+  return crypto.createHash('sha256').update(text.trim().toLowerCase()).digest('hex');
 }

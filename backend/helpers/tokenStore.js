@@ -90,26 +90,37 @@ export async function loadTokens(email) {
   if (rows.length === 0) return null;
 
   const row = rows[0];
-  const accessTokenStr = row.tokens_encrypted.toString();
-  const accessTokenData = verifyAndDecode(accessTokenStr);
   
-  const expiryTime = row.access_token_expires_at;
-  const now = new Date();
-  const timeUntilExpiry = expiryTime - now;
-  
-  // Proactive refresh if expiring in less than 60 seconds
-  if (timeUntilExpiry < 60000 && row.refresh_token_encrypted) {
-    console.log(`🔄 Token expires in ${Math.floor(timeUntilExpiry/1000)}s, refreshing proactively...`);
-    return await refreshAccessToken(email);
+  try {
+    const accessTokenStr = row.tokens_encrypted.toString();
+    const accessTokenData = verifyAndDecode(accessTokenStr);
+    
+    const expiryTime = row.access_token_expires_at;
+    const now = new Date();
+    const timeUntilExpiry = expiryTime - now;
+    
+    // Proactive refresh if expiring in less than 60 seconds
+    if (timeUntilExpiry < 60000 && row.refresh_token_encrypted) {
+      console.log(`🔄 Token expires in ${Math.floor(timeUntilExpiry/1000)}s, refreshing proactively...`);
+      return await refreshAccessToken(email);
+    }
+    
+    // Return existing token if still valid
+    return {
+      access_token: accessTokenData.access_token,
+      scope: accessTokenData.scope,
+      token_type: accessTokenData.token_type,
+      expires_at: expiryTime
+    };
+  } catch (error) {
+    console.error(`❌ Token decode error for ${email}:`, error.message);
+    console.log('🗑️ Cleaning up corrupted token data...');
+    
+    // Clean up corrupted token data
+    await pool.execute('DELETE FROM google_tokens WHERE email = ?', [email]);
+    
+    throw new Error('Token data corrupted. Please re-authenticate via /auth/google');
   }
-  
-  // Return existing token if still valid
-  return {
-    access_token: accessTokenData.access_token,
-    scope: accessTokenData.scope,
-    token_type: accessTokenData.token_type,
-    expires_at: expiryTime
-  };
 }
 
 export async function refreshAccessToken(email) {

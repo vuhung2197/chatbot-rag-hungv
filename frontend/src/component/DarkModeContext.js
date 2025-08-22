@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const DarkModeContext = createContext();
 
@@ -15,8 +15,8 @@ export function DarkModeProvider({ children }) {
   }
 
   useEffect(() => {
-    document.body.style.background = darkMode ? "#23272f" : "#fff";
-    return () => { document.body.style.background = ""; };
+    document.body.style.background = darkMode ? '#23272f' : '#fff';
+    return () => { document.body.style.background = ''; };
   }, [darkMode]);
 
   return (
@@ -26,11 +26,11 @@ export function DarkModeProvider({ children }) {
           maxWidth: 600,
           margin: '30px auto',
           fontFamily: 'sans-serif',
-          background: darkMode ? "#23272f" : "#fff",
-          color: darkMode ? "#fafafa" : "#222",
-          minHeight: "100vh",
-          position: "relative",
-          transition: "background 0.3s, color 0.3s"
+          background: darkMode ? '#23272f' : '#fff',
+          color: darkMode ? '#fafafa' : '#222',
+          minHeight: '100vh',
+          position: 'relative',
+          transition: 'background 0.3s, color 0.3s'
         }}
       >
         {children}

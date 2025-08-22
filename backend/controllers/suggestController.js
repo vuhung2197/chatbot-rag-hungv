@@ -1,5 +1,5 @@
 import '../bootstrap/env.js';
-import axios from "axios";
+import axios from 'axios';
 
 /**
  * Gợi ý từ tiếp theo cho người dùng dựa trên prompt đã nhập.
@@ -10,14 +10,14 @@ import axios from "axios";
  */
 export async function suggestNextWord(req, res) {
   const { prompt } = req.body;
-  if (!prompt || typeof prompt !== "string") return res.json({ suggest: "" });
+  if (!prompt || typeof prompt !== 'string') return res.json({ suggest: '' });
 
   try {
     const openaiRes = await axios.post(
-      "https://api.openai.com/v1/completions",
+      'https://api.openai.com/v1/completions',
       {
-        model: "gpt-3.5-turbo-instruct",
-        prompt: prompt,
+        model: 'gpt-3.5-turbo-instruct',
+        prompt,
         max_tokens: 3,
         temperature: 0.7,
         logprobs: 5,
@@ -36,6 +36,6 @@ export async function suggestNextWord(req, res) {
     res.json({ suggest: text });
   } catch (err) {
     console.error(err.response?.data || err);
-    res.json({ suggest: "" });
+    res.json({ suggest: '' });
   }
 };

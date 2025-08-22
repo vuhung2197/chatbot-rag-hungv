@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from 'axios';
 import '../bootstrap/env.js'; // Đảm bảo biến môi trường được nạp
 
 /**
@@ -10,8 +10,8 @@ import '../bootstrap/env.js'; // Đảm bảo biến môi trường được n�
 export async function getEmbedding(text) {
   const apiKey = process.env.OPENAI_API_KEY;
   const response = await axios.post(
-    "https://api.openai.com/v1/embeddings",
-    { input: text, model: "text-embedding-3-small" },
+    'https://api.openai.com/v1/embeddings',
+    { input: text, model: 'text-embedding-3-small' },
     { headers: { Authorization: `Bearer ${apiKey}` } }
   );
   return response.data.data[0].embedding;

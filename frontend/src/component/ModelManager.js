@@ -48,22 +48,29 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
 
   return (
     <div style={{
-      position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center",
+      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+      background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 1000
     }}>
       <div style={{
-        background: "#fff", borderRadius: 12, padding: "24px 28px", width: "90%", maxWidth: 640,
-        maxHeight: "80vh", overflowY: "auto", position: "relative", color: "#333",
-        fontFamily: "Segoe UI, Arial, sans-serif"
+        background: '#fff', borderRadius: 12, padding: '24px 28px', width: '90%', maxWidth: 640,
+        maxHeight: '80vh', overflowY: 'auto', position: 'relative', color: '#333',
+        fontFamily: 'Segoe UI, Arial, sans-serif'
       }}>
         <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>🧠 Quản lý mô hình LLM</h2>
 
         <form onSubmit={handleSubmit} style={{ display: 'grid', gap: 12, marginBottom: 20 }}>
-          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Tên model" name="name" value={form.name} onChange={handleChange} required />
-          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="URL Endpoint" name="url" value={form.url} onChange={handleChange} required />
-          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Temperature (0-1)" type="number" step="0.01" min="-1" max="1" name="temperature" value={form.temperature} onChange={handleChange} required />
-          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Max Tokens" type="number" name="maxTokens" value={form.maxTokens} onChange={handleChange} required />
+          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Tên model" name="name"
+            value={form.name} onChange={handleChange} required />
+          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="URL Endpoint" name="url"
+            value={form.url} onChange={handleChange} required />
+          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Temperature (0-1)" type="number"
+            step="0.01" min="-1" max="1"
+            name="temperature" value={form.temperature} onChange={handleChange}
+            required />
+          <input style={{ border: '1px solid #ccc', borderRadius: 6, padding: 8 }} placeholder="Max Tokens" type="number"
+            name="maxTokens" value={form.maxTokens} onChange={handleChange}
+            required />
           <button style={{ backgroundColor: '#2563eb', color: '#fff', padding: '10px', borderRadius: 6, fontWeight: 600, border: 'none', cursor: 'pointer' }}>
             {editingIndex !== null ? 'Cập nhật' : 'Thêm mô hình'}
           </button>
@@ -87,8 +94,8 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
         </div>
 
         <button onClick={onClose} style={{
-          position: "absolute", top: 12, right: 16,
-          border: "none", background: "transparent", fontSize: 24, cursor: "pointer"
+          position: 'absolute', top: 12, right: 16,
+          border: 'none', background: 'transparent', fontSize: 24, cursor: 'pointer'
         }}>✕</button>
       </div>
     </div>

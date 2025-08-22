@@ -1,8 +1,8 @@
 // services/updateChunks.js
-import { splitIntoSemanticChunks } from "../utils/chunking.js";
-import { createHash } from "../utils/hash.js";
-import pool from "../db.js";
-import { getEmbedding } from "./embeddingVector.js";
+import { splitIntoSemanticChunks } from '../utils/chunking.js';
+import { createHash } from '../utils/hash.js';
+import pool from '../db.js';
+import { getEmbedding } from './embeddingVector.js';
 
 /**
  * Cập nhật các chunk cho một bản ghi kiến thức.
@@ -23,7 +23,7 @@ export async function updateChunksForKnowledge(id, title, content) {
 
     // Kiểm tra nếu đã tồn tại chunk này thì bỏ qua
     const [exists] = await pool.execute(
-      "SELECT id FROM knowledge_chunks WHERE hash = ? LIMIT 1",
+      'SELECT id FROM knowledge_chunks WHERE hash = ? LIMIT 1',
       [hash]
     );
     if (exists.length > 0) continue;

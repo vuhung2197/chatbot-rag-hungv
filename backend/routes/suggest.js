@@ -1,8 +1,8 @@
-import express from "express";
-import { suggestNextWord } from "../controllers/suggestController.js";
+import express from 'express';
+import { suggestNextWord } from '../controllers/suggestController.js';
 
 const router = express.Router();
 
-router.post("/", suggestNextWord);
+router.post('/', suggestNextWord);
 
 export default router;

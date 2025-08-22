@@ -1,6 +1,6 @@
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import pool from "../db.js";
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import pool from '../db.js';
 import { google } from 'googleapis';
 import { saveTokens } from '../helpers/tokenStore.js';
 import '../bootstrap/env.js';
@@ -15,6 +15,16 @@ const oauth2Client = new google.auth.OAuth2(
 export function authGoogle(req, res) {
   // sinh CSRF token & set cookie
   const state = makeStateCookie(res);
+  
+  // Lưu redirect URL vào session cookie nếu có
+  const redirectBack = req.query.redirect;
+  if (redirectBack) {
+    res.cookie('oauth_redirect', redirectBack, {
+      maxAge: 10 * 60 * 1000, // 10 minutes
+      httpOnly: true,
+      sameSite: 'lax'
+    });
+  }
 
   const url = oauth2Client.generateAuthUrl({
     access_type: 'offline',
@@ -45,8 +55,13 @@ export async function googleCallback(req, res) {
   await saveTokens(profile.emailAddress, tokens);
   const jwtToken = jwt.sign({ email: profile.emailAddress }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-  // 5️⃣ Redirect sang frontend (có thể trả JWT qua cookie hoặc query string)
-  res.redirect(`/chat?token=${jwtToken}`);
+  // 5️⃣ Kiểm tra có redirect URL không, nếu không thì về /chat
+  const redirectUrl = req.cookies.oauth_redirect || '/chat';
+  res.clearCookie('oauth_redirect');
+  
+  // Thêm token vào URL và redirect về trang được yêu cầu
+  const separator = redirectUrl.includes('?') ? '&' : '?';
+  res.redirect(`${redirectUrl}${separator}token=${jwtToken}`);
 }
 
 /**
@@ -56,23 +71,23 @@ export async function googleCallback(req, res) {
  * @param {object} res - Đối tượng response Express
  */
 export async function register(req, res) {
-  const { name, email, password, role = "user" } = req.body;
+  const { name, email, password, role = 'user' } = req.body;
 
   // ✅ Chỉ cho phép 'user' hoặc 'admin'
-  if (!["user", "admin"].includes(role)) {
-    return res.status(400).json({ message: "Role không hợp lệ" });
+  if (!['user', 'admin'].includes(role)) {
+    return res.status(400).json({ message: 'Role không hợp lệ' });
   }
 
   try {
     const hash = await bcrypt.hash(password, 10);
     await pool.execute(
-      "INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)",
+      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
       [name, email, hash, role]
     );
-    res.json({ message: "Registered" });
+    res.json({ message: 'Registered' });
   } catch (err) {
-    console.error("❌ Lỗi khi đăng ký:", err);
-    res.status(500).json({ message: "Lỗi server khi đăng ký" });
+    console.error('❌ Lỗi khi đăng ký:', err);
+    res.status(500).json({ message: 'Lỗi server khi đăng ký' });
   }
 }
 
@@ -84,10 +99,10 @@ export async function register(req, res) {
  */
 export async function login(req, res) {
   const { email, password } = req.body;
-  const [rows] = await pool.execute("SELECT * FROM users WHERE email = ?", [email]);
+  const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
   const user = rows[0];
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
-    return res.status(401).json({ message: "Login failed" });
+    return res.status(401).json({ message: 'Login failed' });
   }
   const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET);
   res.json({ token, role: user.role, id: user.id });

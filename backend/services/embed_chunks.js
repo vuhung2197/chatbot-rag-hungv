@@ -1,6 +1,6 @@
-import pool from "../db.js";
-import { splitIntoChunks } from "../utils/chunking.js";
-import { getEmbedding } from "./embeddingVector.js";
+import pool from '../db.js';
+import { splitIntoChunks } from '../utils/chunking.js';
+import { getEmbedding } from './embeddingVector.js';
 import '../bootstrap/env.js';
 
 /**
@@ -11,16 +11,16 @@ import '../bootstrap/env.js';
  * - Lưu vào bảng knowledge_chunks
  */
 (async () => {
-  const [rows] = await pool.execute("SELECT id, title, content FROM knowledge_base");
-  for (let row of rows) {
+  const [rows] = await pool.execute('SELECT id, title, content FROM knowledge_base');
+  for (const row of rows) {
     const chunks = splitIntoChunks(row.content);
-    for (let chunk of chunks) {
+    for (const chunk of chunks) {
       const emb = await getEmbedding(chunk);
       await pool.execute(
-        "INSERT INTO knowledge_chunks (parent_id, title, content, embedding, token_count) VALUES (?, ?, ?, ?, ?)",
-        [row.id, row.title, chunk, JSON.stringify(emb), chunk.split(" ").length]
+        'INSERT INTO knowledge_chunks (parent_id, title, content, embedding, token_count) VALUES (?, ?, ?, ?, ?)',
+        [row.id, row.title, chunk, JSON.stringify(emb), chunk.split(' ').length]
       );
     }
   }
-  console.log("✅ Done embedding all chunks.");
+  console.log('✅ Done embedding all chunks.');
 })();

@@ -1,5 +1,10 @@
 import React, {createContext, useContext, useEffect, useState} from 'react';
 import {authService} from '../services/authService';
+import {mockAuthService} from '../services/mockAuthService';
+
+// Toggle between mock and real auth service for testing
+const USE_MOCK_AUTH = __DEV__; // Use mock auth in development mode
+const authServiceInstance = USE_MOCK_AUTH ? mockAuthService : authService;
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -23,8 +28,8 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
 
   const checkAuthStatus = async () => {
     try {
-      const token = await authService.getStoredToken();
-      const role = await authService.getStoredRole();
+      const token = await authServiceInstance.getStoredToken();
+      const role = await authServiceInstance.getStoredRole();
       
       if (token && role) {
         setIsAuthenticated(true);
@@ -39,7 +44,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      const result = await authService.login(username, password);
+      const result = await authServiceInstance.login(username, password);
       if (result.success && result.role) {
         setIsAuthenticated(true);
         setUserRole(result.role);
@@ -54,7 +59,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
 
   const register = async (username: string, password: string): Promise<boolean> => {
     try {
-      const result = await authService.register(username, password);
+      const result = await authServiceInstance.register(username, password);
       return result.success;
     } catch (error) {
       console.error('Register error:', error);
@@ -64,7 +69,7 @@ export const AuthProvider: React.FC<{children: React.ReactNode}> = ({children}) 
 
   const logout = async (): Promise<void> => {
     try {
-      await authService.logout();
+      await authServiceInstance.logout();
       setIsAuthenticated(false);
       setUserRole(null);
     } catch (error) {

@@ -27,7 +27,7 @@ export async function translateWordByWord(sentence) {
     })
   );
 
-  return translations.filter(item => item.vi && item.vi.length > 0);
+  return translations.filter((item) => item.vi && item.vi.length > 0);
 }
 
 /**
@@ -75,17 +75,23 @@ export function maskSensitiveInfo(text, mapping = {}) {
     return key;
   });
   // Email
-  text = text.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, (match) => {
-    const key = `[EMAIL_${counter++}]`;
-    mapping[key] = match;
-    return key;
-  });
+  text = text.replace(
+    /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+    (match) => {
+      const key = `[EMAIL_${counter++}]`;
+      mapping[key] = match;
+      return key;
+    }
+  );
   // Địa chỉ (mẫu đơn giản, có thể tuỳ biến thêm)
-  text = text.replace(/(\d{1,4}\s?[\w\s,.\/\-]+(đường|phố|tòa nhà)[^\n,.]*)/gi, (match) => {
-    const key = `[ADDR_${counter++}]`;
-    mapping[key] = match;
-    return key;
-  });
+  text = text.replace(
+    /(\d{1,4}\s?[\w\s,.\/\-]+(đường|phố|tòa nhà)[^\n,.]*)/gi,
+    (match) => {
+      const key = `[ADDR_${counter++}]`;
+      mapping[key] = match;
+      return key;
+    }
+  );
   return text;
 }
 
@@ -111,7 +117,12 @@ export function unmaskSensitiveInfo(text, mapping) {
  * @param {number} maxTokens - Giới hạn tokens
  * @returns {string} - Nội dung phản hồi
  */
-export async function callLLM(model, messages, temperature = 0.2, maxTokens = 512) {
+export async function callLLM(
+  model,
+  messages,
+  temperature = 0.2,
+  maxTokens = 512
+) {
   const baseUrl = model?.url;
   const nameModel = model?.name;
   const temperatureModel = model?.temperature;
@@ -123,11 +134,11 @@ export async function callLLM(model, messages, temperature = 0.2, maxTokens = 51
       model: nameModel,
       messages,
       temperature: temperatureModel,
-      max_tokens: maxTokensModel
+      max_tokens: maxTokensModel,
     },
     {
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
     }
   );
@@ -144,7 +155,12 @@ export async function callLLM(model, messages, temperature = 0.2, maxTokens = 51
  * @param {string} model - Tên model AI muốn sử dụng (mặc định: 'gpt-4o')
  * @returns {Promise<string>} - Nội dung trả lời của AI
  */
-export async function askChatGPT(question, context, systemPrompt = 'Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.', model) {
+export async function askChatGPT(
+  question,
+  context,
+  systemPrompt = 'Bạn là trợ lý AI chuyên trả lời dựa trên thông tin được cung cấp.',
+  model
+) {
   const mapping = {};
 
   // Mask thông tin nhạy cảm trong câu hỏi

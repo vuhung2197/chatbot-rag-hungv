@@ -30,6 +30,7 @@ export function verifyToken(req, res, next) {
  * @param {function} next - Hàm next để chuyển sang middleware tiếp theo
  */
 export function requireAdmin(req, res, next) {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+  if (req.user.role !== 'admin')
+    return res.status(403).json({ message: 'Admin only' });
   next();
 }

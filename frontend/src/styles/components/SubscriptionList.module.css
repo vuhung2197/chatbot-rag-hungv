@@ -14,9 +14,9 @@
 
 /* Alert banners */
 .authBanner {
-  background-color: #FEF3C7;
-  border: 1px solid #F59E0B;
-  color: #92400E;
+  background-color: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
   padding: 16px;
   border-radius: 8px;
   margin-bottom: 16px;
@@ -170,12 +170,12 @@
   .buttonGroup {
     flex-direction: column;
   }
-  
+
   .emailCard {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .title {
     font-size: 20px;
   }

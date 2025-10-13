@@ -1,0 +1,116 @@
+Tổng hợp Kiến trúc và Code của English Chatbot
+
+  🏗️ Kiến trúc Tổng quan
+
+  Stack công nghệ:
+  - Backend: Node.js + Express.js + MySQL
+  - Frontend: React.js với functional components + hooks
+  - AI/ML: OpenAI GPT-4, Text Embedding (text-embedding-3-small)
+  - Database: MySQL với utf8mb4 charset
+
+  Mô hình triển khai:
+  - Monorepo với 2 module độc lập (backend/frontend)
+  - RESTful API architecture
+  - Token-based authentication (JWT)
+
+  📦 Các Module Chính và Vai Trò
+
+  Backend Modules:
+
+  1. Controllers (controllers/)
+  - chatController.js: Xử lý chat chính với 3 mode RAG (embedding/context/direct)        
+  - authController.js: Xác thực user (login/register)
+  - knowledgeController.js: Quản lý knowledge base
+  - uploadController.js: Upload và xử lý tài liệu (PDF, DOC, TXT)
+
+  2. Services (services/)
+  - rag_retrieve.js: Truy xuất chunks theo cosine similarity
+  - rag_cot.js: Chain-of-Thought reasoning với GPT
+  - embeddingVector.js: Tạo embedding vectors
+  - scoreContext.js: Scoring dựa trên keyword matching
+
+  3. Routes & Middleware (routes/, middlewares/)
+  - REST API endpoints theo chức năng
+  - authMiddleware.js: JWT validation
+  - errorHandler.js: Centralized error handling
+
+  Frontend Modules:
+
+  1. Core Components (src/component/)
+  - Chat.js: Giao diện chat chính với history và model selection
+  - KnowledgeAdmin.js: Quản trị knowledge base
+  - Login.js/Register.js: Authentication UI
+  - ModelManager.js: Quản lý AI models
+
+  2. Utilities
+  - DarkModeContext.js: Theme management
+  - Local storage cho caching và history
+
+  🔄 Luồng Xử lý Dữ liệu Chính (RAG Pipeline)
+
+  1. Embedding Mode (RAG chính thức)
+
+  Question → getEmbedding() → retrieveTopChunks() → askChatGPT() → Response
+  - Chuyển câu hỏi thành vector embedding
+  - Tìm top 3 chunks có cosine similarity cao nhất
+  - Kết hợp context với GPT-4 để sinh câu trả lời
+
+  2. Context Mode (Keyword-based)
+
+  Question → selectRelevantContexts() → scoreContext() → askChatGPT() → Response
+  - Phân tích từ khóa trong câu hỏi
+  - Scoring dựa trên keyword matching + important keywords
+  - Ưu tiên title matches và sequence scoring
+
+  3. Direct Mode
+
+  Question → askChatGPT() (với history context) → Response
+  - Trả lời trực tiếp không cần RAG
+  - Sử dụng lịch sử hội thoại làm context
+
+  Data Flow Security:
+
+  - Mask/unmask sensitive info (phone, email, address)
+  - Caching mechanism với SHA256 hash
+  - User-specific history tracking
+
+  📝 Quy tắc Code và Naming
+
+  Backend Conventions:
+
+  - File naming: camelCase (chatController.js, embeddingVector.js)
+  - Function naming: camelCase với verb prefix (getEmbedding,
+  selectRelevantContexts)
+  - Variable naming: camelCase
+  - Constants: UPPER_SNAKE_CASE cho environment variables
+  - Database: snake_case (user_questions, knowledge_chunks)
+
+  Code Style Patterns:
+
+  - ES6 modules (import/export)
+  - Async/await pattern cho asynchronous operations
+  - Destructuring assignment const { message, mode } = req.body
+  - Template literals cho string formatting
+  - Arrow functions cho callbacks
+  - Try-catch error handling
+
+  Frontend Conventions:
+
+  - Components: PascalCase (Chat.js, ModelManager.js)
+  - Hooks: useState, useEffect with descriptive names
+  - Props: camelCase
+  - CSS: Inline styles với object notation
+  - API calls: axios với async/await
+
+  Architecture Patterns:
+
+  - Separation of concerns: Controllers → Services → Database
+  - Single responsibility: Mỗi service file có 1 chức năng chính
+  - Error boundary: Centralized error handling
+  - State management: Local state + localStorage cho persistence
+
+  Comments và Documentation:
+
+  - JSDoc format cho function documentation
+  - Vietnamese comments cho business logic
+  - Emoji prefixes cho log messages (❌, ✅, 📚, 🧠)

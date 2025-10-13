@@ -1,5 +1,10 @@
 import express from 'express';
-import { chat, history, suggest, deleteHistoryItem } from '../controllers/chatController.js';
+import {
+  chat,
+  history,
+  suggest,
+  deleteHistoryItem,
+} from '../controllers/chatController.js';
 import { verifyToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();

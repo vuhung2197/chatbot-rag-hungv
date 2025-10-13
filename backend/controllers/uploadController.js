@@ -17,7 +17,10 @@ import { StatusCodes } from 'http-status-codes';
  */
 export async function uploadAndTrain(req, res) {
   const file = req.file;
-  if (!file) return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Không có file được tải lên.' });
+  if (!file)
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ error: 'Không có file được tải lên.' });
 
   const ext = path.extname(file.originalname).toLowerCase();
   let content = '';
@@ -33,11 +36,16 @@ export async function uploadAndTrain(req, res) {
     } else if (ext === '.txt') {
       content = fs.readFileSync(file.path, 'utf-8');
     } else {
-      return res.status(StatusCodes.BAD_REQUEST).json({ error: 'Định dạng file không hỗ trợ.' });
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ error: 'Định dạng file không hỗ trợ.' });
     }
 
     // Chuyển đổi tiêu đề có dấu tiếng Việt
-    const rawName = Buffer.from(path.basename(file.originalname, ext), 'latin1').toString('utf8');
+    const rawName = Buffer.from(
+      path.basename(file.originalname, ext),
+      'latin1'
+    ).toString('utf8');
     const title = rawName;
 
     // 🔍 Kiểm tra xem title đã tồn tại chưa
@@ -46,7 +54,9 @@ export async function uploadAndTrain(req, res) {
       [title]
     );
     if (rows.length > 0) {
-      return res.status(StatusCodes.CONFLICT).json({ error: '❗️ File đã được upload và huấn luyện trước đó.' });
+      return res
+        .status(StatusCodes.CONFLICT)
+        .json({ error: '❗️ File đã được upload và huấn luyện trước đó.' });
     }
 
     // ✅ Lưu vào DB nếu chưa tồn tại

@@ -11,14 +11,18 @@ export async function saveHighlight(req, res) {
 
   try {
     translatedPairs = await translateWordByWord(text);
-    const cleanedText = translatedPairs.map(item => item.en).join(' ');
-    translatedText = translatedPairs.map(item => item.vi).join(' ');
+    const cleanedText = translatedPairs.map((item) => item.en).join(' ');
+    translatedText = translatedPairs.map((item) => item.vi).join(' ');
 
     await pool.execute(
       'INSERT INTO user_highlighted_text (text, translated_text) VALUES (?, ?)',
       [cleanedText, translatedText]
     );
-    res.json({ message: 'Đã lưu và dịch từng từ!', translatedText, translatedPairs });
+    res.json({
+      message: 'Đã lưu và dịch từng từ!',
+      translatedText,
+      translatedPairs,
+    });
   } catch (e) {
     return res.status(500).json({ message: 'Lỗi dịch AI!' });
   }
@@ -34,8 +38,12 @@ export async function getHighlights(req, res) {
 export async function highlightsRoutes(req, res) {
   const { id } = req.body;
   // Lấy bản ghi highlight
-  const [rows] = await pool.execute('SELECT * FROM user_highlighted_text WHERE id = ?', [id]);
-  if (!rows.length) return res.status(404).json({ message: 'Không tìm thấy đoạn văn!' });
+  const [rows] = await pool.execute(
+    'SELECT * FROM user_highlighted_text WHERE id = ?',
+    [id]
+  );
+  if (!rows.length)
+    return res.status(404).json({ message: 'Không tìm thấy đoạn văn!' });
   const { text, translated_text } = rows[0];
 
   // Nếu text hoặc translated_text trống, không cho duyệt
@@ -44,13 +52,13 @@ export async function highlightsRoutes(req, res) {
   }
 
   // Kiểm tra trùng trong dictionary
-  const [exist] = await pool.execute('SELECT id FROM dictionary WHERE word_en = ?', [text.trim().toLowerCase()]);
+  const [exist] = await pool.execute(
+    'SELECT id FROM dictionary WHERE word_en = ?',
+    [text.trim().toLowerCase()]
+  );
   if (exist.length > 0) {
     // Xoá highlight nếu đã có trong dictionary
-    await pool.execute(
-      'DELETE FROM user_highlighted_text WHERE id = ?',
-      [id]
-    );
+    await pool.execute('DELETE FROM user_highlighted_text WHERE id = ?', [id]);
     return res.status(400).json({ message: 'Từ này đã có trong từ điển!' });
   }
 

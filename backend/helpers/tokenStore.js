@@ -12,7 +12,10 @@ const oauth2Client = new google.auth.OAuth2(
 
 function signAndEncode(json) {
   const payload = Buffer.from(json, 'utf8').toString('base64');
-  const sig = crypto.createHmac('sha256', HMAC_KEY).update(payload).digest('hex');
+  const sig = crypto
+    .createHmac('sha256', HMAC_KEY)
+    .update(payload)
+    .digest('hex');
   return `${payload}.${sig}`;
 }
 
@@ -55,12 +58,14 @@ export async function saveTokens(email, tokens) {
   const accessTokenData = {
     access_token: tokens.access_token,
     scope: tokens.scope,
-    token_type: tokens.token_type
+    token_type: tokens.token_type,
   };
-  
+
   const encodedAccessToken = signAndEncode(JSON.stringify(accessTokenData));
-  const encodedRefreshToken = tokens.refresh_token ? signAndEncode(tokens.refresh_token) : null;
-  
+  const encodedRefreshToken = tokens.refresh_token
+    ? signAndEncode(tokens.refresh_token)
+    : null;
+
   // Calculate expiry time (default 1 hour if not provided)
   const expiresInMs = (tokens.expires_in || 3600) * 1000;
   const expiryTime = new Date(Date.now() + expiresInMs);
@@ -90,36 +95,40 @@ export async function loadTokens(email) {
   if (rows.length === 0) return null;
 
   const row = rows[0];
-  
+
   try {
     const accessTokenStr = row.tokens_encrypted.toString();
     const accessTokenData = verifyAndDecode(accessTokenStr);
-    
+
     const expiryTime = row.access_token_expires_at;
     const now = new Date();
     const timeUntilExpiry = expiryTime - now;
-    
+
     // Proactive refresh if expiring in less than 60 seconds
     if (timeUntilExpiry < 60000 && row.refresh_token_encrypted) {
-      console.log(`🔄 Token expires in ${Math.floor(timeUntilExpiry/1000)}s, refreshing proactively...`);
+      console.log(
+        `🔄 Token expires in ${Math.floor(timeUntilExpiry / 1000)}s, refreshing proactively...`
+      );
       return await refreshAccessToken(email);
     }
-    
+
     // Return existing token if still valid
     return {
       access_token: accessTokenData.access_token,
       scope: accessTokenData.scope,
       token_type: accessTokenData.token_type,
-      expires_at: expiryTime
+      expires_at: expiryTime,
     };
   } catch (error) {
     console.error(`❌ Token decode error for ${email}:`, error.message);
     console.log('🗑️ Cleaning up corrupted token data...');
-    
+
     // Clean up corrupted token data
     await pool.execute('DELETE FROM google_tokens WHERE email = ?', [email]);
-    
-    throw new Error('Token data corrupted. Please re-authenticate via /auth/google');
+
+    throw new Error(
+      'Token data corrupted. Please re-authenticate via /auth/google'
+    );
   }
 }
 
@@ -130,14 +139,14 @@ export async function refreshAccessToken(email) {
      WHERE email = ?`,
     [email]
   );
-  
+
   if (rows.length === 0 || !rows[0].refresh_token_encrypted) {
     throw new Error('No refresh token found for user');
   }
 
   const row = rows[0];
   const refreshToken = verifyAndDecode(row.refresh_token_encrypted.toString());
-  
+
   // Increment refresh attempts for monitoring
   await pool.execute(
     `UPDATE google_tokens 
@@ -148,18 +157,20 @@ export async function refreshAccessToken(email) {
 
   try {
     oauth2Client.setCredentials({ refresh_token: refreshToken });
-    
+
     // Request new access token
     const { credentials } = await oauth2Client.refreshAccessToken();
-    
+
     // Update database with new access token
     const newAccessTokenData = {
       access_token: credentials.access_token,
       scope: credentials.scope,
-      token_type: credentials.token_type || 'Bearer'
+      token_type: credentials.token_type || 'Bearer',
     };
-    
-    const encodedAccessToken = signAndEncode(JSON.stringify(newAccessTokenData));
+
+    const encodedAccessToken = signAndEncode(
+      JSON.stringify(newAccessTokenData)
+    );
     const expiresInMs = (credentials.expires_in || 3600) * 1000;
     const newExpiryTime = new Date(Date.now() + expiresInMs);
 
@@ -174,17 +185,16 @@ export async function refreshAccessToken(email) {
     );
 
     console.log(`✅ Successfully refreshed token for ${email}`);
-    
+
     return {
       access_token: credentials.access_token,
       scope: credentials.scope,
       token_type: credentials.token_type || 'Bearer',
-      expires_at: newExpiryTime
+      expires_at: newExpiryTime,
     };
-    
   } catch (error) {
     console.error(`❌ Token refresh failed for ${email}:`, error.message);
-    
+
     // If refresh fails, mark the refresh token as potentially invalid
     await pool.execute(
       `UPDATE google_tokens 
@@ -192,7 +202,7 @@ export async function refreshAccessToken(email) {
        WHERE email = ? AND refresh_attempts >= 3`,
       [email]
     );
-    
+
     throw new Error(`Token refresh failed: ${error.message}`);
   }
 }
@@ -205,21 +215,30 @@ export async function checkTokenExpiry(email) {
      WHERE email = ?`,
     [email]
   );
-  
-  if (rows.length === 0) return { needsRefresh: true, reason: 'No token found' };
-  
+
+  if (rows.length === 0)
+    return { needsRefresh: true, reason: 'No token found' };
+
   const expiryTime = rows[0].access_token_expires_at;
   const now = new Date();
   const timeUntilExpiry = expiryTime - now;
-  
+
   if (timeUntilExpiry < 0) {
-    return { needsRefresh: true, reason: 'Token expired', expiresIn: timeUntilExpiry };
+    return {
+      needsRefresh: true,
+      reason: 'Token expired',
+      expiresIn: timeUntilExpiry,
+    };
   }
-  
+
   if (timeUntilExpiry < 60000) {
-    return { needsRefresh: true, reason: 'Token expiring soon', expiresIn: timeUntilExpiry };
+    return {
+      needsRefresh: true,
+      reason: 'Token expiring soon',
+      expiresIn: timeUntilExpiry,
+    };
   }
-  
+
   return { needsRefresh: false, expiresIn: timeUntilExpiry };
 }
 
@@ -230,7 +249,7 @@ export async function cleanupExpiredTokens() {
      WHERE access_token_expires_at < DATE_SUB(NOW(), INTERVAL 30 DAY)
      AND refresh_token_encrypted IS NULL`
   );
-  
+
   console.log(`🗑️ Cleaned up ${result[0].affectedRows} expired tokens`);
   return result[0].affectedRows;
 }

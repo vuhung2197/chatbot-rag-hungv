@@ -29,7 +29,7 @@ export function cosineSimilarity(a, b) {
   const dot = a.reduce((sum, ai, i) => sum + ai * b[i], 0);
   const magA = Math.sqrt(a.reduce((sum, ai) => sum + ai * ai, 0));
   const magB = Math.sqrt(b.reduce((sum, bi) => sum + bi * bi, 0));
-  return (magA && magB) ? dot / (magA * magB) : 0;
+  return magA && magB ? dot / (magA * magB) : 0;
 }
 
 /**
@@ -40,20 +40,27 @@ export function cosineSimilarity(a, b) {
  * @param {number} topN - Số lượng kết quả trả về (top N)
  * @returns {Array<string>} - Danh sách context dạng chuỗi
  */
-export function getTopEmbeddingMatches(questionEmbedding, knowledgeRows, topN = 1) {
+export function getTopEmbeddingMatches(
+  questionEmbedding,
+  knowledgeRows,
+  topN = 1
+) {
   const scored = knowledgeRows
-    .map(row => {
+    .map((row) => {
       const emb = Array.isArray(row.embedding) ? row.embedding : null;
       return {
         ...row,
-        score: emb && emb.length === questionEmbedding.length
-          ? cosineSimilarity(questionEmbedding, emb)
-          : 0
+        score:
+          emb && emb.length === questionEmbedding.length
+            ? cosineSimilarity(questionEmbedding, emb)
+            : 0,
       };
     })
-    .filter(item => item.score > 0)
+    .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, topN);
 
-  return scored.map(item => `Tiêu đề: ${item.title}\nNội dung: ${item.content}`);
+  return scored.map(
+    (item) => `Tiêu đề: ${item.title}\nNội dung: ${item.content}`
+  );
 }

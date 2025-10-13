@@ -15,46 +15,49 @@ export function useApi(url, options = {}) {
     method = 'GET',
     dependencies = [], // Re-fetch when these change
     onSuccess,
-    onError
+    onError,
   } = options;
 
-  const fetchData = useCallback(async (customOptions = {}) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchData = useCallback(
+    async (customOptions = {}) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const config = {
-        method,
-        url,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-          ...customOptions.headers
-        },
-        ...customOptions
-      };
+        const config = {
+          method,
+          url,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json',
+            ...customOptions.headers,
+          },
+          ...customOptions,
+        };
 
-      const response = await axios(config);
-      setData(response.data);
-      
-      if (onSuccess) {
-        onSuccess(response.data);
+        const response = await axios(config);
+        setData(response.data);
+
+        if (onSuccess) {
+          onSuccess(response.data);
+        }
+
+        return response.data;
+      } catch (err) {
+        const parsedError = handleApiError(err, `API call to ${url}`);
+        setError(parsedError);
+
+        if (onError) {
+          onError(parsedError);
+        }
+
+        throw parsedError;
+      } finally {
+        setLoading(false);
       }
-      
-      return response.data;
-    } catch (err) {
-      const parsedError = handleApiError(err, `API call to ${url}`);
-      setError(parsedError);
-      
-      if (onError) {
-        onError(parsedError);
-      }
-      
-      throw parsedError;
-    } finally {
-      setLoading(false);
-    }
-  }, [url, method, onSuccess, onError]);
+    },
+    [url, method, onSuccess, onError]
+  );
 
   useEffect(() => {
     if (immediate) {
@@ -69,7 +72,7 @@ export function useApi(url, options = {}) {
     loading,
     error,
     refetch,
-    execute: fetchData
+    execute: fetchData,
   };
 }
 
@@ -80,46 +83,55 @@ export function useForm(initialValues, validationRules = {}) {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const validateField = useCallback((name, value) => {
-    const rules = validationRules[name];
-    if (!rules) return [];
+  const validateField = useCallback(
+    (name, value) => {
+      const rules = validationRules[name];
+      if (!rules) return [];
 
-    const fieldErrors = [];
+      const fieldErrors = [];
 
-    // Required validation
-    if (rules.required && (!value || value.toString().trim() === '')) {
-      fieldErrors.push(`${rules.label || name} là bắt buộc`);
-    }
-
-    // Custom validation
-    if (value && rules.validate && typeof rules.validate === 'function') {
-      const result = rules.validate(value, values);
-      if (result !== true) {
-        fieldErrors.push(result);
+      // Required validation
+      if (rules.required && (!value || value.toString().trim() === '')) {
+        fieldErrors.push(`${rules.label || name} là bắt buộc`);
       }
-    }
 
-    return fieldErrors;
-  }, [validationRules, values]);
+      // Custom validation
+      if (value && rules.validate && typeof rules.validate === 'function') {
+        const result = rules.validate(value, values);
+        if (result !== true) {
+          fieldErrors.push(result);
+        }
+      }
 
-  const setFieldValue = useCallback((name, value) => {
-    setValues(prev => ({ ...prev, [name]: value }));
-    
-    // Validate on change if field was already touched
-    if (touched[name]) {
-      const fieldErrors = validateField(name, value);
-      setErrors(prev => ({ ...prev, [name]: fieldErrors }));
-    }
-  }, [touched, validateField]);
+      return fieldErrors;
+    },
+    [validationRules, values]
+  );
 
-  const setFieldTouched = useCallback((name, isTouched = true) => {
-    setTouched(prev => ({ ...prev, [name]: isTouched }));
-    
-    if (isTouched) {
-      const fieldErrors = validateField(name, values[name]);
-      setErrors(prev => ({ ...prev, [name]: fieldErrors }));
-    }
-  }, [validateField, values]);
+  const setFieldValue = useCallback(
+    (name, value) => {
+      setValues(prev => ({ ...prev, [name]: value }));
+
+      // Validate on change if field was already touched
+      if (touched[name]) {
+        const fieldErrors = validateField(name, value);
+        setErrors(prev => ({ ...prev, [name]: fieldErrors }));
+      }
+    },
+    [touched, validateField]
+  );
+
+  const setFieldTouched = useCallback(
+    (name, isTouched = true) => {
+      setTouched(prev => ({ ...prev, [name]: isTouched }));
+
+      if (isTouched) {
+        const fieldErrors = validateField(name, values[name]);
+        setErrors(prev => ({ ...prev, [name]: fieldErrors }));
+      }
+    },
+    [validateField, values]
+  );
 
   const validateForm = useCallback(() => {
     const formErrors = {};
@@ -134,30 +146,35 @@ export function useForm(initialValues, validationRules = {}) {
     });
 
     setErrors(formErrors);
-    setTouched(Object.keys(validationRules).reduce((acc, name) => {
-      acc[name] = true;
-      return acc;
-    }, {}));
+    setTouched(
+      Object.keys(validationRules).reduce((acc, name) => {
+        acc[name] = true;
+        return acc;
+      }, {})
+    );
 
     return isValid;
   }, [validationRules, values, validateField]);
 
-  const handleSubmit = useCallback(async (onSubmit) => {
-    setIsSubmitting(true);
-    
-    try {
-      const isValid = validateForm();
-      if (isValid && onSubmit) {
-        await onSubmit(values);
+  const handleSubmit = useCallback(
+    async onSubmit => {
+      setIsSubmitting(true);
+
+      try {
+        const isValid = validateForm();
+        if (isValid && onSubmit) {
+          await onSubmit(values);
+        }
+        return isValid;
+      } catch (error) {
+        console.error('Form submission error:', error);
+        throw error;
+      } finally {
+        setIsSubmitting(false);
       }
-      return isValid;
-    } catch (error) {
-      console.error('Form submission error:', error);
-      throw error;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [values, validateForm]);
+    },
+    [values, validateForm]
+  );
 
   const resetForm = useCallback(() => {
     setValues(initialValues);
@@ -175,7 +192,7 @@ export function useForm(initialValues, validationRules = {}) {
     setFieldTouched,
     handleSubmit,
     resetForm,
-    isValid: Object.keys(errors).every(key => errors[key].length === 0)
+    isValid: Object.keys(errors).every(key => errors[key].length === 0),
   };
 }
 
@@ -191,18 +208,21 @@ export function useLocalStorage(key, defaultValue) {
     }
   });
 
-  const setStoredValue = useCallback((newValue) => {
-    try {
-      setValue(newValue);
-      if (newValue === undefined) {
-        localStorage.removeItem(key);
-      } else {
-        localStorage.setItem(key, JSON.stringify(newValue));
+  const setStoredValue = useCallback(
+    newValue => {
+      try {
+        setValue(newValue);
+        if (newValue === undefined) {
+          localStorage.removeItem(key);
+        } else {
+          localStorage.setItem(key, JSON.stringify(newValue));
+        }
+      } catch (error) {
+        console.warn(`Error setting localStorage key "${key}":`, error);
       }
-    } catch (error) {
-      console.warn(`Error setting localStorage key "${key}":`, error);
-    }
-  }, [key]);
+    },
+    [key]
+  );
 
   return [value, setStoredValue];
 }
@@ -213,9 +233,9 @@ export function useToast() {
 
   const showToast = useCallback((message, type = 'info', duration = 3000) => {
     const id = Math.random().toString(36).substr(2, 9);
-    
+
     setToast({ id, message, type });
-    
+
     setTimeout(() => {
       setToast(null);
     }, duration);
@@ -229,10 +249,10 @@ export function useToast() {
     toast,
     showToast,
     hideToast,
-    showSuccess: (message) => showToast(message, 'success'),
-    showError: (message) => showToast(message, 'error'),
-    showWarning: (message) => showToast(message, 'warning'),
-    showInfo: (message) => showToast(message, 'info')
+    showSuccess: message => showToast(message, 'success'),
+    showError: message => showToast(message, 'error'),
+    showWarning: message => showToast(message, 'warning'),
+    showInfo: message => showToast(message, 'info'),
   };
 }
 
@@ -242,21 +262,27 @@ export function useAuth() {
   const [token, setToken] = useLocalStorage('token', null);
   const [role, setRole] = useLocalStorage('role', null);
 
-  const login = useCallback(async (credentials) => {
-    try {
-      const response = await axios.post(`${CONFIG.API_URL}/auth/login`, credentials);
-      const { token, role, user } = response.data;
-      
-      setToken(token);
-      setRole(role);
-      setUser(user);
-      
-      return { success: true, user };
-    } catch (error) {
-      const parsedError = handleApiError(error, 'login');
-      throw parsedError;
-    }
-  }, [setToken, setRole, setUser]);
+  const login = useCallback(
+    async credentials => {
+      try {
+        const response = await axios.post(
+          `${CONFIG.API_URL}/auth/login`,
+          credentials
+        );
+        const { token, role, user } = response.data;
+
+        setToken(token);
+        setRole(role);
+        setUser(user);
+
+        return { success: true, user };
+      } catch (error) {
+        const parsedError = handleApiError(error, 'login');
+        throw parsedError;
+      }
+    },
+    [setToken, setRole, setUser]
+  );
 
   const logout = useCallback(() => {
     setToken(null);
@@ -274,6 +300,6 @@ export function useAuth() {
     isAuthenticated,
     isAdmin,
     login,
-    logout
+    logout,
   };
 }

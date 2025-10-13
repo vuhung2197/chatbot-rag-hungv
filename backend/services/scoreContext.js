@@ -19,13 +19,19 @@ function normalizeText(text) {
  * @param {string} question - Câu hỏi người dùng
  * @returns {number} - Điểm số mức độ liên quan
  */
-function scoreContext(question, context, title, questionKeywords, importantKeywords) {
+function scoreContext(
+  question,
+  context,
+  title,
+  questionKeywords,
+  importantKeywords
+) {
   let score = 0;
   const normTitle = normalizeText(title);
   const normContext = normalizeText(context);
   const normQuestion = normalizeText(question);
 
-  importantKeywords.forEach(kw => {
+  importantKeywords.forEach((kw) => {
     if (normTitle.includes(kw) && normContext.includes(kw)) score += 4;
     else if (normTitle.includes(kw)) score += 3;
     else if (normContext.includes(kw)) score += 2;
@@ -35,14 +41,14 @@ function scoreContext(question, context, title, questionKeywords, importantKeywo
     score += 6;
   }
 
-  questionKeywords.forEach(kw => {
+  questionKeywords.forEach((kw) => {
     if (normTitle.includes(kw)) score += 2;
     if (normContext.includes(kw)) score += 1;
   });
 
   let seqScore = 0;
   let lastIdx = -2;
-  questionKeywords.forEach(kw => {
+  questionKeywords.forEach((kw) => {
     const idx = normContext.indexOf(kw);
     if (idx >= 0 && idx - lastIdx <= 3) seqScore += 1;
     if (idx >= 0) lastIdx = idx;
@@ -68,19 +74,30 @@ function scoreContext(question, context, title, questionKeywords, importantKeywo
  * @param {number} topN - Số lượng context trả về (top N)
  * @returns {Array<{context: string, score: number}>} - Danh sách context và điểm số
  */
-export function selectRelevantContexts(message, allKnowledge, importantKeywords, topN = 3) {
+export function selectRelevantContexts(
+  message,
+  allKnowledge,
+  importantKeywords,
+  topN = 3
+) {
   const normQ = normalizeText(message);
-  const questionKeywords = normQ.split(' ').filter(w => w.length > 2);
+  const questionKeywords = normQ.split(' ').filter((w) => w.length > 2);
 
   const scored = allKnowledge
-    .map(k => ({
-      score: scoreContext(message, k.content, k.title, questionKeywords, importantKeywords),
-      value: `Tiêu đề: ${k.title}\nNội dung: ${k.content}`
+    .map((k) => ({
+      score: scoreContext(
+        message,
+        k.content,
+        k.title,
+        questionKeywords,
+        importantKeywords
+      ),
+      value: `Tiêu đề: ${k.title}\nNội dung: ${k.content}`,
     }))
-    .filter(item => item.score > 0)
+    .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, topN)
-    .map(item => item.value);
+    .map((item) => item.value);
 
   return scored;
 }

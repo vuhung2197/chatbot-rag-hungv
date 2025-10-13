@@ -21,21 +21,27 @@ const cosineSimilarity = (a, b) => {
  * @returns {Promise<Array>} - Danh sách các chunk phù hợp nhất
  */
 export async function retrieveTopChunks(questionEmbedding, topK = 3) {
-  const [rows] = await pool.execute('SELECT id, title, content, embedding FROM knowledge_chunks');
-  const scored = rows.map(row => {
-    let emb;
-    try {
-      emb = Array.isArray(row.embedding) ? row.embedding : JSON.parse(row.embedding);
-    } catch (err) {
-      console.error('❌ Lỗi parse embedding:', err, 'row id:', row.id);
-      emb = null;
-    }
+  const [rows] = await pool.execute(
+    'SELECT id, title, content, embedding FROM knowledge_chunks'
+  );
+  const scored = rows
+    .map((row) => {
+      let emb;
+      try {
+        emb = Array.isArray(row.embedding)
+          ? row.embedding
+          : JSON.parse(row.embedding);
+      } catch (err) {
+        console.error('❌ Lỗi parse embedding:', err, 'row id:', row.id);
+        emb = null;
+      }
 
-    return {
-      ...row,
-      score: emb ? cosineSimilarity(questionEmbedding, emb) : 0
-    };
-  }).filter(r => r.score > 0.5); // bạn có thể điều chỉnh ngưỡng
+      return {
+        ...row,
+        score: emb ? cosineSimilarity(questionEmbedding, emb) : 0,
+      };
+    })
+    .filter((r) => r.score > 0.5); // bạn có thể điều chỉnh ngưỡng
 
   return scored.sort((a, b) => b.score - a.score).slice(0, topK);
 }

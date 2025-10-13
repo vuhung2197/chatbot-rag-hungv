@@ -23,7 +23,8 @@ export class NetworkError extends Error {
   constructor(message = 'Network request failed') {
     super(message);
     this.name = 'NetworkError';
-    this.userMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.';
+    this.userMessage =
+      'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.';
   }
 }
 
@@ -36,7 +37,7 @@ export class ServerError extends Error {
   }
 }
 
-// Parse API error response into specific error types  
+// Parse API error response into specific error types
 export function parseApiError(error) {
   if (!error.response) {
     // Network error (no response from server)
@@ -61,17 +62,19 @@ export function parseApiError(error) {
   }
 }
 
-// Check if error requires authentication  
+// Check if error requires authentication
 export function isAuthError(error) {
   if (error instanceof AuthenticationError) return true;
-  
+
   const status = error.response?.status;
   const message = error.response?.data?.message || error.message || '';
-  
-  return status === 401 ||
-         message.includes('token') ||
-         message.includes('authenticate') ||
-         message.includes('expired');
+
+  return (
+    status === 401 ||
+    message.includes('token') ||
+    message.includes('authenticate') ||
+    message.includes('expired')
+  );
 }
 
 // Get user-friendly error message
@@ -79,7 +82,7 @@ export function getUserErrorMessage(error) {
   if (error.userMessage) {
     return error.userMessage;
   }
-  
+
   // Fallback for unknown errors
   return 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
 }
@@ -102,15 +105,15 @@ export function logError(error, context = '') {
 // Enhanced error handler for API calls
 export function handleApiError(error, context = '', onAuthError = null) {
   const parsedError = parseApiError(error);
-  
+
   // Log for debugging
   logError(parsedError, context);
-  
+
   // Handle authentication errors
   if (isAuthError(parsedError) && onAuthError) {
     onAuthError(parsedError);
     return parsedError;
   }
-  
+
   return parsedError;
 }

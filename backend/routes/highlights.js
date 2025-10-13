@@ -1,5 +1,10 @@
 import express from 'express';
-import { saveHighlight, getHighlights, highlightsRoutes, deleteHighlight } from '../controllers/highlightsController.js';
+import {
+  saveHighlight,
+  getHighlights,
+  highlightsRoutes,
+  deleteHighlight,
+} from '../controllers/highlightsController.js';
 
 const router = express.Router();
 

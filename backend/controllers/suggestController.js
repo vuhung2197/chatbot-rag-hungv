@@ -38,4 +38,4 @@ export async function suggestNextWord(req, res) {
     console.error(err.response?.data || err);
     res.json({ suggest: '' });
   }
-};
+}

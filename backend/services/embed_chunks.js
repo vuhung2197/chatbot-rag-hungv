@@ -11,7 +11,9 @@ import '../bootstrap/env.js';
  * - Lưu vào bảng knowledge_chunks
  */
 (async () => {
-  const [rows] = await pool.execute('SELECT id, title, content FROM knowledge_base');
+  const [rows] = await pool.execute(
+    'SELECT id, title, content FROM knowledge_base'
+  );
   for (const row of rows) {
     const chunks = splitIntoChunks(row.content);
     for (const chunk of chunks) {

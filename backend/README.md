@@ -108,5 +108,6 @@ Nhận câu trả lời từ ChatGPT, trả về giao diện người dùng.
 - Gợi ý context liên tục học từ các câu hỏi chưa trả lời được.
 
 Config ENV
-+ default DB_HOST = db, DB_PORT = 3306
-+ muốn debug -> đổi DB_HOST = localhost, DB_PORT = 3307 + F5
+
+- default DB_HOST = db, DB_PORT = 3306
+- muốn debug -> đổi DB_HOST = localhost, DB_PORT = 3307 + F5

@@ -17,5 +17,8 @@ export function createHash(text) {
  * @returns {string} - Giá trị hash dạng hex
  */
 export function hashQuestion(text) {
-  return crypto.createHash('sha256').update(text.trim().toLowerCase()).digest('hex');
+  return crypto
+    .createHash('sha256')
+    .update(text.trim().toLowerCase())
+    .digest('hex');
 }

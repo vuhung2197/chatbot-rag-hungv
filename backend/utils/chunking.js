@@ -6,9 +6,9 @@
  */
 export function splitIntoSemanticChunks(content, maxWords = 100) {
   const paragraphs = content
-    .split(/\n\s*\n/)  // Tách đoạn văn theo dòng trống
-    .map(p => p.trim())
-    .filter(p => p.length > 0);  // Loại bỏ đoạn rỗng
+    .split(/\n\s*\n/) // Tách đoạn văn theo dòng trống
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0); // Loại bỏ đoạn rỗng
 
   const chunks = [];
   let currentChunk = '';
@@ -27,7 +27,7 @@ export function splitIntoSemanticChunks(content, maxWords = 100) {
           currentChunk = sentence;
           wordCount = sentenceWords;
         } else {
-          currentChunk += ` ${  sentence}`;
+          currentChunk += ` ${sentence}`;
           wordCount += sentenceWords;
         }
       }
@@ -37,7 +37,7 @@ export function splitIntoSemanticChunks(content, maxWords = 100) {
         currentChunk = paragraph;
         wordCount = paragraphWordCount;
       } else {
-        currentChunk += `\n\n${  paragraph}`;
+        currentChunk += `\n\n${paragraph}`;
         wordCount += paragraphWordCount;
       }
     }

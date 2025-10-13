@@ -12,6 +12,7 @@ import unansweredRoutes from './routes/unanswered.js';
 import uploadRoutes from './routes/upload.js';
 import authRoutes from './routes/auth.js';
 import emailRoutes from './routes/email.js';
+import algorithmStatsRoutes from './routes/algorithmStats.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
@@ -30,6 +31,7 @@ app.use('/unanswered', unansweredRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/auth', authRoutes);
 app.use('/email', emailRoutes);
+app.use('/algorithm-stats', algorithmStatsRoutes);
 
 app.use(errorHandler);
 

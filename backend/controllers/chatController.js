@@ -5,6 +5,7 @@ import { selectRelevantContexts } from '../services/scoreContext.js';
 import { retrieveTopChunks } from '../services/rag_retrieve.js';
 import { hashQuestion } from '../utils/hash.js';
 import { StatusCodes } from 'http-status-codes';
+import { selectAlgorithm, logAlgorithmSelection } from '../services/algorithmSelector.js';
 import '../bootstrap/env.js';
 
 /**
@@ -70,20 +71,39 @@ function toMarkdown(text) {
  * @param {object} res - Đối tượng response Express
  */
 export async function chat(req, res) {
-  const { message, mode = 'embedding', model } = req.body;
+  // ❌ Bỏ 'mode' từ FE
+  // const { message, mode = 'embedding', model } = req.body;
+  const { message, model } = req.body;
   const userId = req.user?.id;
 
   if (!message)
     return res.status(StatusCodes.BAD_REQUEST).json({ reply: 'No message!' });
 
   try {
+    // ✅ Tự chọn thuật toán dựa theo câu hỏi
+    const selection = await selectAlgorithm(message, userId);
+    const mode = selection?.algorithm || 'direct';
+
+    // (Khuyến nghị) lưu log lựa chọn để theo dõi/điều chỉnh
+    try {
+      await logAlgorithmSelection(
+        message,
+        mode,
+        selection?.confidence ?? 0.5,
+        selection?.analysis ?? null,
+        userId ?? null
+      );
+    } catch (e) {
+      console.warn('⚠️ Không thể lưu log algorithm selection:', e.message);
+    }
+
     let context = '';
     let isAnswered = true;
     let systemPrompt =
       'Bạn là một trợ lý AI chuyên nghiệp, trả lời ngắn gọn, chính xác.';
 
     if (mode === 'context') {
-      // 📌 Truy xuất ngữ cảnh dựa trên keyword
+      // 📌 Truy xuất ngữ cảnh dựa trên keyword (score context)
       const [rows] = await pool.execute('SELECT * FROM knowledge_base');
       const [kwRows] = await pool.execute(
         'SELECT keyword FROM important_keywords'

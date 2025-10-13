@@ -18,10 +18,10 @@ async function analyzeQuestionRelevance(question) {
     const [kwRows] = await pool.execute("SELECT keyword FROM important_keywords");
     const importantKeywords = kwRows.map(r => r.keyword.toLowerCase());
     
-    // Lấy mẫu tiêu đề kiến thức để phân tích
-    const [titleRows] = await pool.execute("SELECT DISTINCT title FROM knowledge_base LIMIT 100");
-    const knowledgeTitles = titleRows.map(r => r.title.toLowerCase());
-    
+    // Lấy nội dung kiến thức để phân tích
+    const [contentRows] = await pool.execute("SELECT DISTINCT content FROM knowledge_base LIMIT 100");
+    const knowledgeContents = contentRows.map(r => r.content.toLowerCase());
+
     const normalizedQuestion = normalizeText(question);
     const questionWords = normalizedQuestion.split(' ').filter(w => w.length > 2);
     
@@ -37,17 +37,16 @@ async function analyzeQuestionRelevance(question) {
         matchedKeywords.push(keyword);
       }
     });
-    
-    // Kiểm tra tiêu đề chủ đề
-    knowledgeTitles.forEach(title => {
-      const titleWords = title.split(' ').filter(w => w.length > 2);
-      const commonWords = titleWords.filter(word => 
+    // Kiểm tra nội dung chủ đề
+    knowledgeContents.forEach(content => {
+      const contentWords = content.split(' ').filter(w => w.length > 2);
+      const commonWords = contentWords.filter(word => 
         questionWords.some(qw => qw.includes(word) || word.includes(qw))
       );
       
       if (commonWords.length > 0) {
         relevanceScore += commonWords.length * 2;
-        matchedTopics.push(title);
+        matchedTopics.push(content);
       }
     });
     

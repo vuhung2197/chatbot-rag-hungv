@@ -100,7 +100,7 @@ export default function Chat() {
     try {
       const res = await axios.post(
         `${API_URL}/chat`,
-        { message: input, mode, model },
+        { message: input, model },
         {
           headers: {
             'Content-Type': 'application/json',

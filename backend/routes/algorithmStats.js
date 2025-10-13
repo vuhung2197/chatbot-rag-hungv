@@ -12,7 +12,7 @@ const router = express.Router();
 router.get("/stats", getAlgorithmStats);
 
 // Lấy lịch sử chọn thuật toán (cần login)
-router.get("/history", verifyToken, getRecentAlgorithmSelections);
+router.get("/history", getRecentAlgorithmSelections);
 
 // Test thuật toán sẽ được chọn cho câu hỏi
 router.post("/test", testAlgorithmSelection);

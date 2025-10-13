@@ -96,7 +96,7 @@ export async function addKnowledge(req, res) {
   const insertedId = result.insertId;
 
   // Cập nhật important keywords nếu cần
-  // await updateImportantKeywords(title, content);
+  await updateImportantKeywords(title, content);
 
   // const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [insertedId]);
   await updateChunksForKnowledge(insertedId, title, content);
@@ -127,7 +127,7 @@ export async function updateKnowledge(req, res) {
   );
 
   // Cập nhật important keywords nếu cần
-  // await updateImportantKeywords(title, content);
+  await updateImportantKeywords(title, content);
 
   // const [rows] = await pool.execute("SELECT * FROM knowledge_base WHERE id=?", [id]);
   await updateChunksForKnowledge(id, title, content);

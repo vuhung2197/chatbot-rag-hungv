@@ -18,6 +18,10 @@ export default function Chat() {
   const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
+  const [showAlgoModal, setShowAlgoModal] = useState(false);
+  const [algoHistory, setAlgoHistory] = useState([]);
+  const [algoLoading, setAlgoLoading] = useState(false);
+  const [algoError, setAlgoError] = useState('');
 
   const algorithmDescriptions = {
     embedding:
@@ -137,6 +141,38 @@ export default function Chat() {
     setLoading(false);
   }
 
+  async function openAlgoHistory() {
+    setShowAlgoModal(true);
+    setAlgoLoading(true);
+    setAlgoError('');
+    try {
+      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('token');
+      const limit = 50; // hoặc lấy từ UI, hiện để cố định
+
+      const res = await axios.get(
+        `${API_URL}/algorithm-stats/history?limit=${limit}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Chuẩn hoá matched_keywords nếu là JSON string
+      const rows = (res.data || []).map(r => {
+        let mk = r.matched_keywords;
+        if (typeof mk === 'string') {
+          try { mk = JSON.parse(mk); } catch { /* giữ nguyên string */ }
+        }
+        return { ...r, matched_keywords: mk };
+      });
+
+      setAlgoHistory(rows);
+    } catch (e) {
+      console.error('Lỗi lấy lịch sử thuật toán:', e);
+      setAlgoError('Không thể lấy lịch sử chọn thuật toán.');
+    } finally {
+      setAlgoLoading(false);
+    }
+  }
+
   return (
     <div
       style={{
@@ -184,6 +220,23 @@ export default function Chat() {
           🕘 Xem câu hỏi gần đây
         </button>
       )}
+
+      <button
+        style={{
+          marginTop: 16,
+          marginBottom: 16,
+          backgroundColor: '#0ea5e9',
+          color: 'white',
+          padding: '8px 16px',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          marginLeft: 8
+        }}
+        onClick={openAlgoHistory}
+      >
+        📊 Lịch sử chọn thuật toán
+      </button>
 
       {showRecentModal && (
         <div
@@ -344,6 +397,123 @@ export default function Chat() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {showAlgoModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: 'rgba(0,0,0,0.4)',
+            zIndex: 999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#fff',
+              width: '95%',
+              maxWidth: 1000,
+              maxHeight: '85%',
+              overflowY: 'auto',
+              borderRadius: 12,
+              padding: '24px 32px',
+              position: 'relative',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
+            }}
+          >
+            <h2 style={{ marginTop: 0, color: '#111', marginBottom: 16 }}>
+              📊 Lịch sử lựa chọn thuật toán
+            </h2>
+
+            <button
+              onClick={() => setShowAlgoModal(false)}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 20,
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              Đóng
+            </button>
+
+            {algoLoading && <div>Đang tải...</div>}
+            {algoError && (
+              <div style={{ color: '#b91c1c', marginBottom: 12 }}>{algoError}</div>
+            )}
+
+            {!algoLoading && !algoError && (
+              <div style={{ overflowX: 'auto' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: '0.95em',
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: '#f3f4f6' }}>
+                      <th>Thời gian</th>
+                      <th>Câu hỏi</th>
+                      <th>Thuật toán</th>
+                      <th>Confidence</th>
+                      <th>Relevance</th>
+                      <th>Keywords</th>
+                      <th>Loại câu hỏi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {algoHistory.map((row, i) => (
+                      <tr key={row.id || i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                        <td>
+                          {row.created_at
+                            ? new Date(row.created_at).toLocaleString('vi-VN')
+                            : '-'}
+                        </td>
+                        <td style={{ maxWidth: 320 }}>
+                          <div title={row.question} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {row.question}
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 600 }}>
+                            {row.selected_algorithm || '-'}
+                          </span>
+                        </td>
+                        <td>{typeof row.confidence === 'number' ? row.confidence.toFixed(2) : row.confidence ?? '-'}</td>
+                        <td>{row.relevance_score ?? '-'}</td>
+                        <td style={{ maxWidth: 260 }}>
+                          {Array.isArray(row.matched_keywords)
+                            ? row.matched_keywords.join(', ')
+                            : (row.matched_keywords ?? '-')}
+                        </td>
+                        <td>{row.question_type ?? '-'}</td>
+                      </tr>
+                    ))}
+                    {algoHistory.length === 0 && (
+                      <tr>
+                        <td colSpan={7} style={{ padding: 16, textAlign: 'center', color: '#6b7280' }}>
+                          Chưa có dữ liệu.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

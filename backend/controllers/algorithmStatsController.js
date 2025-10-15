@@ -72,37 +72,54 @@ export async function getAlgorithmStats(req, res) {
  */
 export async function getRecentAlgorithmSelections(req, res) {
   const userId = req.user?.id;
-  const limit = parseInt(req.query.limit) || 50;
-
   if (!userId) {
-    return res.status(StatusCodes.UNAUTHORIZED).json({ 
-      error: "Cần đăng nhập để xem lịch sử" 
+    return res.status(StatusCodes.UNAUTHORIZED).json({
+      error: "Cần đăng nhập để xem lịch sử",
     });
   }
 
+  // Validate & clamp limit
+  let limit = parseInt(req.query.limit, 10);
+  if (Number.isNaN(limit) || limit <= 0) limit = 50;
+  if (limit > 500) limit = 500;
+
+  // Chèn trực tiếp limit (đã được validate) để tránh lỗi "Incorrect arguments to mysqld_stmt_execute"
+  const sql = `
+    SELECT 
+      id,
+      question,
+      selected_algorithm,
+      confidence,
+      relevance_score,
+      matched_keywords,
+      question_type,
+      created_at
+    FROM algorithm_selections
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `;
+
   try {
-    const [selections] = await pool.execute(`
-      SELECT 
-        id,
-        question,
-        selected_algorithm,
-        confidence,
-        relevance_score,
-        matched_keywords,
-        question_type,
-        created_at
-      FROM algorithm_selections 
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-      LIMIT ?
-    `, [userId, limit]);
+    const [rows] = await pool.execute(sql, [userId]);
 
-    res.json(selections);
+    // Tránh lỗi khi serialize BigInt
+    const safeRows = rows.map(r =>
+      JSON.parse(
+        JSON.stringify(r, (_, v) => (typeof v === "bigint" ? v.toString() : v))
+      )
+    );
 
+    return res.json(safeRows);
   } catch (error) {
-    console.error("❌ Lỗi lấy lịch sử thuật toán:", error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
-      error: "Không thể lấy lịch sử chọn thuật toán" 
+    console.error("❌ Lỗi lấy lịch sử thuật toán:", {
+      code: error.code,
+      sqlMessage: error.sqlMessage,
+      sqlState: error.sqlState,
+      sql,
+    });
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      error: "Không thể lấy lịch sử chọn thuật toán",
     });
   }
 }

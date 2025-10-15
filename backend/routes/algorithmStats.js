@@ -11,8 +11,8 @@ const router = express.Router();
 // Lấy thống kê thuật toán (có thể không cần login để xem thống kê tổng quan)
 router.get("/stats", getAlgorithmStats);
 
-// Lấy lịch sử chọn thuật toán (cần login)
-router.get("/history", getRecentAlgorithmSelections);
+// Lấy lịch sử chọn thuật toán
+router.get("/history", verifyToken, getRecentAlgorithmSelections);
 
 // Test thuật toán sẽ được chọn cho câu hỏi
 router.post("/test", testAlgorithmSelection);

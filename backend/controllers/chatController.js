@@ -5,7 +5,7 @@ import { selectRelevantContexts } from '../services/scoreContext.js';
 import { retrieveTopChunks } from '../services/rag_retrieve.js';
 import { hashQuestion } from '../utils/hash.js';
 import { StatusCodes } from 'http-status-codes';
-import { selectAlgorithm, logAlgorithmSelection } from '../services/algorithmSelector.js';
+// import { selectAlgorithm, logAlgorithmSelection } from '../services/algorithmSelector.js';
 import '../bootstrap/env.js';
 
 /**
@@ -81,21 +81,23 @@ export async function chat(req, res) {
 
   try {
     // ✅ Tự chọn thuật toán dựa theo câu hỏi
-    const selection = await selectAlgorithm(message, userId);
-    const mode = selection?.algorithm || 'direct';
+    // const selection = await selectAlgorithm(message, userId);
+    // const mode = selection?.algorithm || 'direct';
 
     // (Khuyến nghị) lưu log lựa chọn để theo dõi/điều chỉnh
-    try {
-      await logAlgorithmSelection(
-        message,
-        mode,
-        selection?.confidence ?? 0.5,
-        selection?.analysis ?? null,
-        userId ?? null
-      );
-    } catch (e) {
-      console.warn('⚠️ Không thể lưu log algorithm selection:', e.message);
-    }
+    // try {
+    //   await logAlgorithmSelection(
+    //     message,
+    //     mode,
+    //     selection?.confidence ?? 0.5,
+    //     selection?.analysis ?? null,
+    //     userId ?? null
+    //   );
+    // } catch (e) {
+    //   console.warn('⚠️ Không thể lưu log algorithm selection:', e.message);
+    // }
+
+    const mode = 'embedding'; // Tạm thời bỏ chọn thuật toán tự động
 
     let context = '';
     let isAnswered = true;

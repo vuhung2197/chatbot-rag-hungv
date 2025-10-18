@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import HelpGuide from './HelpGuide';
 import ChatInputSuggest from './ChatInputSuggest';
 import CryptoJS from 'crypto-js';
@@ -6,27 +6,17 @@ import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function Chat() {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
   const [showGuide, setShowGuide] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState('direct');
   const [questionHistory, setQuestionHistory] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
-
-  const algorithmDescriptions = {
-    embedding:
-      '📚 RAG + Chunk: Thuật toán kết hợp truy xuất ngữ nghĩa (RAG) và chia đoạn nhỏ (chunking) giúp chuyển câu hỏi thành vector embedding rồi tìm kiếm chính xác đoạn kiến thức phù hợp. Cho phép xử lý câu hỏi khó, không cần trùng từ khóa.',
-    context:
-      '🧠 Score Context: So sánh từ khóa giữa câu hỏi và nội dung kiến thức bằng cách đếm số từ khớp, ưu tiên cụm từ quan trọng, độ tương đồng và phạt độ dài. Hiệu quả khi nội dung và câu hỏi có từ ngữ gần nhau.',
-    direct:
-      '💬 Direct Mode: Trả lời trực tiếp mà không cần truy xuất ngữ nghĩa. Phù hợp với câu hỏi đơn giản hoặc đã có kiến thức nền từ mô hình.',
-  };
 
   // Render lần đầu tiên khi component mount
   useEffect(() => {
@@ -100,7 +90,7 @@ export default function Chat() {
     try {
       const res = await axios.post(
         `${API_URL}/chat`,
-        { message: input, mode, model },
+        { message: input, model },
         {
           headers: {
             'Content-Type': 'application/json',
@@ -136,6 +126,7 @@ export default function Chat() {
     }
     setLoading(false);
   }
+
 
   return (
     <div
@@ -184,6 +175,7 @@ export default function Chat() {
           🕘 Xem câu hỏi gần đây
         </button>
       )}
+
 
       {showRecentModal && (
         <div
@@ -348,6 +340,7 @@ export default function Chat() {
         </div>
       )}
 
+
       {history.length > 0 && (
         <button
           onClick={() => {
@@ -374,28 +367,6 @@ export default function Chat() {
         </button>
       )}
 
-      <label
-        style={{
-          marginTop: 16,
-          display: 'block',
-          fontWeight: 'bold',
-          color: '#000',
-        }}
-      >
-        Chọn thuật toán:
-      </label>
-      <select
-        value={mode}
-        onChange={e => setMode(e.target.value)}
-        style={{ marginBottom: 8 }}
-      >
-        <option value='embedding'>📚 RAG + Chunk</option>
-        <option value='context'>🧠 Score context</option>
-        <option value='direct'>💬 Direct Mode</option>
-      </select>
-      <div style={{ fontSize: '0.95em', color: '#666', marginBottom: 16 }}>
-        {algorithmDescriptions[mode]}
-      </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: '1.5em' }}>
         <ChatInputSuggest

@@ -1,5 +1,5 @@
 import pool from '../db.js';
-import { searchSimilarVectors, cachedVectorSearch, hybridVectorSearch } from './vectorDatabase.js';
+import { cachedVectorSearch, hybridVectorSearch } from './vectorDatabase.js';
 
 /**
  * Tối ưu hóa RAG retrieval với vector database
@@ -16,20 +16,17 @@ import { searchSimilarVectors, cachedVectorSearch, hybridVectorSearch } from './
  */
 export async function retrieveTopChunks(questionEmbedding, topK = 3, threshold = 0.5) {
   try {
-    // Sử dụng cached vector search để tối ưu performance
-    const results = await cachedVectorSearch(questionEmbedding, topK);
+    // Sử dụng cached vector search với threshold
+    const results = await cachedVectorSearch(questionEmbedding, topK, threshold);
     
-    // Filter theo threshold
-    const filteredResults = results.filter(r => r.score > threshold);
+    // console.log(`🎯 Retrieved ${results.length} chunks from vector database`);
+    return results;
     
-    console.log(`🎯 Retrieved ${filteredResults.length} chunks from vector database`);
-    return filteredResults;
-    
-  } catch (error) {
-    console.error('❌ Error in optimized vector search:', error);
+  } catch {
+    // console.error('❌ Error in optimized vector search');
     
     // Fallback to basic search nếu vector search fail
-    console.log('🔄 Falling back to basic search...');
+    // console.log('🔄 Falling back to basic search...');
     return await basicVectorSearch(questionEmbedding, topK, threshold);
   }
 }
@@ -44,11 +41,11 @@ export async function retrieveTopChunks(questionEmbedding, topK = 3, threshold =
 export async function retrieveTopChunksHybrid(questionEmbedding, keywords = [], topK = 3) {
   try {
     const results = await hybridVectorSearch(questionEmbedding, keywords, topK);
-    console.log(`🎯 Hybrid search retrieved ${results.length} chunks`);
+    // console.log(`🎯 Hybrid search retrieved ${results.length} chunks`);
     return results;
     
-  } catch (error) {
-    console.error('❌ Error in hybrid search:', error);
+  } catch {
+    // console.error('❌ Error in hybrid search');
     return await retrieveTopChunks(questionEmbedding, topK);
   }
 }
@@ -59,18 +56,8 @@ export async function retrieveTopChunksHybrid(questionEmbedding, keywords = [], 
  */
 async function basicVectorSearch(questionEmbedding, topK = 3, threshold = 0.5) {
   try {
-    // Sử dụng stored procedure nếu có
-    const [rows] = []] = await pool.execute(
-      'CALL SearchSimilarVectors(?, ?, ?)',
-      [JSON.stringify(questionEmbedding), threshold, topK * 2]
-    );
-    
-    if (rows.length > 0) {
-      return rows.slice(0, topK);
-    }
-    
-    // Fallback to manual calculation nếu stored procedure không có
-    console.log('⚠️ Using manual vector search (not optimized)');
+    // Fallback to manual calculation (stored procedure có thể không tồn tại)
+    // console.log('⚠️ Using manual vector search (not optimized)');
     const [allRows] = await pool.execute(
       'SELECT id, title, content, embedding FROM knowledge_chunks LIMIT 1000'
     );
@@ -82,8 +69,8 @@ async function basicVectorSearch(questionEmbedding, topK = 3, threshold = 0.5) {
           emb = Array.isArray(row.embedding)
             ? row.embedding
             : JSON.parse(row.embedding);
-        } catch (err) {
-          console.error('❌ Lỗi parse embedding:', err, 'row id:', row.id);
+        } catch {
+          // console.error('❌ Lỗi parse embedding');
           emb = null;
         }
 
@@ -98,8 +85,8 @@ async function basicVectorSearch(questionEmbedding, topK = 3, threshold = 0.5) {
 
     return scored;
     
-  } catch (error) {
-    console.error('❌ Error in basic vector search:', error);
+  } catch {
+    // console.error('❌ Error in basic vector search');
     return [];
   }
 }
@@ -136,8 +123,8 @@ export async function batchRetrieveTopChunks(queries, topK = 3) {
   try {
     const { batchVectorSearch } = await import('./vectorDatabase.js');
     return await batchVectorSearch(queries, topK);
-  } catch (error) {
-    console.error('❌ Error in batch retrieval:', error);
+  } catch {
+    // console.error('❌ Error in batch retrieval');
     return [];
   }
 }

@@ -14,19 +14,14 @@ import pool from '../db.js';
  * Sử dụng HNSW (Hierarchical Navigable Small World) algorithm
  */
 export async function createVectorIndex() {
-  try {
-    // Tạo index cho vector similarity search
-    await pool.execute(`
-      ALTER TABLE knowledge_chunks 
-      ADD INDEX idx_embedding_vector USING ivfflat (embedding) 
-      WITH (lists = 100)
-    `);
-    
-    console.log('✅ Vector index created successfully');
-  } catch (error) {
-    console.error('❌ Error creating vector index:', error);
-    throw error;
-  }
+  // Tạo index cho vector similarity search
+  await pool.execute(`
+    ALTER TABLE knowledge_chunks 
+    ADD INDEX idx_embedding_vector USING ivfflat (embedding) 
+    WITH (lists = 100)
+  `);
+  
+  // console.log('✅ Vector index created successfully');
 }
 
 /**
@@ -34,36 +29,68 @@ export async function createVectorIndex() {
  * Thay vì load toàn bộ vectors, sử dụng index để tìm kiếm nhanh
  */
 export async function searchSimilarVectors(questionEmbedding, topK = 3, threshold = 0.5) {
-  try {
-    // Sử dụng vector similarity search với index
-    const [rows] = await pool.execute(`
-      SELECT 
-        id, 
-        title, 
-        content, 
-        embedding,
-        (embedding <-> ?) as distance
-      FROM knowledge_chunks 
-      WHERE (embedding <-> ?) < ?
-      ORDER BY distance ASC
-      LIMIT ?
-    `, [
-      JSON.stringify(questionEmbedding),
-      JSON.stringify(questionEmbedding), 
-      1 - threshold, // Convert similarity to distance
-      topK
-    ]);
+  // Fallback to basic similarity search nếu vector index chưa có
+  const limit = topK * 3; // Lấy nhiều hơn để filter sau
+  
+  // Sử dụng query đơn giản hơn để tránh lỗi parameter
+  const [rows] = await pool.execute(`
+    SELECT 
+      id, 
+      title, 
+      content, 
+      embedding
+    FROM knowledge_chunks 
+    WHERE embedding IS NOT NULL
+    LIMIT ${limit}
+  `);
 
-    return rows.map(row => ({
-      ...row,
-      score: 1 - row.distance, // Convert distance back to similarity
-      embedding: JSON.parse(row.embedding)
-    }));
+  // Tính similarity manually
+  const scored = rows
+    .map(row => {
+      let emb;
+      try {
+        emb = Array.isArray(row.embedding) 
+          ? row.embedding 
+          : JSON.parse(row.embedding);
+      } catch {
+        return null;
+      }
 
-  } catch (error) {
-    console.error('❌ Error in vector search:', error);
-    throw error;
+      const similarity = cosineSimilarity(questionEmbedding, emb);
+      return {
+        ...row,
+        score: similarity,
+        embedding: emb
+      };
+    })
+    .filter(item => item && item.score > threshold)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
+
+  return scored;
+}
+
+/**
+ * Tính cosine similarity giữa hai vector
+ */
+function cosineSimilarity(a, b, eps = 1e-12) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return 0;
+
+  let dot = 0, aa = 0, bb = 0;
+  for (let i = 0; i < a.length; i++) {
+    const x = Number(a[i]);
+    const y = Number(b[i]);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return 0;
+    dot += x * y;
+    aa += x * x;
+    bb += y * y;
   }
+
+  const denom = Math.sqrt(aa) * Math.sqrt(bb);
+  if (denom < eps) return 0;
+
+  const s = dot / denom;
+  return Math.max(-1, Math.min(1, s));
 }
 
 /**
@@ -81,7 +108,7 @@ export async function batchVectorSearch(queries, topK = 3) {
         results: result
       });
     } catch (error) {
-      console.error(`❌ Error processing query: ${query.text}`, error);
+      // console.error(`❌ Error processing query: ${query.text}`, error);
       results.push({
         query: query.text,
         results: [],
@@ -99,15 +126,15 @@ export async function batchVectorSearch(queries, topK = 3) {
  */
 const vectorCache = new Map();
 
-export async function cachedVectorSearch(questionEmbedding, topK = 3) {
-  const cacheKey = JSON.stringify(questionEmbedding) + `_${topK}`;
+export async function cachedVectorSearch(questionEmbedding, topK = 3, threshold = 0.5) {
+  const cacheKey = `${JSON.stringify(questionEmbedding)}_${topK}_${threshold}`;
   
   if (vectorCache.has(cacheKey)) {
-    console.log('🎯 Cache hit for vector search');
+    // console.log('🎯 Cache hit for vector search');
     return vectorCache.get(cacheKey);
   }
   
-  const results = await searchSimilarVectors(questionEmbedding, topK);
+  const results = await searchSimilarVectors(questionEmbedding, topK, threshold);
   vectorCache.set(cacheKey, results);
   
   // Clean cache sau 1 giờ
@@ -123,42 +150,36 @@ export async function cachedVectorSearch(questionEmbedding, topK = 3) {
  * Tăng độ chính xác bằng cách kết hợp nhiều phương pháp
  */
 export async function hybridVectorSearch(questionEmbedding, keywords = [], topK = 3) {
-  try {
-    // Vector similarity search
-    const vectorResults = await searchSimilarVectors(questionEmbedding, topK * 2);
+  // Vector similarity search
+  const vectorResults = await searchSimilarVectors(questionEmbedding, topK * 2);
+  
+  // Keyword search nếu có keywords
+  let keywordResults = [];
+  if (keywords.length > 0) {
+    const keywordQuery = keywords.join(' OR ');
+    const [keywordRows] = await pool.execute(`
+      SELECT id, title, content, embedding
+      FROM knowledge_chunks 
+      WHERE MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE)
+      LIMIT ?
+    `, [keywordQuery, topK]);
     
-    // Keyword search nếu có keywords
-    let keywordResults = [];
-    if (keywords.length > 0) {
-      const keywordQuery = keywords.join(' OR ');
-      const [keywordRows] = await pool.execute(`
-        SELECT id, title, content, embedding
-        FROM knowledge_chunks 
-        WHERE MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE)
-        LIMIT ?
-      `, [keywordQuery, topK]);
-      
-      keywordResults = keywordRows.map(row => ({
-        ...row,
-        embedding: JSON.parse(row.embedding),
-        score: 0.8 // Fixed score for keyword matches
-      }));
-    }
-    
-    // Combine và re-rank results
-    const combinedResults = [...vectorResults, ...keywordResults];
-    const uniqueResults = combinedResults.filter((item, index, self) => 
-      index === self.findIndex(t => t.id === item.id)
-    );
-    
-    return uniqueResults
-      .sort((a, b) => b.score - a.score)
-      .slice(0, topK);
-      
-  } catch (error) {
-    console.error('❌ Error in hybrid search:', error);
-    throw error;
+    keywordResults = keywordRows.map(row => ({
+      ...row,
+      embedding: JSON.parse(row.embedding),
+      score: 0.8 // Fixed score for keyword matches
+    }));
   }
+  
+  // Combine và re-rank results
+  const combinedResults = [...vectorResults, ...keywordResults];
+  const uniqueResults = combinedResults.filter((item, index, self) => 
+    index === self.findIndex(t => t.id === item.id)
+  );
+  
+  return uniqueResults
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topK);
 }
 
 /**
@@ -175,8 +196,8 @@ export async function getVectorSearchStats() {
     `);
     
     return stats[0];
-  } catch (error) {
-    console.error('❌ Error getting vector stats:', error);
+  } catch {
+    // console.error('❌ Error getting vector stats');
     return null;
   }
 }

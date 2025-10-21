@@ -1,22 +1,30 @@
-import { useState, useEffect } from 'react';
-import HelpGuide from './HelpGuide';
+import { useState, useEffect, useRef } from 'react';
 import ChatInputSuggest from './ChatInputSuggest';
-import CryptoJS from 'crypto-js';
 import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
 import axios from 'axios';
+import '../styles/Chat.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function Chat() {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
-  const [showGuide, setShowGuide] = useState(true);
   const [loading, setLoading] = useState(false);
   const [questionHistory, setQuestionHistory] = useState([]);
   const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  // Auto scroll to bottom
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [history, loading]);
 
   // Render lần đầu tiên khi component mount
   useEffect(() => {
@@ -26,7 +34,7 @@ export default function Chat() {
       try {
         setHistory(JSON.parse(saved));
       } catch (e) {
-        console.error('Lỗi khi parse history:', e);
+        // console.error('Lỗi khi parse history:', e);
       }
     }
 
@@ -35,7 +43,7 @@ export default function Chat() {
       try {
         setModel(JSON.parse(savedModel));
       } catch (e) {
-        console.error('Lỗi khi parse model đã lưu:', e);
+        // console.error('Lỗi khi parse model đã lưu:', e);
       }
     }
   }, []);
@@ -49,290 +57,243 @@ export default function Chat() {
   useEffect(() => {
     async function fetchHistory() {
       try {
-        const res = await axios.get(`${API_URL}/chat/history`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const data = res.data;
-        setQuestionHistory(data);
-      } catch (err) {
-        console.error('Lỗi khi lấy lịch sử câu hỏi:', err);
+        const response = await axios.get(`${API_URL}/api/chat/history`);
+        if (response.data && response.data.length > 0) {
+          setQuestionHistory(response.data);
+        }
+      } catch (error) {
+        // console.error('Lỗi khi tải lịch sử:', error);
       }
     }
-
     fetchHistory();
   }, []);
 
-  const hashQuestion = text => {
-    return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
-  };
-
-  async function sendChat() {
+  const sendChat = async () => {
     if (!input.trim() || loading) return;
+
+    const userMessage = input.trim();
+    setInput('');
     setLoading(true);
-    const timestamp = new Date().toISOString();
-    const hash = hashQuestion(input);
-    const cached = JSON.parse(localStorage.getItem('chatbot_cache') || '{}');
 
-    if (cached[hash]) {
-      setHistory([
-        { user: input, bot: cached[hash], createdAt: timestamp },
-        ...history,
-      ]);
-      setInput('');
-      setLoading(false);
-      return;
-    }
+    // Thêm tin nhắn người dùng vào lịch sử
+    const newUserMessage = {
+      user: userMessage,
+      bot: '',
+      createdAt: new Date().toISOString(),
+    };
 
-    const token = localStorage.getItem('token');
+    setHistory(prev => [...prev, newUserMessage]);
 
     try {
-      const res = await axios.post(
-        `${API_URL}/chat`,
-        { message: input, model },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = res.data;
-      setHistory([
-        { user: input, bot: data.reply, createdAt: timestamp },
-        ...history,
-      ]);
+      const response = await axios.post(`${API_URL}/api/chat`, {
+        message: userMessage,
+        model: model?.name || 'gpt-3.5-turbo',
+      });
 
-      const isNoAnswer = [
-        'Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.',
-        'Không thể tính embedding câu hỏi!',
-        'Bot đang bận, vui lòng thử lại sau!',
-        'Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.',
-      ].includes(data.reply);
+      const botReply = response.data.reply;
 
-      if (!isNoAnswer) {
-        cached[hash] = data.reply;
-        localStorage.setItem('chatbot_cache', JSON.stringify(cached));
+      // Cập nhật tin nhắn bot vào lịch sử
+      setHistory(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1].bot = botReply;
+        return updated;
+      });
+
+      // Lưu vào database
+      try {
+        await axios.post(`${API_URL}/api/chat/save`, {
+          question: userMessage,
+          reply: botReply,
+          isAnswered: true,
+        });
+      } catch (dbError) {
+        // console.error('Lỗi khi lưu vào database:', dbError);
       }
 
-      setInput('');
-    } catch (err) {
-      setHistory([
-        { user: input, bot: 'Lỗi khi gửi câu hỏi!', createdAt: timestamp },
-        ...history,
-      ]);
-      setInput('');
+    } catch (error) {
+      // console.error('Lỗi khi gửi tin nhắn:', error);
+      const errorMessage = 'Xin lỗi, có lỗi xảy ra. Vui lòng thử lại.';
+      
+      setHistory(prev => {
+        const updated = [...prev];
+        updated[updated.length - 1].bot = errorMessage;
+        return updated;
+      });
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChat();
+    }
+  };
 
   return (
-    <div
-      style={{
-        background: 'rgba(255,255,255,0.92)',
-        borderRadius: '2em',
-        padding: '2em 2.5em',
-        maxWidth: 620,
-        boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18)',
-        border: '1px solid #bcbcbc',
-        margin: '0 auto',
-        color: '#333',
-      }}
-    >
-      <div className='mb-3 flex items-center gap-2'>
-        <span className='text-sm text-gray-700'>🧠 Đang dùng:</span>
-        <strong className='text-blue-700 text-sm'>
-          {model?.name || 'Chưa chọn'}
-        </strong>
-        <button
-          onClick={() => setShowModelPopup(true)}
-          className='text-sm underline text-blue-600 hover:text-blue-800'
-        >
-          🔧 Đổi mô hình
-        </button>
-      </div>
-      <button onClick={() => setShowGuide(v => !v)}>
-        {showGuide ? 'Ẩn hướng dẫn' : 'Hiện hướng dẫn'}
-      </button>
-      {showGuide && <HelpGuide />}
-
-      {questionHistory.length > 0 && (
-        <button
-          style={{
-            marginTop: 16,
-            marginBottom: 16,
-            backgroundColor: '#2563eb',
-            color: 'white',
-            padding: '8px 16px',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-          }}
-          onClick={() => setShowRecentModal(true)}
-        >
-          🕘 Xem câu hỏi gần đây
-        </button>
-      )}
-
-
-      {showRecentModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundColor: 'rgba(0,0,0,0.4)',
-            zIndex: 999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: '#fff',
-              width: '90%',
-              maxWidth: 800,
-              maxHeight: '80%',
-              overflowY: 'auto',
-              borderRadius: 12,
-              padding: '24px 32px',
-              position: 'relative',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
-            }}
+    <div className="chat-container">
+      {/* Header */}
+      <div className="chat-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="chat-logo">
+            AI
+          </div>
+          <div>
+            <h1 className="chat-title">
+              English Chatbot
+            </h1>
+            <p className="chat-subtitle">
+              {model ? `Model: ${model.name}` : 'Chọn model để bắt đầu'}
+            </p>
+          </div>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setShowRecentModal(true)}
+            className="chat-button"
           >
-            <h2 style={{ marginTop: 0, color: '#222', marginBottom: 16 }}>
-              🕘 Câu hỏi & trả lời gần đây
+            📚 Lịch sử
+          </button>
+          
+          <button
+            onClick={() => setShowModelPopup(true)}
+            className="chat-button chat-button-primary"
+          >
+            ⚙️ Model
+          </button>
+          
+          {history.length > 0 && (
+            <button
+              onClick={() => {
+                setHistory([]);
+                localStorage.removeItem('chatbot_history');
+                localStorage.removeItem('chatbot_cache');
+                localStorage.removeItem('chatbot_selected_model');
+              }}
+              className="chat-button chat-button-danger"
+            >
+              🗑️ Xóa
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Chat Messages */}
+      <div className="chat-messages">
+        {history.length === 0 && !loading && (
+          <div className="chat-empty-state">
+            <div className="chat-empty-icon">
+              🤖
+            </div>
+            <h2 className="chat-empty-title">
+              Chào mừng đến với English Chatbot
+            </h2>
+            <p className="chat-empty-description">
+              Tôi có thể giúp bạn học tiếng Anh, trả lời câu hỏi và cung cấp thông tin. 
+              Hãy bắt đầu cuộc trò chuyện bằng cách gõ câu hỏi của bạn!
+            </p>
+          </div>
+        )}
+
+        {history.map((item, idx) => (
+          <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* User Message */}
+            <div className="message-user">
+              <div className="message-bubble-user">
+                {item.user}
+              </div>
+            </div>
+
+            {/* Bot Message */}
+            {item.bot && (
+              <div className="message-bot">
+                <div className="message-bubble-bot">
+                  <ReactMarkdown>{item.bot}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {/* Loading Message */}
+        {loading && (
+          <div className="message-loading">
+            <div className="message-loading-bubble">
+              <div className="loading-dots">
+                <div className="loading-dot"></div>
+                <div className="loading-dot"></div>
+                <div className="loading-dot"></div>
+              </div>
+              <span>Đang suy nghĩ...</span>
+            </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input Area */}
+      <div className="chat-input-area">
+        <div className="chat-input-container">
+          <div className="chat-input-wrapper">
+            <ChatInputSuggest
+              value={input}
+              onChange={setInput}
+              onSend={sendChat}
+              disabled={loading}
+              onKeyPress={handleKeyPress}
+              placeholder="Nhập câu hỏi của bạn..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Questions Modal */}
+      {showRecentModal && (
+        <div className="chat-modal">
+          <div className="chat-modal-content">
+            <h2 className="chat-modal-header">
+              📚 Lịch sử câu hỏi
             </h2>
 
             <button
               onClick={() => setShowRecentModal(false)}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 20,
-                background: '#ef4444',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                padding: '6px 12px',
-                cursor: 'pointer',
-              }}
+              className="chat-modal-close"
             >
-              Đóng
+              ✕ Đóng
             </button>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {questionHistory.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    background: '#f9fafb',
-                    borderRadius: 10,
-                    padding: '16px 20px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ color: '#6b7280', fontSize: '0.85em' }}>
-                      🗓 {new Date(item.created_at).toLocaleString('vi-VN')}
-                    </span>
+                <div key={index} className="chat-history-item">
+                  <div className="chat-history-date">
+                    🗓 {new Date(item.created_at).toLocaleString('vi-VN')}
                   </div>
 
-                  <div
-                    style={{
-                      background: '#eef2ff',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      color: '#1e3a8a',
-                      fontSize: '1em',
-                      marginBottom: 10,
-                    }}
-                  >
+                  <div className="chat-history-question">
                     <b>Bạn:</b> {item.question}
                   </div>
 
-                  <div
-                    style={{
-                      background: '#ecfdf5',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      color: '#065f46',
-                      fontSize: '1em',
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
+                  <div className="chat-history-answer">
                     <b>Bot:</b>
                     <div style={{ marginTop: 6 }}>
                       <ReactMarkdown>{item.bot_reply}</ReactMarkdown>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      setInput(item.question);
-                      setShowRecentModal(false);
-                    }}
-                    style={{
-                      marginTop: 12,
-                      background: '#3b82f6',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: '0.95em',
-                    }}
-                  >
-                    🔁 Gửi lại câu hỏi này
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      if (
-                        !window.confirm(
-                          'Bạn có chắc chắn muốn xóa câu hỏi này?'
-                        )
-                      )
-                        return;
-                      try {
-                        const res = await axios.delete(
-                          `${API_URL}/chat/history/${item.id}`,
-                          {
-                            headers: {
-                              Authorization: `Bearer ${localStorage.getItem('token')}`,
-                            },
-                          }
-                        );
-                        if (res.status === 200) {
-                          setQuestionHistory(prev =>
-                            prev.filter(q => q.id !== item.id)
-                          );
-                        } else {
-                          alert('Xóa thất bại!');
-                        }
-                      } catch (err) {
-                        console.error('Lỗi khi xóa câu hỏi:', err);
-                        alert('Đã xảy ra lỗi khi xóa!');
-                      }
-                    }}
-                    style={{
-                      background: '#ef4444',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: '0.95em',
-                    }}
-                  >
-                    🗑 Xóa
-                  </button>
+                  <div className="chat-history-actions">
+                    <button
+                      onClick={() => {
+                        setInput(item.question);
+                        setShowRecentModal(false);
+                      }}
+                      className="chat-history-button"
+                    >
+                      🔁 Gửi lại câu hỏi này
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -340,116 +301,9 @@ export default function Chat() {
         </div>
       )}
 
-
-      {history.length > 0 && (
-        <button
-          onClick={() => {
-            if (
-              window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?')
-            ) {
-              setHistory([]);
-              localStorage.removeItem('chatbot_history');
-              localStorage.removeItem('chatbot_cache');
-              localStorage.removeItem('chatbot_selected_model');
-            }
-          }}
-          style={{
-            marginBottom: 12,
-            backgroundColor: '#f44336',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            padding: '6px 12px',
-            cursor: 'pointer',
-          }}
-        >
-          🗑 Xóa toàn bộ lịch sử
-        </button>
-      )}
-
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: '1.5em' }}>
-        <ChatInputSuggest
-          value={input}
-          onChange={setInput}
-          onSend={sendChat}
-          disabled={loading}
-        />
-      </div>
-
-      <div
-        style={{
-          maxHeight: 340,
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column-reverse',
-          gap: '1em',
-        }}
-      >
-        {loading && (
-          <div
-            style={{
-              textAlign: 'left',
-              color: '#999',
-              fontStyle: 'italic',
-              margin: '0.5em 0 0.5em 10px',
-            }}
-          >
-            <b>Bot:</b> <span>Đang trả lời...</span>
-          </div>
-        )}
-        {history.map((item, idx) => {
-          const time = new Date(item.createdAt).toLocaleString('vi-VN');
-          return (
-            <div key={idx}>
-              <div
-                style={{
-                  background: '#e4e7ff',
-                  color: '#35477d',
-                  alignSelf: 'flex-end',
-                  marginLeft: 'auto',
-                  padding: '8px 12px',
-                  borderRadius: '1em',
-                  marginBottom: 4,
-                  display: 'inline-block',
-                  maxWidth: '85%',
-                }}
-              >
-                <b>Bạn:</b> {item.user}
-                <div style={{ fontSize: '0.8em', color: '#999', marginTop: 4 }}>
-                  {time}
-                </div>
-              </div>
-              <div
-                style={{
-                  background: '#e2fcfa',
-                  color: '#24637c',
-                  alignSelf: 'flex-start',
-                  marginRight: 'auto',
-                  padding: '8px 12px',
-                  borderRadius: '1em',
-                  marginBottom: 4,
-                  display: 'inline-block',
-                  maxWidth: '85%',
-                  whiteSpace: 'normal',
-                  fontSize: '1.06em',
-                }}
-              >
-                <b>Bot:</b>
-                <div style={{ marginTop: 4 }}>
-                  <ReactMarkdown>{item.bot}</ReactMarkdown>
-                </div>
-                <div style={{ fontSize: '0.8em', color: '#999', marginTop: 4 }}>
-                  {time}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
+      {/* Model Selection Modal */}
       {showModelPopup && (
-        <div className='fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50'>
+        <div className="chat-modal">
           <ModelManager
             onSelectModel={m => {
               setModel(m);

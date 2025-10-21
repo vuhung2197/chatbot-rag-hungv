@@ -1,13 +1,16 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import '../styles/Chat.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function ChatInputSuggest({
   value,
   onChange,
   onSend,
   disabled,
+  onKeyPress,
+  placeholder = "Nhập câu hỏi của bạn..."
 }) {
   const [suggest, setSuggest] = useState('');
   const [loadingSuggest, setLoadingSuggest] = useState(false);
@@ -44,58 +47,32 @@ export default function ChatInputSuggest({
       onChange(value + suggest);
       setSuggest('');
     }
-    if (e.key === 'Enter' && value.trim() && !disabled) {
-      onSend();
+    if (onKeyPress) {
+      onKeyPress(e);
     }
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      <input
+    <div className="chat-input-wrapper">
+      <textarea
         value={value}
         onChange={handleInput}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        style={{
-          width: '100%',
-          padding: '10px 48px 10px 16px',
-          fontSize: 17,
-          borderRadius: 15,
-          border: '1.5px solid #e3e0fd',
-          boxSizing: 'border-box',
-        }}
-        placeholder='Nhập câu hỏi hoặc từ cần dịch...'
+        className="chat-textarea"
+        placeholder={placeholder}
         autoFocus
       />
-      {/* Button nằm trọn bên trong input */}
+
+      {/* Send Button */}
       <button
         onClick={() => !disabled && value.trim() && onSend()}
         disabled={disabled || !value.trim()}
-        style={{
-          position: 'absolute',
-          right: 5,
-          top: '36%',
-          transform: 'translateY(-50%)',
-          background: disabled || !value.trim() ? '#e2e2e2' : '#4f3ed7',
-          border: 'none',
-          borderRadius: '50%',
-          width: 34,
-          height: 34,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontSize: '1.3em',
-          cursor: disabled || !value.trim() ? 'not-allowed' : 'pointer',
-          boxShadow: '0 2px 8px #d2d2ff44',
-          transition: 'background 0.2s',
-          zIndex: 2,
-          padding: 0,
-        }}
+        className="chat-send-button"
         tabIndex={-1}
-        title='Gửi'
+        title='Gửi tin nhắn'
       >
-        <svg width='20' height='20' viewBox='0 0 20 20' fill='none'>
+        <svg width='16' height='16' viewBox='0 0 20 20' fill='none'>
           <path
             d='M10 16V4M10 4L4 10M10 4l6 6'
             stroke='white'
@@ -106,42 +83,32 @@ export default function ChatInputSuggest({
         </svg>
       </button>
 
+      {/* Suggestion Text */}
       {value && suggest && !loadingSuggest && !disabled && (
-        <span
-          style={{
-            position: 'absolute',
-            left: 18 + value.length * 9,
-            top: 10,
-            color: '#b8b8ea',
-            fontSize: 17,
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
+        <span className="chat-suggestion">
           {suggest}
         </span>
       )}
+
+      {/* Loading Indicator */}
       {loadingSuggest && (
-        <span
-          style={{
-            position: 'absolute',
-            right: 50,
-            top: 13,
-            color: '#aaa',
-            fontSize: 15,
-          }}
-        >
-          ...
-        </span>
+        <div className="chat-loading-indicator">
+          <div className="chat-loading-spinner"></div>
+          <span>Đang gợi ý...</span>
+        </div>
       )}
-      <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+
+      {/* Help Text */}
+      <div className="chat-help-text">
         {suggest ? (
           <>
-            Nhấn <b>Tab</b> để chèn gợi ý:{' '}
-            <span style={{ color: '#4f3ed7' }}>{suggest}</span>
+            <span>Nhấn <b>Tab</b> để chèn gợi ý:</span>
+            <span className="chat-suggestion-text">
+              {suggest}
+            </span>
           </>
         ) : (
-          'Gợi ý từ tiếp theo tự động'
+          <span>💡 Gợi ý từ tiếp theo tự động</span>
         )}
       </div>
     </div>

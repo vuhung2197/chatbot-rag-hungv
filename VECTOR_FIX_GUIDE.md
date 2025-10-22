@@ -71,16 +71,10 @@ function cosineSimilarity(a, b, eps = 1e-12) {
 
 ## 🧪 KIỂM TRA LUỒNG XỬ LÝ
 
-### **1. Setup Database**
+### **1. Test Vector Flow**
 ```bash
-# Chạy script setup
-node backend/setup_vector_database.js
-```
-
-### **2. Test Vector Flow**
-```bash
-# Chạy test vector flow
-node backend/test/vector_flow_test.js
+# Test vector flow đã được tích hợp vào main application
+# Không cần chạy script riêng
 ```
 
 ### **3. Test Chat Functionality**
@@ -118,7 +112,7 @@ node backend/services/embed_chunks.js
 ### **Step 3: Test Vector Search**
 ```bash
 # Test basic functionality
-node backend/test/vector_flow_test.js
+# Test đã được tích hợp vào main application
 ```
 
 ### **Step 4: Test Chat API**
@@ -247,7 +241,7 @@ const results = await retrieveTopChunks(embedding, 2, 0.2);
 ## 📞 SUPPORT
 
 Nếu vẫn gặp lỗi, hãy:
-1. Chạy `node backend/test/vector_flow_test.js`
+1. Chạy `# Test đã được tích hợp vào main application`
 2. Gửi kết quả test
 3. Kiểm tra logs chi tiết
 4. Verify database setup

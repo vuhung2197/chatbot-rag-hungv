@@ -11,7 +11,6 @@ import suggestRoutes from './routes/suggest.js';
 import unansweredRoutes from './routes/unanswered.js';
 import uploadRoutes from './routes/upload.js';
 import authRoutes from './routes/auth.js';
-import emailRoutes from './routes/email.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
@@ -29,7 +28,6 @@ app.use('/suggest-next-word', suggestRoutes);
 app.use('/unanswered', unansweredRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/auth', authRoutes);
-app.use('/email', emailRoutes);
 
 app.use(errorHandler);
 

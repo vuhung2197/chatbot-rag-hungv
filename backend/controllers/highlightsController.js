@@ -1,5 +1,5 @@
 import pool from '../db.js';
-import { translateWordByWord } from '../rules.js';
+import { translateWordByWord } from './chatController.js';
 
 export async function saveHighlight(req, res) {
   const { text } = req.body;

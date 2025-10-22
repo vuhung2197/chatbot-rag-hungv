@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import '../styles/KnowledgeAdmin.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function KnowledgeAdmin() {
   const [list, setList] = useState([]);
@@ -60,12 +61,14 @@ export default function KnowledgeAdmin() {
   const handleCancel = () => setForm({ title: '', content: '', id: null });
 
   const fetchChunks = async id => {
+    // eslint-disable-next-line no-console
     console.log('🔍 Chunk button clicked with id:', id);
     try {
       const res = await axios.get(`${API_URL}/knowledge/${id}/chunks`);
       setChunkPreview({ id, chunks: res.data });
       setShowChunkModal(true);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('❌ Lỗi khi lấy chunks:', err);
     }
   };
@@ -105,345 +108,233 @@ export default function KnowledgeAdmin() {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 700,
-        margin: '40px auto',
-        background: '#fff',
-        padding: '2em',
-        borderRadius: 18,
-        boxShadow: '0 6px 32px 0 rgba(0,0,0,0.10)',
-        fontFamily: 'Segoe UI, Arial, sans-serif',
-      }}
-    >
-      <h2
-        style={{
-          color: '#4f3ed7',
-          textAlign: 'center',
-          marginBottom: 28,
-          fontWeight: 800,
-          letterSpacing: 1,
-        }}
-      >
-        🧠 Quản Lý Kiến Thức
-      </h2>
-
-      <div style={{ marginBottom: 20 }}>
-        <label
-          style={{
-            fontWeight: 600,
-            marginBottom: 6,
-            display: 'block',
-            color: '#333',
-          }}
-        >
-          📤 Upload file kiến thức:
-        </label>
-        <input
-          type='file'
-          accept='.txt,.md,.csv,.json'
-          onChange={handleFileUpload}
-        />
+    <div className="knowledge-admin">
+      <div className="admin-header">
+        <div className="header-content">
+          <div className="header-icon">🧠</div>
+          <div className="header-text">
+            <h1>Quản Lý Kiến Thức</h1>
+            <p>Quản lý và cập nhật cơ sở kiến thức cho chatbot</p>
+          </div>
+        </div>
       </div>
 
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        style={{
-          background: '#f8f7ff',
-          padding: 18,
-          borderRadius: 12,
-          marginBottom: 30,
-          boxShadow: '0 1px 8px 0 rgba(79,62,215,0.07)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}
-      >
-        <input
-          placeholder='Tiêu đề kiến thức...'
-          value={form.title}
-          onChange={e => setForm({ ...form, title: e.target.value })}
-          required
-          maxLength={200}
-          style={{
-            fontSize: 18,
-            padding: '10px 16px',
-            border: '1.5px solid #e3e0fd',
-            borderRadius: 8,
-            outline: 'none',
-          }}
-        />
-        <textarea
-          placeholder='Nội dung kiến thức...'
-          value={form.content}
-          onChange={e => setForm({ ...form, content: e.target.value })}
-          required
-          rows={5}
-          style={{
-            fontSize: 16,
-            padding: '10px 16px',
-            border: '1.5px solid #e3e0fd',
-            borderRadius: 8,
-            outline: 'none',
-            minHeight: 90,
-          }}
-        />
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button
-            type='submit'
-            style={{
-              background: '#4f3ed7',
-              color: '#fff',
-              fontWeight: 700,
-              padding: '10px 20px',
-              borderRadius: 8,
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background .2s',
-            }}
-          >
-            {form.id ? 'Cập nhật' : 'Thêm'}
-          </button>
-          {form.id && (
-            <button
-              type='button'
-              onClick={handleCancel}
-              style={{
-                background: '#e5e5e5',
-                color: '#4f3ed7',
-                fontWeight: 700,
-                padding: '10px 20px',
-                borderRadius: 8,
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Hủy
-            </button>
+      <div className="admin-container">
+        {/* Upload Section */}
+        <div className="upload-section">
+          <div className="section-header">
+            <h3>📤 Tải lên tài liệu</h3>
+            <p>Upload file kiến thức từ máy tính</p>
+          </div>
+          <div className="upload-area">
+            <input
+              type="file"
+              accept=".txt,.md,.csv,.json"
+              onChange={handleFileUpload}
+              className="file-input"
+              id="file-upload"
+            />
+            <label htmlFor="file-upload" className="file-label">
+              <div className="upload-icon">📁</div>
+              <div className="upload-text">
+                <span className="upload-title">Chọn file để tải lên</span>
+                <span className="upload-subtitle">Hỗ trợ: .txt, .md, .csv, .json</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Form Section */}
+        <div className="form-section">
+          <div className="section-header">
+            <h3>✏️ Thêm/Sửa kiến thức</h3>
+            <p>Nhập thông tin kiến thức mới hoặc chỉnh sửa</p>
+          </div>
+          <form ref={formRef} onSubmit={handleSubmit} className="knowledge-form">
+            <div className="form-group">
+              <label className="form-label">Tiêu đề kiến thức</label>
+              <input
+                type="text"
+                placeholder="Nhập tiêu đề kiến thức..."
+                value={form.title}
+                onChange={e => setForm({ ...form, title: e.target.value })}
+                required
+                maxLength={200}
+                className="form-input"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Nội dung kiến thức</label>
+              <textarea
+                placeholder="Nhập nội dung kiến thức..."
+                value={form.content}
+                onChange={e => setForm({ ...form, content: e.target.value })}
+                required
+                rows={5}
+                className="form-textarea"
+              />
+            </div>
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                {form.id ? 'Cập nhật kiến thức' : 'Thêm kiến thức'}
+              </button>
+              {form.id && (
+                <button type="button" onClick={handleCancel} className="btn btn-secondary">
+                  Hủy bỏ
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+
+        {/* Knowledge List Section */}
+        <div className="knowledge-section">
+          <div className="section-header">
+            <h3>📚 Danh sách kiến thức</h3>
+            <p>Quản lý các kiến thức đã thêm vào hệ thống</p>
+          </div>
+          {list.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📝</div>
+              <div className="empty-text">
+                <h4>Chưa có kiến thức nào</h4>
+                <p>Hãy thêm kiến thức mới để bắt đầu</p>
+              </div>
+            </div>
+          ) : (
+            <div className="knowledge-grid">
+              {list.map(item => (
+                <div key={item.id} className="knowledge-card">
+                  <div className="card-header">
+                    <h4 className="card-title">{item.title}</h4>
+                    <div className="card-actions">
+                      <button
+                        onClick={() => handleEdit(item)}
+                        className="btn btn-sm btn-outline"
+                        title="Chỉnh sửa"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => fetchChunks(item.id)}
+                        className="btn btn-sm btn-info"
+                        title="Xem chunks"
+                      >
+                        📄
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="btn btn-sm btn-danger"
+                        title="Xóa"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <div className="card-content">
+                    <p className="card-text">
+                      {item.content.length > 150 
+                        ? `${item.content.substring(0, 150)}...` 
+                        : item.content
+                      }
+                    </p>
+                    {item.content.length > 150 && (
+                      <button 
+                        className="btn btn-sm btn-outline"
+                        onClick={() => {
+                          const fullText = item.content;
+                          if (window.confirm(`Nội dung đầy đủ:\n\n${fullText}`)) {
+                            // User can copy or do something with full text
+                          }
+                        }}
+                      >
+                        Xem đầy đủ
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-      </form>
 
-      <div>
-        <h3
-          style={{
-            color: '#22223b',
-            borderBottom: '1.5px solid #e3e0fd',
-            paddingBottom: 10,
-            marginBottom: 20,
-            fontWeight: 700,
-          }}
-        >
-          📚 Danh sách kiến thức đã thêm
-        </h3>
-        {list.length === 0 ? (
-          <div style={{ color: '#999', textAlign: 'center' }}>
-            Chưa có kiến thức nào!
+        {/* Unanswered Questions Section */}
+        <div className="unanswered-section">
+          <div className="section-header">
+            <h3>❓ Câu hỏi chưa trả lời</h3>
+            <p>Các câu hỏi người dùng chưa có câu trả lời phù hợp</p>
           </div>
-        ) : (
-          <div style={{ display: 'grid', gap: 18 }}>
-            {list.map(item => (
-              <div
-                key={item.id}
-                style={{
-                  background: '#f3f0fc',
-                  borderLeft: '5px solid #4f3ed7',
-                  borderRadius: 10,
-                  padding: '16px 18px',
-                  boxShadow: '0 1px 6px 0 rgba(79,62,215,0.08)',
-                  position: 'relative',
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 17,
-                    marginBottom: 8,
-                    color: '#322b6d',
-                  }}
-                >
-                  {item.title}
-                </div>
-                <div
-                  style={{
-                    fontSize: 16,
-                    color: '#444',
-                    whiteSpace: 'pre-line',
-                    marginBottom: 12,
-                  }}
-                >
-                  {item.content}
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    gap: 10,
-                    position: 'absolute',
-                    top: 16,
-                    right: 18,
-                  }}
-                >
-                  <button
-                    onClick={() => handleEdit(item)}
-                    style={{
-                      background: '#fff',
-                      border: '1.2px solid #4f3ed7',
-                      color: '#4f3ed7',
-                      borderRadius: 6,
-                      padding: '4px 13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      marginRight: 3,
-                    }}
-                  >
-                    Sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    style={{
-                      background: '#ffeded',
-                      border: '1.2px solid #ed6060',
-                      color: '#ed6060',
-                      borderRadius: 6,
-                      padding: '4px 13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Xóa
-                  </button>
-                  <button
-                    onClick={() => fetchChunks(item.id)}
-                    style={{
-                      background: '#fefefe',
-                      border: '1px solid #bbb',
-                      color: '#444',
-                      borderRadius: 6,
-                      padding: '4px 13px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Chunk
-                  </button>
-                </div>
+          {unanswered.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">✅</div>
+              <div className="empty-text">
+                <h4>Tuyệt vời!</h4>
+                <p>Không có câu hỏi nào bị bỏ sót</p>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div style={{ marginTop: 40 }}>
-        <h3
-          style={{
-            color: '#c22d2d',
-            borderBottom: '1.5px solid #f5dada',
-            paddingBottom: 10,
-            marginBottom: 20,
-            fontWeight: 700,
-          }}
-        >
-          ❓ Câu hỏi chưa có câu trả lời
-        </h3>
-        {unanswered.length === 0 ? (
-          <div style={{ color: '#888', fontStyle: 'italic' }}>
-            Không có câu hỏi nào bị bỏ sót.
-          </div>
-        ) : (
-          <ul style={{ paddingLeft: 18, color: '#444' }}>
-            {unanswered.map(q => (
-              <li key={q.id} style={{ marginBottom: 8 }}>
-                <span>{q.question}</span>
-                <button
-                  onClick={() => handleUseUnanswered(q.question)}
-                  style={{
-                    marginLeft: 10,
-                    padding: '2px 8px',
-                    fontSize: 13,
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    border: '1px solid #aaa',
-                  }}
-                >
-                  Dùng để huấn luyện
-                </button>
-                <button
-                  onClick={() => handleDeleteUnanswered(q.id)}
-                  style={{
-                    marginLeft: 10,
-                    padding: '2px 8px',
-                    fontSize: 13,
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    border: '1px solid #aaa',
-                  }}
-                >
-                  Xóa
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {showChunkModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 12,
-              padding: '24px 28px',
-              width: '90%',
-              maxWidth: 600,
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              position: 'relative',
-              color: '#333',
-              fontFamily: 'Segoe UI, Arial, sans-serif',
-            }}
-          >
-            <h3 style={{ marginBottom: 16 }}>
-              📎 Các đoạn chunk của kiến thức
-            </h3>
-            {chunkPreview.chunks.length === 0 ? (
-              <i style={{ color: '#999' }}>Chưa có chunk nào</i>
-            ) : (
-              chunkPreview.chunks.map((c, i) => (
-                <div key={c.id} style={{ fontSize: 14, marginBottom: 14 }}>
-                  <b>• Chunk {i + 1}</b> ({c.token_count} tokens):
-                  <br />
-                  <span style={{ whiteSpace: 'pre-wrap' }}>{c.content}</span>
+            </div>
+          ) : (
+            <div className="unanswered-list">
+              {unanswered.map(q => (
+                <div key={q.id} className="unanswered-item">
+                  <div className="question-content">
+                    <p className="question-text">{q.question}</p>
+                  </div>
+                  <div className="question-actions">
+                    <button
+                      onClick={() => handleUseUnanswered(q.question)}
+                      className="btn btn-sm btn-primary"
+                    >
+                      Dùng để huấn luyện
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUnanswered(q.id)}
+                      className="btn btn-sm btn-danger"
+                    >
+                      Xóa
+                    </button>
+                  </div>
                 </div>
-              ))
-            )}
-            <button
-              onClick={() => setShowChunkModal(false)}
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 14,
-                border: 'none',
-                background: 'transparent',
-                fontSize: 20,
-                cursor: 'pointer',
-              }}
-            >
-              ✕
-            </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chunk Modal */}
+      {showChunkModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>📎 Các đoạn chunk của kiến thức</h3>
+              <button
+                onClick={() => setShowChunkModal(false)}
+                className="modal-close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              {chunkPreview.chunks.length === 0 ? (
+                <div className="empty-chunks">
+                  <div className="empty-icon">📄</div>
+                  <p>Chưa có chunk nào được tạo</p>
+                </div>
+              ) : (
+                <div className="chunks-list">
+                  {chunkPreview.chunks.map((c, i) => (
+                    <div key={c.id} className="chunk-item">
+                      <div className="chunk-header">
+                        <span className="chunk-number">Chunk {i + 1}</span>
+                        <span className="chunk-tokens">{c.token_count} tokens</span>
+                      </div>
+                      <div className="chunk-content">
+                        <pre>{c.content}</pre>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

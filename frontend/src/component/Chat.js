@@ -18,14 +18,23 @@ export default function Chat() {
   const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
   const [advancedResponse, setAdvancedResponse] = useState(null);
   const messagesEndRef = useRef(null);
+  const lastMessageRef = useRef(null);
 
-  // Auto scroll to bottom
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Auto scroll to last message (beginning of bot response)
+  const scrollToLastMessage = () => {
+    if (lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start' // Scroll to top of the message
+      });
+    } else {
+      // Fallback to bottom if no last message ref
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    scrollToLastMessage();
   }, [history, loading]);
 
   // Render lần đầu tiên khi component mount
@@ -132,8 +141,8 @@ export default function Chat() {
       
       const data = res.data;
       setHistory([
-        { user: input, bot: data.reply, createdAt: timestamp },
         ...history,
+        { user: input, bot: data.reply, createdAt: timestamp },
       ]);
 
       const isNoAnswer = [
@@ -343,49 +352,56 @@ export default function Chat() {
           </div>
         )}
 
-        {history.map((item, idx) => (
-          <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* User Message */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <div style={{
-                backgroundColor: '#10a37f',
-                color: 'white',
-                padding: '12px 16px',
-                borderRadius: '18px 18px 4px 18px',
-                maxWidth: '70%',
-                fontSize: '15px',
-                lineHeight: '1.5',
-                wordWrap: 'break-word'
-              }}>
-                {item.user}
-              </div>
-            </div>
-
-            {/* Bot Message */}
-            {item.bot && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+        {history.map((item, idx) => {
+          const isLastMessage = idx === history.length - 1;
+          return (
+            <div 
+              key={idx} 
+              ref={isLastMessage ? lastMessageRef : null}
+              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+            >
+              {/* User Message */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <div style={{
-                  backgroundColor: '#ffffff',
-                  color: '#1f2937',
+                  backgroundColor: '#10a37f',
+                  color: 'white',
                   padding: '12px 16px',
-                  borderRadius: '18px 18px 18px 4px',
+                  borderRadius: '18px 18px 4px 18px',
                   maxWidth: '70%',
                   fontSize: '15px',
                   lineHeight: '1.5',
-                  wordWrap: 'break-word',
-                  border: '1px solid #e5e7eb',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  wordWrap: 'break-word'
                 }}>
-                  <ReactMarkdown>{item.bot}</ReactMarkdown>
+                  {item.user}
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              {/* Bot Message */}
+              {item.bot && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div style={{
+                    backgroundColor: '#ffffff',
+                    color: '#1f2937',
+                    padding: '12px 16px',
+                    borderRadius: '18px 18px 18px 4px',
+                    maxWidth: '70%',
+                    fontSize: '15px',
+                    lineHeight: '1.5',
+                    wordWrap: 'break-word',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  }}>
+                    <ReactMarkdown>{item.bot}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {/* Loading Message */}
         {loading && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <div ref={lastMessageRef} style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <div style={{
               backgroundColor: '#ffffff',
               color: '#1f2937',

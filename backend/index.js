@@ -4,6 +4,7 @@ import './bootstrap/env.js';
 import cookieParser from 'cookie-parser';
 
 import chatRoutes from './routes/chat.js';
+import advancedChatRoutes from './routes/advancedChat.js';
 import feedbackRoutes from './routes/feedback.js';
 import highlightsRoutes from './routes/highlights.js';
 import knowledgeRoutes from './routes/knowledge.js';
@@ -21,6 +22,7 @@ app.use(cookieParser());
 
 // Import routes
 app.use('/chat', chatRoutes);
+app.use('/advanced-chat', advancedChatRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/highlights', highlightsRoutes);
 app.use('/knowledge', knowledgeRoutes);

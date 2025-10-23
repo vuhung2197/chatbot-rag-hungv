@@ -15,6 +15,8 @@ export default function Chat() {
   const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
+  const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
+  const [advancedResponse, setAdvancedResponse] = useState(null);
   const messagesEndRef = useRef(null);
 
   // Auto scroll to bottom
@@ -34,6 +36,7 @@ export default function Chat() {
       try {
         setHistory(JSON.parse(saved));
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Lỗi khi parse history:', e);
       }
     }
@@ -43,6 +46,7 @@ export default function Chat() {
       try {
         setModel(JSON.parse(savedModel));
       } catch (e) {
+        // eslint-disable-next-line no-console
         console.error('Lỗi khi parse model đã lưu:', e);
       }
     }
@@ -65,6 +69,7 @@ export default function Chat() {
         const data = res.data;
         setQuestionHistory(data);
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error('Lỗi khi lấy lịch sử câu hỏi:', err);
       }
     }
@@ -79,11 +84,12 @@ export default function Chat() {
   async function sendChat() {
     if (!input.trim() || loading) return;
     setLoading(true);
+    setAdvancedResponse(null);
     const timestamp = new Date().toISOString();
     const hash = hashQuestion(input);
     const cached = JSON.parse(localStorage.getItem('chatbot_cache') || '{}');
 
-    if (cached[hash]) {
+    if (cached[hash] && !useAdvancedRAG) {
       setHistory([
         { user: input, bot: cached[hash], createdAt: timestamp },
         ...history,
@@ -96,16 +102,34 @@ export default function Chat() {
     const token = localStorage.getItem('token');
 
     try {
-      const res = await axios.post(
-        `${API_URL}/chat`,
-        { message: input, model },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      let res;
+      if (useAdvancedRAG) {
+        // Sử dụng Advanced RAG
+        res = await axios.post(
+          `${API_URL}/advanced-chat/advanced-chat`,
+          { message: input, model },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setAdvancedResponse(res.data);
+      } else {
+        // Sử dụng RAG thông thường
+        res = await axios.post(
+          `${API_URL}/chat`,
+          { message: input, model },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+      
       const data = res.data;
       setHistory([
         { user: input, bot: data.reply, createdAt: timestamp },
@@ -119,7 +143,7 @@ export default function Chat() {
         'Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.',
       ].includes(data.reply);
 
-      if (!isNoAnswer) {
+      if (!isNoAnswer && !useAdvancedRAG) {
         cached[hash] = data.reply;
         localStorage.setItem('chatbot_cache', JSON.stringify(cached));
       }
@@ -205,6 +229,29 @@ export default function Chat() {
             }}
           >
             📚 Lịch sử
+          </button>
+          
+          <button
+            onClick={() => setUseAdvancedRAG(!useAdvancedRAG)}
+            title={useAdvancedRAG 
+              ? 'Advanced RAG: Multi-chunk reasoning cho câu hỏi phức tạp' 
+              : 'RAG thông thường: Nhanh cho câu hỏi đơn giản'
+            }
+            style={{
+              backgroundColor: useAdvancedRAG ? '#10a37f' : '#f3f4f6',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: useAdvancedRAG ? 'white' : '#374151',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {useAdvancedRAG ? '🧠 Advanced RAG' : '🧠 RAG'}
           </button>
           
           <button
@@ -383,6 +430,82 @@ export default function Chat() {
           </div>
         )}
 
+        {/* Advanced RAG Info */}
+        {advancedResponse && (
+          <div style={{
+            backgroundColor: '#f0f9ff',
+            border: '1px solid #0ea5e9',
+            borderRadius: '12px',
+            padding: '16px',
+            margin: '16px 24px',
+            fontSize: '14px',
+            color: '#333'
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              marginBottom: '12px',
+              fontWeight: '600',
+              color: '#0369a1'
+            }}>
+              🧠 Advanced RAG Analysis
+            </div>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <strong>📊 Processing Steps:</strong>
+              <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
+                {advancedResponse.reasoning_steps?.map((step, index) => (
+                  <li key={index} style={{ marginBottom: '4px' }}>
+                    {step}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <strong>📚 Chunks Used:</strong> {advancedResponse.chunks_used?.length || 0}
+              {advancedResponse.chunks_used?.length > 0 && (
+                <div style={{ 
+                  marginTop: '8px', 
+                  display: 'grid', 
+                  gap: '4px',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}>
+                  {advancedResponse.chunks_used.map((chunk, index) => (
+                    <div key={index} style={{
+                      background: '#e0f2fe',
+                      padding: '6px 8px',
+                      borderRadius: '6px',
+                      fontSize: '12px'
+                    }}>
+                      <strong>{chunk.title}</strong> 
+                      <span style={{ color: '#666', marginLeft: '8px' }}>
+                        (Score: {chunk.score?.toFixed(3)}, Stage: {chunk.stage})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {advancedResponse.metadata && (
+              <div style={{ 
+                background: '#f8fafc', 
+                padding: '8px 12px', 
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontFamily: 'monospace'
+              }}>
+                <strong>⚡ Performance:</strong> {advancedResponse.metadata.processing_time}ms | 
+                <strong> Clusters:</strong> {advancedResponse.metadata.clusters} | 
+                <strong> Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains}
+              </div>
+            )}
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
 
@@ -543,6 +666,7 @@ export default function Chat() {
                           alert('Xóa thất bại!');
                         }
                       } catch (err) {
+                        // eslint-disable-next-line no-console
                         console.error('Lỗi khi xóa câu hỏi:', err);
                         alert('Đã xảy ra lỗi khi xóa!');
                       }

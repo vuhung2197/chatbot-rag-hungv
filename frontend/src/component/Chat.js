@@ -142,7 +142,13 @@ export default function Chat() {
       const data = res.data;
       setHistory([
         ...history,
-        { user: input, bot: data.reply, createdAt: timestamp },
+        { 
+          user: input, 
+          bot: data.reply, 
+          createdAt: timestamp,
+          chunks_used: data.chunks_used,
+          metadata: data.metadata
+        },
       ]);
 
       const isNoAnswer = [
@@ -392,6 +398,58 @@ export default function Chat() {
                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                   }}>
                     <ReactMarkdown>{item.bot}</ReactMarkdown>
+                    
+                    {/* Regular Chat Chunks */}
+                    {item.chunks_used && item.chunks_used.length > 0 && (
+                      <div style={{ 
+                        marginTop: '12px', 
+                        padding: '8px 0',
+                        borderTop: '1px solid #e5e7eb'
+                      }}>
+                        <div style={{ 
+                          fontSize: '12px', 
+                          color: '#6b7280', 
+                          marginBottom: '6px',
+                          fontWeight: '500'
+                        }}>
+                          📚 Chunks used ({item.chunks_used.length}):
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {item.chunks_used.map((chunk, chunkIdx) => (
+                            <div key={chunkIdx} style={{
+                              background: '#f8fafc',
+                              padding: '6px 8px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              border: '1px solid #e5e7eb'
+                            }}>
+                              <div style={{ fontWeight: '500', color: '#374151' }}>
+                                {chunk.title}
+                              </div>
+                              <div style={{ color: '#6b7280', marginTop: '2px' }}>
+                                Score: {chunk.score?.toFixed(3)} | ID: {chunk.id}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Regular Chat Metadata */}
+                    {item.metadata && (
+                      <div style={{ 
+                        marginTop: '8px', 
+                        padding: '6px 8px',
+                        background: '#f8fafc',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        color: '#6b7280',
+                        border: '1px solid #e5e7eb'
+                      }}>
+                        🤖 {item.metadata.model_used} | ⚡ {item.metadata.processing_time}ms | 
+                        📄 {item.metadata.context_length} chars | 📚 {item.metadata.total_chunks} chunks
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -484,22 +542,52 @@ export default function Chat() {
               {advancedResponse.chunks_used?.length > 0 && (
                 <div style={{ 
                   marginTop: '8px', 
-                  display: 'grid', 
-                  gap: '4px',
-                  maxHeight: '120px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  maxHeight: '200px',
                   overflowY: 'auto'
                 }}>
                   {advancedResponse.chunks_used.map((chunk, index) => (
                     <div key={index} style={{
-                      background: '#e0f2fe',
-                      padding: '6px 8px',
-                      borderRadius: '6px',
-                      fontSize: '12px'
+                      background: '#f8fafc',
+                      border: '1px solid #e5e7eb',
+                      padding: '10px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                     }}>
-                      <strong>{chunk.title}</strong> 
-                      <span style={{ color: '#666', marginLeft: '8px' }}>
-                        (Score: {chunk.score?.toFixed(3)}, Stage: {chunk.stage})
-                      </span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <div style={{ fontWeight: '600', color: '#1e40af', fontSize: '13px' }}>
+                          {chunk.title}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#666', display: 'flex', gap: '8px' }}>
+                          <span>Score: {chunk.score?.toFixed(3)}</span>
+                          <span>Stage: {chunk.stage}</span>
+                        </div>
+                      </div>
+                      <div style={{ 
+                        color: '#374151', 
+                        fontSize: '12px', 
+                        lineHeight: '1.4',
+                        background: '#ffffff',
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #e5e7eb',
+                        marginBottom: '4px'
+                      }}>
+                        {chunk.content}
+                      </div>
+                      <div style={{ 
+                        fontSize: '10px', 
+                        color: '#6b7280', 
+                        display: 'flex',
+                        gap: '12px'
+                      }}>
+                        <span>ID: {chunk.id}</span>
+                        <span>Source: {chunk.source}</span>
+                        <span>Chunk: {chunk.chunk_index}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -514,9 +602,16 @@ export default function Chat() {
                 fontSize: '12px',
                 fontFamily: 'monospace'
               }}>
-                <strong>⚡ Performance:</strong> {advancedResponse.metadata.processing_time}ms | 
-                <strong> Clusters:</strong> {advancedResponse.metadata.clusters} | 
-                <strong> Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains}
+                <div style={{ marginBottom: '4px' }}>
+                  <strong>🤖 Model:</strong> {advancedResponse.metadata.model_used} | 
+                  <strong> ⚡ Time:</strong> {advancedResponse.metadata.processing_time}ms | 
+                  <strong> 📄 Context:</strong> {advancedResponse.metadata.context_length} chars
+                </div>
+                <div>
+                  <strong>🔗 Clusters:</strong> {advancedResponse.metadata.clusters} | 
+                  <strong> 🧠 Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains} | 
+                  <strong> 📚 Total Chunks:</strong> {advancedResponse.metadata.total_chunks}
+                </div>
               </div>
             )}
           </div>

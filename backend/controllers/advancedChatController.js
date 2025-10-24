@@ -1,5 +1,6 @@
 import pool from '../db.js';
 import { getEmbedding } from '../services/embeddingVector.js';
+import { hashQuestion } from '../utils/hash.js';
 import { StatusCodes } from 'http-status-codes';
 import '../bootstrap/env.js';
 import OpenAI from 'openai';
@@ -71,6 +72,9 @@ function toAdvancedMarkdown(text) {
 export async function advancedChat(req, res) {
   const { message, model } = req.body;
   const userId = req.user?.id;
+
+  // Validate model name
+  // const model = model.name && typeof model.name === 'string' ? model.name : 'gpt-4o';
 
   if (!message) {
     return res.status(StatusCodes.BAD_REQUEST).json({ 
@@ -161,7 +165,7 @@ export async function advancedChat(req, res) {
       console.log('🔗 Fused context length:', fusedContext.length);
       
       // Debug: Log context preview để kiểm tra
-      console.log('📄 Context preview:', fusedContext.substring(0, 200) + '...');
+      console.log('📄 Context preview:', `${fusedContext.substring(0, 200)}...`);
     } catch (error) {
       console.error('❌ Error in context fusion:', error);
       // Fallback to simple context
@@ -187,7 +191,7 @@ Hướng dẫn trả lời:
     try {
       // Set timeout for LLM call
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('LLM call timeout')), 30000)
+        setTimeout(() => reject(new Error('LLM call timeout')), 100000)
       );
       
       const llmPromise = askAdvancedChatGPT(message, fusedContext, systemPrompt, model);
@@ -206,7 +210,7 @@ Hướng dẫn trả lời:
       `Created ${clusters.length} semantic clusters`,
       `Generated ${reasoningChains.length} reasoning chains`,
       `Fused context with ${fusedContext.length} characters`,
-      `Generated response using advanced RAG`
+      `Generated response using advanced RAG with model ${model.name}`
     ];
 
     // 11. Ghi lịch sử (không có metadata column)
@@ -223,14 +227,19 @@ Hướng dẫn trả lời:
       chunks_used: rerankedChunks.map(c => ({
         id: c.id,
         title: c.title,
+        content: c.content.substring(0, 200) + (c.content.length > 200 ? '...' : ''),
         score: c.final_score || c.score,
-        stage: c.retrieval_stage
+        stage: c.retrieval_stage,
+        source: c.source || 'unknown',
+        chunk_index: c.chunk_index || 0
       })),
       metadata: {
         total_chunks: allChunks.length,
         clusters: clusters.length,
         reasoning_chains: reasoningChains.length,
-        processing_time: t1 - t0
+        processing_time: t1 - t0,
+        model_used: model.name,
+        context_length: fusedContext.length
       }
     });
 
@@ -251,7 +260,7 @@ async function askAdvancedChatGPT(question, context, systemPrompt, model) {
   // Giới hạn độ dài context để tránh lỗi JSON parsing
   const maxContextLength = 8000;
   const truncatedContext = context.length > maxContextLength 
-    ? context.substring(0, maxContextLength) + '...' 
+    ? `${context.substring(0, maxContextLength)}...` 
     : context;
 
   const prompt = `# Câu hỏi: ${question}
@@ -275,15 +284,14 @@ Kết hợp thông tin từ nhiều nguồn một cách logic và có cấu trú
     }
   ];
 
-  // Validate model name
-  const validModel = model && typeof model === 'string' ? model : 'gpt-4o';
+  // const validModel = model.name && typeof model.name === 'string' ? model.name : 'gpt-4o';
 
   const response = await openai.chat.completions.create({
-    model: validModel,
+    model: 'gpt-4o',
     messages,
     temperature: 0.3,
     max_tokens: 1000
-  });
+  });  
 
   return response.choices[0].message.content.trim();
 }
@@ -293,10 +301,17 @@ Kết hợp thông tin từ nhiều nguồn một cách logic và có cấu trú
  */
 async function logUnanswered(question) {
   try {
-    await pool.execute(
-      'INSERT INTO unanswered_questions (question, created_at) VALUES (?, NOW())',
-      [question]
+    const hash = hashQuestion(question);
+    const [rows] = await pool.execute(
+      'SELECT 1 FROM unanswered_questions WHERE hash = ? LIMIT 1',
+      [hash]
     );
+    if (rows.length === 0) {
+      await pool.execute(
+        'INSERT INTO unanswered_questions (question, hash, created_at) VALUES (?, ?, NOW())',
+        [question, hash]
+      );
+    }
   } catch (err) {
     console.error('❌ Lỗi log unanswered:', err);
   }

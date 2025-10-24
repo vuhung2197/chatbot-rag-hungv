@@ -132,7 +132,22 @@ export async function chat(req, res) {
       );
     }
 
-    res.json({ reply: toMarkdown(reply) });
+    res.json({ 
+      reply: toMarkdown(reply),
+      chunks_used: chunks.map(c => ({
+        id: c.id,
+        title: c.title,
+        content: c.content.substring(0, 200) + (c.content.length > 200 ? '...' : ''),
+        score: c.score,
+        source: c.source || 'unknown'
+      })),
+      metadata: {
+        total_chunks: chunks.length,
+        processing_time: t1 - t0,
+        model_used: model || 'gpt-4o',
+        context_length: context.length
+      }
+    });
   } catch (err) {
     console.error('❌ Lỗi xử lý:', err);
     res.json({ reply: 'Bot đang bận, vui lòng thử lại sau!' });

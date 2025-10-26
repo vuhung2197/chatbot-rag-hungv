@@ -3,7 +3,6 @@ import { getEmbedding } from '../services/embeddingVector.js';
 import { hashQuestion } from '../utils/hash.js';
 import { StatusCodes } from 'http-status-codes';
 import '../bootstrap/env.js';
-import OpenAI from 'openai';
 import {
   multiStageRetrieval,
   semanticClustering,
@@ -12,8 +11,7 @@ import {
   adaptiveRetrieval,
   rerankContext
 } from '../services/advancedRAGFixed.js';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+import { callLLM } from './chatController.js';
 
 /**
  * Advanced Chat Controller với Multi-Chunk Reasoning
@@ -73,9 +71,6 @@ export async function advancedChat(req, res) {
   const { message, model } = req.body;
   const userId = req.user?.id;
 
-  // Validate model name
-  // const model = model.name && typeof model.name === 'string' ? model.name : 'gpt-4o';
-
   if (!message) {
     return res.status(StatusCodes.BAD_REQUEST).json({ 
       reply: 'No message!',
@@ -84,8 +79,24 @@ export async function advancedChat(req, res) {
     });
   }
 
+  // Validate model
+  if (!model || !model.url || !model.name) {
+    console.error('❌ Invalid model configuration:', model);
+    return res.status(StatusCodes.BAD_REQUEST).json({ 
+      reply: 'Invalid model configuration!',
+      reasoning_steps: [],
+      chunks_used: []
+    });
+  }
+
   try {
     console.log('🧠 Advanced RAG processing:', message);
+    console.log('📋 Model config:', {
+      name: model.name,
+      url: model.url,
+      temperature: model.temperature,
+      maxTokens: model.maxTokens
+    });
     
     // 1. Tạo embedding cho câu hỏi
     let questionEmbedding;
@@ -189,16 +200,29 @@ Hướng dẫn trả lời:
     const t0 = Date.now();
     let reply = '';
     try {
-      // Set timeout for LLM call
+      // Set timeout for LLM call - increased for complex processing
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('LLM call timeout')), 100000)
+        setTimeout(() => reject(new Error('LLM call timeout')), 180000)
       );
       
       const llmPromise = askAdvancedChatGPT(message, fusedContext, systemPrompt, model);
       reply = await Promise.race([llmPromise, timeoutPromise]);
     } catch (error) {
-      console.error('❌ Error in LLM call:', error);
-      reply = 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi phức tạp này. Vui lòng thử lại với câu hỏi đơn giản hơn.';
+      console.error('❌ Error in LLM call for Advanced RAG:', {
+        message: error.message,
+        stack: error.stack,
+        model: model?.name,
+        model_url: model?.url
+      });
+      
+      // Provide detailed error message
+      if (error.message && error.message.includes('LLM API Error')) {
+        reply = `Lỗi kết nối với model: ${error.message}`;
+      } else if (error.message && error.message.includes('timeout')) {
+        reply = 'Model mất quá nhiều thời gian để phản hồi. Vui lòng thử lại với câu hỏi ngắn gọn hơn.';
+      } else {
+        reply = 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi phức tạp này. Vui lòng thử lại với câu hỏi đơn giản hơn.';
+      }
     }
     
     const t1 = Date.now();
@@ -254,14 +278,17 @@ Hướng dẫn trả lời:
 }
 
 /**
- * Gọi OpenAI với context nâng cao
+ * Gọi LLM với context nâng cao - sử dụng model được chọn
  */
 async function askAdvancedChatGPT(question, context, systemPrompt, model) {
-  // Giới hạn độ dài context để tránh lỗi JSON parsing
-  const maxContextLength = 8000;
+  // Giới hạn độ dài context để tránh lỗi và tăng tốc xử lý
+  // Reduced from 8000 to 6000 for faster processing
+  const maxContextLength = 6000;
   const truncatedContext = context.length > maxContextLength 
     ? `${context.substring(0, maxContextLength)}...` 
     : context;
+  
+  console.log(`📝 Context size: ${context.length} chars, truncated to: ${truncatedContext.length} chars`);
 
   const prompt = `# Câu hỏi: ${question}
 
@@ -280,20 +307,15 @@ Kết hợp thông tin từ nhiều nguồn một cách logic và có cấu trú
     },
     { 
       role: 'user', 
-      content: prompt.substring(0, 12000) // Giới hạn user prompt
+      content: prompt.substring(0, 8000) // Reduced from 12000 to 8000 for faster processing
     }
   ];
 
-  // const validModel = model.name && typeof model.name === 'string' ? model.name : 'gpt-4o';
+  // Sử dụng model được chọn thay vì hardcode
+  // Reduced max_tokens from 1000 to 800 for faster response
+  const reply = await callLLM(model, messages, 0.3, 800);
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages,
-    temperature: 0.3,
-    max_tokens: 1000
-  });  
-
-  return response.choices[0].message.content.trim();
+  return reply;
 }
 
 /**

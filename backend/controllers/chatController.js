@@ -144,7 +144,7 @@ export async function chat(req, res) {
       metadata: {
         total_chunks: chunks.length,
         processing_time: t1 - t0,
-        model_used: model || 'gpt-4o',
+        model_used: model.name || 'gpt-4o',
         context_length: context.length
       }
     });
@@ -379,27 +379,67 @@ export async function callLLM(
   _temperature = 0.2,
   _maxTokens = 512
 ) {
-  const baseUrl = model?.url;
-  const nameModel = model?.name;
-  const temperatureModel = model?.temperature;
-  const maxTokensModel = model?.maxTokens;
+  // Validate model
+  if (!model || !model.url || !model.name) {
+    throw new Error('Invalid model configuration: missing url or name');
+  }
 
-  const response = await axios.post(
-    `${baseUrl}/chat/completions`,
-    {
-      model: nameModel,
-      messages,
-      temperature: temperatureModel,
-      max_tokens: maxTokensModel,
-    },
-    {
-      headers: {
-        'Content-Type': 'application/json',
+  const baseUrl = model.url;
+  const nameModel = model.name;
+  
+  // Use temperature from model if available, otherwise use parameter
+  const temperatureModel = model.temperature !== undefined ? model.temperature : _temperature;
+  
+  // Use maxTokens from model if available, otherwise use parameter
+  const maxTokensModel = model.maxTokens !== undefined ? model.maxTokens : _maxTokens;
+
+  // Normalize URL - remove trailing slash if exists
+  const normalizedUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  const fullUrl = `${normalizedUrl}/chat/completions`;
+
+  console.log('🔗 Calling LLM:', {
+    url: fullUrl,
+    model: nameModel,
+    temperature: temperatureModel,
+    max_tokens: maxTokensModel,
+    messages_count: messages.length
+  });
+
+  try {
+    const response = await axios.post(
+      fullUrl,
+      {
+        model: nameModel,
+        messages,
+        temperature: temperatureModel,
+        max_tokens: maxTokensModel,
       },
-    }
-  );
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 180000, // 3 minutes timeout for complex RAG
+      }
+    );
 
-  return response.data.choices[0].message.content.trim();
+    const content = response.data.choices[0].message.content.trim();
+    console.log('✅ LLM response received successfully');
+    return content;
+  } catch (error) {
+    console.error('❌ LLM call error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      url: fullUrl,
+      request_body: {
+        model: nameModel,
+        temperature: temperatureModel,
+        max_tokens: maxTokensModel,
+        messages_count: messages.length
+      }
+    });
+    throw new Error(`LLM API Error: ${error.message} - ${error.response?.data ? JSON.stringify(error.response.data) : ''}`);
+  }
 }
 
 /**

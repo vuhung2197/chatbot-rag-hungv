@@ -13,10 +13,21 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
   const [models, setModels] = useState([]);
   const [form, setForm] = useState(defaultForm);
   const [editingIndex, setEditingIndex] = useState(null);
+  const [selectedModel, setSelectedModel] = useState(null);
 
   useEffect(() => {
     const stored = localStorage.getItem('llm_models');
     if (stored) setModels(JSON.parse(stored));
+    
+    // Get currently selected model
+    const savedModel = localStorage.getItem('chatbot_selected_model');
+    if (savedModel) {
+      try {
+        setSelectedModel(JSON.parse(savedModel));
+      } catch (e) {
+        console.error('Lỗi khi parse model đã chọn:', e);
+      }
+    }
   }, []);
 
   const saveModels = newList => {
@@ -85,9 +96,48 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
           fontFamily: 'Segoe UI, Arial, sans-serif',
         }}
       >
-        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>
           🧠 Quản lý mô hình LLM
         </h2>
+        
+        {selectedModel && (
+          <div style={{ 
+            backgroundColor: '#f0fdf4',
+            border: '1px solid #16a34a',
+            borderRadius: 8,
+            padding: 12,
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12
+          }}>
+            <div style={{ 
+              backgroundColor: '#16a34a', 
+              color: '#fff', 
+              borderRadius: '50%', 
+              width: 24, 
+              height: 24, 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontSize: 14,
+              fontWeight: 600
+            }}>
+              ✓
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, color: '#16a34a', fontWeight: 600 }}>
+                Model đang sử dụng:
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#333' }}>
+                {selectedModel.name}
+              </div>
+              <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
+                {selectedModel.url}
+              </div>
+            </div>
+          </div>
+        )}
 
         <form
           onSubmit={handleSubmit}
@@ -150,16 +200,32 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
             <div
               key={i}
               style={{
-                border: '1px solid #ddd',
+                border: selectedModel?.name === m.name ? '2px solid #16a34a' : '1px solid #ddd',
                 borderRadius: 8,
                 padding: 16,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
+                backgroundColor: selectedModel?.name === m.name ? '#f0fdf4' : '#fff',
+                transition: 'all 0.2s ease',
               }}
             >
               <div>
-                <div style={{ fontWeight: 600 }}>{m.name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 600 }}>{m.name}</span>
+                  {selectedModel?.name === m.name && (
+                    <span style={{ 
+                      fontSize: 11, 
+                      backgroundColor: '#16a34a', 
+                      color: '#fff', 
+                      padding: '2px 8px', 
+                      borderRadius: 12,
+                      fontWeight: 600 
+                    }}>
+                      ✓ ĐANG SỬ DỤNG
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 13, color: '#555' }}>{m.url}</div>
                 <div style={{ fontSize: 12, color: '#777', marginTop: 4 }}>
                   Temp: {m.temperature} | MaxTokens: {m.maxTokens}
@@ -190,17 +256,22 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
                 </button>
                 <button
                   style={{
-                    color: '#16a34a',
-                    background: 'none',
-                    border: 'none',
+                    color: selectedModel?.name === m.name ? '#fff' : '#16a34a',
+                    background: selectedModel?.name === m.name ? '#16a34a' : 'none',
+                    border: selectedModel?.name === m.name ? '2px solid #16a34a' : 'none',
+                    borderRadius: 6,
+                    padding: '6px 12px',
                     cursor: 'pointer',
+                    fontWeight: selectedModel?.name === m.name ? 600 : 400,
                   }}
                   onClick={() => {
                     onSelectModel(m);
+                    setSelectedModel(m);
+                    localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
                     onClose();
                   }}
                 >
-                  Chọn
+                  {selectedModel?.name === m.name ? '✓ Đã chọn' : 'Chọn'}
                 </button>
               </div>
             </div>

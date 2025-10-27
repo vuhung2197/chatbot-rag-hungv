@@ -6,7 +6,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 
 - **🎯 Thuần RAG**: Tìm kiếm và trả lời dựa trên kiến thức đã học
 - **📚 Quản lý kiến thức**: Upload, chunking và embedding tự động
-- **🌐 Dịch song ngữ**: Anh-Việt thông minh với highlight text
+- **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
 
@@ -28,16 +28,18 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Vector Embedding**: Tự động tạo embedding cho mỗi chunk
 - **Admin Interface**: Quản lý kiến thức trực quan
 
-### 🌐 **Dịch Song Ngữ**
-- **Auto Language Detection**: Tự động nhận diện ngôn ngữ
-- **Highlight Translation**: Dịch text được bôi đậm
-- **Context-Aware**: Dịch dựa trên ngữ cảnh
-
 ### ⚡ **Tối Ưu Hiệu Suất**
 - **Vector Indexing**: Tìm kiếm nhanh với large-scale vectors
 - **Caching Layer**: Cache kết quả tìm kiếm
 - **Hybrid Search**: Kết hợp vector + keyword search
 - **Batch Processing**: Xử lý nhiều queries cùng lúc
+
+### 🚀 **Advanced RAG**
+- **Multi-Stage Retrieval**: Lấy chunks theo nhiều giai đoạn
+- **Semantic Clustering**: Nhóm chunks theo chủ đề
+- **Multi-Hop Reasoning**: Tìm mối liên kết giữa chunks
+- **Context Re-ranking**: Sắp xếp lại context theo độ liên quan
+- **Adaptive Retrieval**: Điều chỉnh retrieval dựa trên độ phức tạp
 
 ---
 
@@ -50,7 +52,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 │                 │    │                 │    │                 │
 │ • Chat UI       │    │ • RAG Engine    │    │ • Knowledge     │
 │ • Admin Panel   │    │ • Vector Search │    │ • Vectors       │
-│ • Translation   │    │ • API Routes    │    │ • Users         │
+│ • Model Manager │    │ • API Routes    │    │ • Users         │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -202,10 +204,10 @@ mysql -u root -p chatbot < db/remove_unused_tables.sql
 - Xem và chỉnh sửa chunks
 - Quản lý câu hỏi chưa trả lời
 
-### **4. Dịch Song Ngữ**
-- Bôi đậm text cần dịch
-- Chọn ngôn ngữ đích
-- Nhận kết quả dịch
+### **4. Chọn Model LLM**
+- Quản lý và chuyển đổi giữa các model (OpenAI, Ollama)
+- Cấu hình temperature và max tokens
+- Monitor performance của từng model
 
 ---
 

@@ -1,7 +1,6 @@
 // 📁 src/App.jsx
 import React, { useState, useEffect } from 'react';
 import Chat from './component/Chat';
-// import Highlights from './component/Highlights';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
 import Login from './component/Login';
 import Register from './component/Register';
@@ -142,18 +141,6 @@ export default function App() {
         >
           Tra cứu kiến thức
         </button>
-        {/* <button
-          onClick={() => setView('highlights')}
-          style={{
-            background: view === 'highlights' ? '#7137ea' : '#f6f9fc',
-            color: view === 'highlights' ? '#fff' : '#333',
-            border: "1px solid #7137ea",
-            borderRadius: 8,
-            padding: "8px 16px"
-          }}
-        >
-          Highlights
-        </button> */}
         <button
           onClick={() => setView('knowledgeadmin')}
           style={{
@@ -188,7 +175,6 @@ export default function App() {
         </div>
       )}
       {view === 'chat' && <Chat darkMode={darkMode} />}
-      {/* {view === 'highlights' && <Highlights darkMode={darkMode} />} */}
       {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
     </>
   );

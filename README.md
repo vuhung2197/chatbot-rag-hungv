@@ -1,4 +1,4 @@
-# 🤖 English Chatbot - RAG-Powered AI Assistant
+# 🤖 Chatbot-RAG-Powered AI Assistant
 
 ## 🧠 Giới Thiệu Dự Án
 

@@ -5,7 +5,6 @@ import cookieParser from 'cookie-parser';
 
 import chatRoutes from './routes/chat.js';
 import advancedChatRoutes from './routes/advancedChat.js';
-import feedbackRoutes from './routes/feedback.js';
 import knowledgeRoutes from './routes/knowledge.js';
 import suggestRoutes from './routes/suggest.js';
 import unansweredRoutes from './routes/unanswered.js';
@@ -22,7 +21,6 @@ app.use(cookieParser());
 // Import routes
 app.use('/chat', chatRoutes);
 app.use('/advanced-chat', advancedChatRoutes);
-app.use('/feedback', feedbackRoutes);
 app.use('/knowledge', knowledgeRoutes);
 app.use('/suggest-next-word', suggestRoutes);
 app.use('/unanswered', unansweredRoutes);

@@ -10,6 +10,8 @@ import suggestRoutes from './routes/suggest.js';
 import unansweredRoutes from './routes/unanswered.js';
 import uploadRoutes from './routes/upload.js';
 import authRoutes from './routes/auth.js';
+import usageRoutes from './routes/usage.js';
+import conversationRoutes from './routes/conversation.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const app = express();
@@ -26,6 +28,8 @@ app.use('/suggest-next-word', suggestRoutes);
 app.use('/unanswered', unansweredRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/auth', authRoutes);
+app.use('/usage', usageRoutes);
+app.use('/conversations', conversationRoutes);
 
 app.use(errorHandler);
 

@@ -3,11 +3,12 @@ import ChatInputSuggest from './ChatInputSuggest';
 import CryptoJS from 'crypto-js';
 import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
+import ConversationsList from './ConversationsList';
 import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-export default function Chat() {
+export default function Chat({ darkMode = false }) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,8 +18,44 @@ export default function Chat() {
   const [model, setModel] = useState(null);
   const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
   const [advancedResponse, setAdvancedResponse] = useState(null);
+  const [showConversations, setShowConversations] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const lastMessageRef = useRef(null);
+
+  // Load messages khi chọn conversation
+  useEffect(() => {
+    async function loadConversationMessages() {
+      if (!currentConversationId) {
+        setHistory([]);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const res = await axios.get(
+          `${API_URL}/conversations/${currentConversationId}/messages`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Convert messages từ DB format sang history format
+        const messages = res.data.messages || [];
+        const formattedHistory = messages.map(msg => ({
+          user: msg.question,
+          bot: msg.bot_reply,
+          createdAt: msg.created_at
+        }));
+
+        setHistory(formattedHistory.reverse()); // Reverse để hiển thị từ cũ đến mới
+      } catch (err) {
+        console.error('Error loading conversation messages:', err);
+      }
+    }
+
+    loadConversationMessages();
+  }, [currentConversationId]);
 
   // Auto scroll to last message (beginning of bot response)
   const scrollToLastMessage = () => {
@@ -116,7 +153,7 @@ export default function Chat() {
         // Sử dụng Advanced RAG
         res = await axios.post(
           `${API_URL}/advanced-chat/advanced-chat`,
-          { message: input, model },
+          { message: input, model, conversationId: currentConversationId },
           {
             headers: {
               'Content-Type': 'application/json',
@@ -129,7 +166,7 @@ export default function Chat() {
         // Sử dụng RAG thông thường
         res = await axios.post(
           `${API_URL}/chat`,
-          { message: input, model },
+          { message: input, model, conversationId: currentConversationId },
           {
             headers: {
               'Content-Type': 'application/json',
@@ -137,6 +174,11 @@ export default function Chat() {
             },
           }
         );
+      }
+      
+      // Cập nhật conversationId từ response nếu có
+      if (res.data.conversationId) {
+        setCurrentConversationId(res.data.conversationId);
       }
       
       const data = res.data;
@@ -178,24 +220,44 @@ export default function Chat() {
   return (
     <div style={{
       display: 'flex',
-      flexDirection: 'column',
+      flexDirection: 'row',
       height: '100vh',
       backgroundColor: '#f7f7f8',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      {/* Header */}
+      {/* Conversations Sidebar */}
+      {showConversations && (
+        <div style={{ width: '300px', flexShrink: 0 }}>
+          <ConversationsList
+            darkMode={darkMode}
+            onSelectConversation={(id) => {
+              setCurrentConversationId(id);
+            }}
+            currentConversationId={currentConversationId}
+          />
+        </div>
+      )}
+
+      {/* Main Chat Area */}
       <div style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '16px 24px',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        flexDirection: 'column',
+        flex: 1,
+        minWidth: 0
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '32px',
+        {/* Header */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '32px',
             height: '32px',
             backgroundColor: '#10a37f',
             borderRadius: '8px',
@@ -207,9 +269,9 @@ export default function Chat() {
             fontSize: '16px'
           }}>
             AI
-          </div>
-          <div>
-            <h1 style={{
+            </div>
+            <div>
+              <h1 style={{
               margin: 0,
               fontSize: '18px',
               fontWeight: '600',
@@ -225,9 +287,26 @@ export default function Chat() {
               {model ? `Model: ${model.name}` : 'Chọn model để bắt đầu'}
             </p>
           </div>
-        </div>
+          </div>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={() => setShowConversations(!showConversations)}
+              style={{
+              backgroundColor: showConversations ? '#7137ea' : '#f3f4f6',
+              border: '1px solid #d1d5db',
+              borderRadius: '8px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              color: showConversations ? 'white' : '#374151',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            💬 Cuộc trò chuyện
+          </button>
           <button
             onClick={() => setShowRecentModal(true)}
             style={{
@@ -313,12 +392,12 @@ export default function Chat() {
               🗑️ Xóa
             </button>
           )}
+          </div>
         </div>
-      </div>
 
-      {/* Chat Messages */}
-      <div style={{
-        flex: 1,
+        {/* Chat Messages */}
+        <div style={{
+          flex: 1,
         overflowY: 'auto',
         padding: '24px',
         display: 'flex',
@@ -617,12 +696,12 @@ export default function Chat() {
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
+          <div ref={messagesEndRef} />
+        </div>
 
-      {/* Input Area */}
-      <div style={{
-        backgroundColor: '#ffffff',
+        {/* Input Area */}
+        <div style={{
+          backgroundColor: '#ffffff',
         borderTop: '1px solid #e5e7eb',
         padding: '16px 24px',
         boxShadow: '0 -1px 3px rgba(0,0,0,0.1)'
@@ -638,10 +717,10 @@ export default function Chat() {
             />
           </div>
         </div>
-      </div>
+        </div>
 
-      {/* Recent Questions Modal */}
-      {showRecentModal && (
+        {/* Recent Questions Modal */}
+        {showRecentModal && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -799,10 +878,10 @@ export default function Chat() {
             </div>
           </div>
         </div>
-      )}
+        )}
 
-      {/* Model Selection Modal */}
-      {showModelPopup && (
+        {/* Model Selection Modal */}
+        {showModelPopup && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -824,10 +903,10 @@ export default function Chat() {
             onClose={() => setShowModelPopup(false)}
           />
         </div>
-      )}
+        )}
 
-      {/* CSS for animations */}
-      <style>{`
+        {/* CSS for animations */}
+        <style>{`
         @keyframes pulse {
           0%, 80%, 100% {
             opacity: 0.3;
@@ -837,6 +916,8 @@ export default function Chat() {
           }
         }
       `}</style>
+      </div>
+      {/* End Main Chat Area */}
     </div>
   );
 }

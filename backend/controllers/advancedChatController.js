@@ -12,6 +12,8 @@ import {
   rerankContext
 } from '../services/advancedRAGFixed.js';
 import { callLLM } from './chatController.js';
+import { trackUsage } from './usageController.js';
+import { getOrCreateConversationId } from './conversationController.js';
 
 /**
  * Advanced Chat Controller với Multi-Chunk Reasoning
@@ -68,7 +70,7 @@ function toAdvancedMarkdown(text) {
  * Advanced Chat API với Multi-Chunk Reasoning
  */
 export async function advancedChat(req, res) {
-  const { message, model } = req.body;
+  const { message, model, conversationId } = req.body;
   const userId = req.user?.id;
 
   if (!message) {
@@ -237,12 +239,45 @@ Hướng dẫn trả lời:
       `Generated response using advanced RAG with model ${model.name}`
     ];
 
-    // 11. Ghi lịch sử (không có metadata column)
+    // 11. Ghi lịch sử với conversation_id
     if (userId) {
-      await pool.execute(
-        'INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)',
-        [userId, message, reply, true]
+      const finalConversationId = await getOrCreateConversationId(userId, conversationId);
+      
+      // Tự động tạo title từ tin nhắn đầu tiên nếu chưa có title
+      const [existingMessages] = await pool.execute(
+        'SELECT COUNT(*) as count FROM user_questions WHERE user_id = ? AND conversation_id = ?',
+        [userId, finalConversationId]
       );
+      
+      let conversationTitle = null;
+      if (existingMessages[0].count === 0) {
+        // Đây là tin nhắn đầu tiên, tạo title từ message (tối đa 50 ký tự)
+        conversationTitle = message.trim().substring(0, 50);
+        if (message.length > 50) conversationTitle += '...';
+      }
+      
+      await pool.execute(
+        'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, finalConversationId, conversationTitle, message, reply, true]
+      );
+      // Track usage for advanced RAG
+      await trackUsage(userId, 'advanced_rag', { tokens: fusedContext.length || 0 });
+      
+      res.json({
+        reply: toAdvancedMarkdown(reply),
+        conversationId: finalConversationId,
+        reasoning_steps: reasoningSteps,
+        chunks_used: rerankedChunks.map(c => ({
+          id: c.id,
+          title: c.title,
+          content: c.content.substring(0, 200) + (c.content.length > 200 ? '...' : ''),
+          score: c.final_score || c.score,
+          stage: c.retrieval_stage,
+          source: c.source || 'unknown',
+          chunk_index: c.chunk_index || 0
+        }))
+      });
+      return;
     }
 
     res.json({ 

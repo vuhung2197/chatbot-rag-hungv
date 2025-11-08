@@ -4,6 +4,7 @@ import Chat from './component/Chat';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
 import Login from './component/Login';
 import Register from './component/Register';
+import UsageCounter from './component/UsageCounter';
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
@@ -174,6 +175,7 @@ export default function App() {
           {toast}
         </div>
       )}
+      <UsageCounter darkMode={darkMode} />
       {view === 'chat' && <Chat darkMode={darkMode} />}
       {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
     </>

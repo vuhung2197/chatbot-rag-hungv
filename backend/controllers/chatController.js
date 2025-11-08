@@ -5,6 +5,8 @@ import { hashQuestion } from '../utils/hash.js';
 import { StatusCodes } from 'http-status-codes';
 import '../bootstrap/env.js';
 import axios from 'axios';
+import { trackUsage } from './usageController.js';
+import { getOrCreateConversationId } from './conversationController.js';
 
 /**
  * Chuyển đổi văn bản AI trả lời thành Markdown giống ChatGPT.
@@ -69,7 +71,7 @@ function toMarkdown(text) {
  * @param {object} res - Đối tượng response Express
  */
 export async function chat(req, res) {
-  const { message, model } = req.body;
+  const { message, model, conversationId } = req.body;
   const userId = req.user?.id;
 
   if (!message)
@@ -121,14 +123,52 @@ export async function chat(req, res) {
     const t1 = Date.now();
     console.log('⏱️ Thời gian gọi OpenAI:', t1 - t0, 'ms');
 
-    // ✅ Ghi lịch sử
+    // ✅ Ghi lịch sử với conversation_id
     if (userId) {
-      await pool.execute(
-        'INSERT INTO user_questions (user_id, question, bot_reply, is_answered) VALUES (?, ?, ?, ?)',
-        [userId, message, reply, isAnswered]
+      const finalConversationId = await getOrCreateConversationId(userId, conversationId);
+      
+      // Tự động tạo title từ tin nhắn đầu tiên nếu chưa có title
+      const [existingMessages] = await pool.execute(
+        'SELECT COUNT(*) as count FROM user_questions WHERE user_id = ? AND conversation_id = ?',
+        [userId, finalConversationId]
       );
+      
+      let conversationTitle = null;
+      if (existingMessages[0].count === 0) {
+        // Đây là tin nhắn đầu tiên, tạo title từ message (tối đa 50 ký tự)
+        conversationTitle = message.trim().substring(0, 50);
+        if (message.length > 50) conversationTitle += '...';
+      }
+      
+      await pool.execute(
+        'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, finalConversationId, conversationTitle, message, reply, isAnswered]
+      );
+      // Track usage
+      await trackUsage(userId, 'query', { tokens: context.length || 0 });
+      
+      // Return conversationId để frontend có thể tiếp tục sử dụng
+      res.json({ 
+        reply: toMarkdown(reply),
+        conversationId: finalConversationId,
+        chunks_used: chunks.map(c => ({
+          id: c.id,
+          title: c.title,
+          content: c.content.substring(0, 200) + (c.content.length > 200 ? '...' : ''),
+          score: c.score,
+          source: c.source || 'unknown'
+        })),
+        metadata: {
+          total_chunks: chunks.length,
+          processing_time: t1 - t0,
+          model_used: model.name || 'gpt-4o',
+          context_length: context.length
+        }
+      });
+      return;
     }
 
+    // Response khi không có userId (guest mode)
     res.json({ 
       reply: toMarkdown(reply),
       chunks_used: chunks.map(c => ({

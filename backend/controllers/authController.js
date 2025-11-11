@@ -110,6 +110,13 @@ export async function login(req, res) {
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ message: 'Login failed' });
   }
+  
+  // Update last_login_at
+  await pool.execute(
+    'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [user.id]
+  );
+  
   const token = jwt.sign(
     { id: user.id, role: user.role },
     process.env.JWT_SECRET

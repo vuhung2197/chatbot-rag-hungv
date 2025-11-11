@@ -5,11 +5,13 @@ import KnowledgeAdmin from './component/KnowledgeAdmin';
 import Login from './component/Login';
 import Register from './component/Register';
 import UsageCounter from './component/UsageCounter';
+import ProfileSettings from './component/ProfileSettings';
 import { useDarkMode } from './component/DarkModeContext';
 
 export default function App() {
   const [view, setView] = useState('chat');
   const [toast, setToast] = useState('');
+  const [showProfile, setShowProfile] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
 
   const [role, setRole] = useState(localStorage.getItem('role'));
@@ -94,22 +96,41 @@ export default function App() {
       >
         {darkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
       </button>
-      <button
-        onClick={handleLogout}
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 10,
-          background: '#eee',
-          border: '1px solid #666',
-          padding: '6px 18px',
-          borderRadius: 20,
-          cursor: 'pointer',
-          zIndex: 1000,
-        }}
-      >
-        Đăng xuất
-      </button>
+      <div style={{
+        position: 'absolute',
+        left: 0,
+        top: 10,
+        display: 'flex',
+        gap: '8px',
+        zIndex: 1000,
+      }}>
+        <button
+          onClick={() => setShowProfile(true)}
+          style={{
+            background: darkMode ? '#2d2d2d' : '#f0f0f0',
+            border: `1px solid ${darkMode ? '#555' : '#ccc'}`,
+            padding: '6px 18px',
+            borderRadius: 20,
+            cursor: 'pointer',
+            color: darkMode ? '#fff' : '#333',
+            fontSize: '14px',
+          }}
+        >
+          👤 Profile
+        </button>
+        <button
+          onClick={handleLogout}
+          style={{
+            background: '#eee',
+            border: '1px solid #666',
+            padding: '6px 18px',
+            borderRadius: 20,
+            cursor: 'pointer',
+          }}
+        >
+          Đăng xuất
+        </button>
+      </div>
       <h3
         style={{
           color: '#7137ea',
@@ -176,8 +197,23 @@ export default function App() {
         </div>
       )}
       <UsageCounter darkMode={darkMode} />
-      {view === 'chat' && <Chat darkMode={darkMode} />}
-      {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
+      {showProfile ? (
+        <div style={{
+          padding: '20px',
+          backgroundColor: darkMode ? '#1a1a1a' : '#f5f5f5',
+          minHeight: 'calc(100vh - 200px)',
+        }}>
+          <ProfileSettings
+            darkMode={darkMode}
+            onClose={() => setShowProfile(false)}
+          />
+        </div>
+      ) : (
+        <>
+          {view === 'chat' && <Chat darkMode={darkMode} />}
+          {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
+        </>
+      )}
     </>
   );
 }

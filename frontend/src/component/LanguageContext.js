@@ -131,6 +131,23 @@ const translations = {
     'session.loading': 'Đang tải...',
     'session.loadError': 'Không thể tải danh sách sessions',
     'session.tip': 'Mẹo: Đăng xuất các session không sử dụng để bảo mật tài khoản của bạn.',
+    
+    // OAuth Providers
+    'oauth.title': 'Tài khoản đã liên kết',
+    'oauth.description': 'Liên kết tài khoản của bạn với các dịch vụ bên thứ ba để đăng nhập nhanh hơn.',
+    'oauth.link': 'Liên kết',
+    'oauth.unlink': 'Hủy liên kết',
+    'oauth.linking': 'Đang liên kết...',
+    'oauth.linked': 'Đã liên kết',
+    'oauth.unlinkConfirm': 'Bạn có chắc chắn muốn hủy liên kết với {provider}?',
+    'oauth.unlinkSuccess': '{provider} đã được hủy liên kết thành công',
+    'oauth.unlinkError': 'Lỗi khi hủy liên kết',
+    'oauth.linkError': 'Lỗi khi liên kết',
+    'oauth.loadError': 'Không thể tải danh sách tài khoản đã liên kết',
+    'oauth.loading': 'Đang tải',
+    'oauth.noRedirectUrl': 'Không có URL chuyển hướng',
+    'oauth.noProviders': 'Chưa có tài khoản nào được liên kết',
+    'oauth.linkSuccess': '{provider} đã được liên kết thành công',
   },
   en: {
     // Common
@@ -256,6 +273,23 @@ const translations = {
     'session.loading': 'Loading...',
     'session.loadError': 'Unable to load sessions',
     'session.tip': 'Tip: Sign out unused sessions to secure your account.',
+    
+    // OAuth Providers
+    'oauth.title': 'Connected Accounts',
+    'oauth.description': 'Link your account with third-party services for faster login.',
+    'oauth.link': 'Link',
+    'oauth.unlink': 'Unlink',
+    'oauth.linking': 'Linking...',
+    'oauth.linked': 'Linked',
+    'oauth.unlinkConfirm': 'Are you sure you want to unlink {provider}?',
+    'oauth.unlinkSuccess': '{provider} has been unlinked successfully',
+    'oauth.unlinkError': 'Error unlinking account',
+    'oauth.linkError': 'Error linking account',
+    'oauth.loadError': 'Unable to load connected accounts',
+    'oauth.loading': 'Loading',
+    'oauth.noRedirectUrl': 'No redirect URL available',
+    'oauth.noProviders': 'No accounts linked yet',
+    'oauth.linkSuccess': '{provider} has been linked successfully',
   },
 };
 

@@ -41,9 +41,25 @@ export default function App() {
     const error = urlParams.get('error');
     const pathname = window.location.pathname;
     
+    // Handle OAuth link success
+    const oauthLinked = urlParams.get('oauth_linked');
+    const oauthSuccess = urlParams.get('success');
+    if (oauthLinked && oauthSuccess === 'true' && pathname === '/profile') {
+      showToast(`✅ ${oauthLinked} đã được liên kết thành công!`);
+      // Clean URL
+      window.history.replaceState({}, document.title, '/profile');
+      return;
+    }
+
     // Handle OAuth errors
     if (error) {
-      showToast(`OAuth error: ${error}`);
+      let errorMessage = `OAuth error: ${error}`;
+      if (error === 'already_linked_to_another_account') {
+        errorMessage = 'Tài khoản này đã được liên kết với một tài khoản khác';
+      } else if (error === 'user_not_found') {
+        errorMessage = 'Không tìm thấy người dùng';
+      }
+      showToast(errorMessage);
       // Clean URL
       window.history.replaceState({}, document.title, '/');
       return;
@@ -63,7 +79,8 @@ export default function App() {
     
     // Priority 2: Handle Google OAuth success (token from callback)
     // Google OAuth will have token, role, and id in URL
-    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password') {
+    // Check this BEFORE checking for oauth_linked to handle login flow
+    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password' && !oauthLinked) {
       console.log('🔐 Google OAuth callback - Setting token and role:', { token: token.substring(0, 20) + '...', roleFromUrl, idFromUrl });
       localStorage.setItem('token', token);
       localStorage.setItem('role', roleFromUrl);

@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AvatarUploader from './AvatarUploader';
+import EmailVerification from './EmailVerification';
+import ChangePassword from './ChangePassword';
+import SessionManagement from './SessionManagement';
+import { useLanguage } from './LanguageContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function ProfileSettings({ darkMode = false, onClose }) {
+  const { language, changeLanguage, t } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -13,9 +18,9 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
 
   // Form fields
   const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
   const [bio, setBio] = useState('');
   const [timezone, setTimezone] = useState('Asia/Ho_Chi_Minh');
-  const [language, setLanguage] = useState('vi');
 
   useEffect(() => {
     loadProfile();
@@ -30,11 +35,16 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       const data = res.data;
       setProfile(data);
       setDisplayName(data.displayName || data.name || '');
+      setEmail(data.email || '');
       setBio(data.bio || '');
       setTimezone(data.timezone || 'Asia/Ho_Chi_Minh');
-      setLanguage(data.language || 'vi');
+      const userLanguage = data.language || 'vi';
+      // Update LanguageContext when profile loads
+      if (userLanguage !== language) {
+        changeLanguage(userLanguage);
+      }
     } catch (err) {
-      setError('Không thể tải thông tin profile');
+      setError(t('profile.loadError'));
       console.error(err);
     } finally {
       setLoading(false);
@@ -52,6 +62,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         `${API_URL}/user/profile`,
         {
           displayName: displayName.trim() || null,
+          email: email.trim() || null,
           bio: bio.trim() || null,
           timezone,
           language,
@@ -61,12 +72,15 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         }
       );
 
-      setSuccess('Đã cập nhật profile thành công!');
+      setSuccess(t('profile.updateSuccess'));
+      // Language context is already updated when user changes dropdown
+      // Reload profile to get updated data
+      await loadProfile();
       setTimeout(() => {
         if (onClose) onClose();
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi cập nhật profile');
+      setError(err.response?.data?.message || t('profile.updateError'));
     } finally {
       setSaving(false);
     }
@@ -77,6 +91,11 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
     setSuccess('Đã cập nhật avatar thành công!');
   };
 
+  const handleVerificationUpdate = async () => {
+    // Reload profile from API to get the latest email verification status
+    await loadProfile();
+  };
+
   if (loading) {
     return (
       <div style={{
@@ -84,7 +103,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         textAlign: 'center',
         color: darkMode ? '#fff' : '#333',
       }}>
-        Đang tải...
+        {t('common.loading')}
       </div>
     );
   }
@@ -96,7 +115,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         textAlign: 'center',
         color: darkMode ? '#fff' : '#333',
       }}>
-        Không thể tải thông tin profile
+        {t('profile.loadError')}
       </div>
     );
   }
@@ -155,11 +174,11 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       {error && (
         <div style={{
           padding: '12px',
-          backgroundColor: '#fee',
-          color: '#c33',
+          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
+          color: darkMode ? '#ff6b6b' : '#c33',
           borderRadius: '6px',
           marginBottom: '16px',
-          border: '1px solid #fcc',
+          border: `1px solid ${darkMode ? '#6b2b2b' : '#fcc'}`,
         }}>
           {error}
         </div>
@@ -168,11 +187,11 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       {success && (
         <div style={{
           padding: '12px',
-          backgroundColor: '#efe',
-          color: '#3c3',
+          backgroundColor: darkMode ? '#1f4a1f' : '#efe',
+          color: darkMode ? '#6bff6b' : '#3c3',
           borderRadius: '6px',
           marginBottom: '16px',
-          border: '1px solid #cfc',
+          border: `1px solid ${darkMode ? '#2b6b2b' : '#cfc'}`,
         }}>
           {success}
         </div>
@@ -180,7 +199,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
 
       {/* Avatar Section */}
       <div style={{ marginBottom: '32px' }}>
-        <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>Ảnh đại diện</h3>
+        <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>{t('profile.avatar')}</h3>
         <AvatarUploader
           currentAvatarUrl={profile.avatarUrl}
           onAvatarUpdate={handleAvatarUpdate}
@@ -198,13 +217,13 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             fontWeight: '500',
             fontSize: '14px',
           }}>
-            Tên hiển thị
+            {t('profile.displayName')}
           </label>
           <input
             type="text"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="Tên hiển thị"
+            placeholder={t('profile.displayName')}
             maxLength={100}
             style={{
               width: '100%',
@@ -222,11 +241,11 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             color: darkMode ? '#999' : '#666',
             marginTop: '4px',
           }}>
-            Tên hiển thị có thể khác với email
+            {t('profile.displayNameHint')}
           </div>
         </div>
 
-        {/* Email (Read-only) */}
+        {/* Email */}
         <div>
           <label style={{
             display: 'block',
@@ -238,35 +257,38 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
           </label>
           <input
             type="email"
-            value={profile.email}
-            disabled
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
             style={{
               width: '100%',
               padding: '10px 12px',
               border: `1px solid ${inputBorder}`,
               borderRadius: '6px',
               fontSize: '14px',
-              backgroundColor: darkMode ? '#1a1a1a' : '#f5f5f5',
-              color: darkMode ? '#999' : '#666',
+              backgroundColor: inputBg,
+              color: textColor,
               boxSizing: 'border-box',
-              cursor: 'not-allowed',
             }}
           />
           <div style={{
             fontSize: '12px',
             color: darkMode ? '#999' : '#666',
             marginTop: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
           }}>
-            {profile.emailVerified ? (
-              <span style={{ color: '#28a745' }}>✓ Đã xác thực</span>
-            ) : (
-              <span style={{ color: '#ffc107' }}>⚠ Chưa xác thực</span>
+            {email !== profile.email && (
+              <span style={{ color: '#ffc107' }}>⚠ Email sẽ được cập nhật và cần xác thực lại</span>
             )}
           </div>
         </div>
+
+        {/* Email Verification */}
+        <EmailVerification
+          email={profile.email}
+          emailVerified={profile.emailVerified}
+          darkMode={darkMode}
+          onVerificationUpdate={handleVerificationUpdate}
+        />
 
         {/* Bio */}
         <div>
@@ -276,12 +298,12 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             fontWeight: '500',
             fontSize: '14px',
           }}>
-            Giới thiệu (Bio)
+            {t('profile.bio')}
           </label>
           <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
-            placeholder="Giới thiệu về bản thân..."
+            placeholder={t('profile.bioPlaceholder')}
             maxLength={500}
             rows={4}
             style={{
@@ -314,7 +336,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             fontWeight: '500',
             fontSize: '14px',
           }}>
-            Múi giờ
+            {t('profile.timezone')}
           </label>
           <select
             value={timezone}
@@ -346,11 +368,15 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             fontWeight: '500',
             fontSize: '14px',
           }}>
-            Ngôn ngữ
+            {t('profile.language')}
           </label>
           <select
             value={language}
-            onChange={(e) => setLanguage(e.target.value)}
+            onChange={(e) => {
+              const newLang = e.target.value;
+              // Apply language immediately
+              changeLanguage(newLang);
+            }}
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -375,17 +401,23 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
           fontSize: '14px',
         }}>
           <div style={{ marginBottom: '8px' }}>
-            <strong>Trạng thái tài khoản:</strong> {profile.accountStatus === 'active' ? '✓ Hoạt động' : profile.accountStatus}
+            <strong>{t('profile.accountStatus')}:</strong> {profile.accountStatus === 'active' ? (language === 'vi' ? '✓ Hoạt động' : '✓ Active') : profile.accountStatus}
           </div>
           <div style={{ marginBottom: '8px' }}>
-            <strong>Ngày tạo:</strong> {new Date(profile.createdAt).toLocaleDateString('vi-VN')}
+            <strong>{t('profile.createdAt')}:</strong> {new Date(profile.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
           </div>
           {profile.lastLoginAt && (
             <div>
-              <strong>Đăng nhập lần cuối:</strong> {new Date(profile.lastLoginAt).toLocaleString('vi-VN')}
+              <strong>{t('profile.lastLogin')}:</strong> {new Date(profile.lastLoginAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
             </div>
           )}
         </div>
+
+        {/* Password Management */}
+        <ChangePassword darkMode={darkMode} />
+
+        {/* Session Management */}
+        <SessionManagement darkMode={darkMode} />
 
         {/* Save Button */}
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
@@ -404,7 +436,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
                 opacity: saving ? 0.6 : 1,
               }}
             >
-              Hủy
+              {t('common.cancel')}
             </button>
           )}
           <button
@@ -422,7 +454,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
               opacity: saving ? 0.6 : 1,
             }}
           >
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? t('profile.saving') : t('profile.saveChanges')}
           </button>
         </div>
       </div>

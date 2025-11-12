@@ -6,31 +6,120 @@ import Login from './component/Login';
 import Register from './component/Register';
 import UsageCounter from './component/UsageCounter';
 import ProfileSettings from './component/ProfileSettings';
+import VerifyEmailPage from './component/VerifyEmailPage';
+import ResetPasswordPage from './component/ResetPasswordPage';
+import SetPasswordPage from './component/SetPasswordPage';
 import { useDarkMode } from './component/DarkModeContext';
+import { useLanguage } from './component/LanguageContext';
 
 export default function App() {
   const [view, setView] = useState('chat');
   const [toast, setToast] = useState('');
   const [showProfile, setShowProfile] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
+  const { t } = useLanguage();
 
   const [role, setRole] = useState(localStorage.getItem('role'));
   const [page, setPage] = useState('login');
-
-  useEffect(() => {
-    if (role) setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
-  }, [role]);
+  
+  // Check if this is a verification link
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isSettingPassword, setIsSettingPassword] = useState(false);
 
   function showToast(msg) {
     setToast(msg);
     setTimeout(() => setToast(''), 2000);
   }
+  
+  // Handle Google OAuth callback token and other token-based flows
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const roleFromUrl = urlParams.get('role');
+    const idFromUrl = urlParams.get('id');
+    const error = urlParams.get('error');
+    const pathname = window.location.pathname;
+    
+    // Handle OAuth errors
+    if (error) {
+      showToast(`OAuth error: ${error}`);
+      // Clean URL
+      window.history.replaceState({}, document.title, '/');
+      return;
+    }
+    
+    // Priority 1: Check if this is set password page (new OAuth user)
+    if (pathname === '/set-password' && token && roleFromUrl && idFromUrl) {
+      const newUser = urlParams.get('newUser') === 'true';
+      if (newUser) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', roleFromUrl);
+        localStorage.setItem('userId', idFromUrl);
+        setIsSettingPassword(true);
+        return;
+      }
+    }
+    
+    // Priority 2: Handle Google OAuth success (token from callback)
+    // Google OAuth will have token, role, and id in URL
+    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password') {
+      console.log('🔐 Google OAuth callback - Setting token and role:', { token: token.substring(0, 20) + '...', roleFromUrl, idFromUrl });
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', roleFromUrl);
+      localStorage.setItem('userId', idFromUrl);
+      setRole(roleFromUrl);
+      showToast('Đăng nhập thành công!');
+      // Clean URL immediately
+      window.history.replaceState({}, document.title, '/');
+      // Force a small delay to ensure state updates
+      setTimeout(() => {
+        // This ensures the component re-renders with the new role
+        window.location.reload();
+      }, 100);
+      return;
+    }
+    
+    // Priority 3: Check if this is a reset password link
+    // Reset password will have token but no role/id, and pathname might be /reset-password
+    if (token && !roleFromUrl && (pathname === '/reset-password' || pathname === '/')) {
+      setIsResettingPassword(true);
+      return;
+    }
+    
+    // Priority 4: Check if URL contains verification token (for email verification)
+    // Email verification will have token but no role/id
+    if (token && !roleFromUrl && !isResettingPassword && !isSettingPassword) {
+      setIsVerifyingEmail(true);
+      return;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (role) setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
+  }, [role]);
 
   function handleLogout() {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
+    localStorage.removeItem('userId');
     setRole(null);
     setPage('login');
+  }
+
+  // Show set password page if new OAuth user
+  if (isSettingPassword) {
+    return <SetPasswordPage darkMode={darkMode} />;
+  }
+
+  // Show reset password page if token in URL
+  if (isResettingPassword) {
+    return <ResetPasswordPage darkMode={darkMode} />;
+  }
+
+  // Show verification page if token in URL
+  if (isVerifyingEmail) {
+    return <VerifyEmailPage darkMode={darkMode} />;
   }
 
   if (!role) {
@@ -40,7 +129,7 @@ export default function App() {
           <>
             <Login onLogin={r => setRole(r)} />
             <p style={{ marginTop: 10, textAlign: 'center' }}>
-              Chưa có tài khoản?{' '}
+              {t('auth.noAccount')}{' '}
               <button
                 onClick={() => setPage('register')}
                 style={{
@@ -50,7 +139,7 @@ export default function App() {
                   cursor: 'pointer',
                 }}
               >
-                Đăng ký
+                {t('auth.register')}
               </button>
             </p>
           </>
@@ -58,7 +147,7 @@ export default function App() {
           <>
             <Register onRegister={() => setPage('login')} />
             <p style={{ marginTop: 10, textAlign: 'center' }}>
-              Đã có tài khoản?{' '}
+              {t('auth.hasAccount')}{' '}
               <button
                 onClick={() => setPage('login')}
                 style={{
@@ -68,7 +157,7 @@ export default function App() {
                   cursor: 'pointer',
                 }}
               >
-                Đăng nhập
+                {t('auth.login')}
               </button>
             </p>
           </>
@@ -128,7 +217,7 @@ export default function App() {
             cursor: 'pointer',
           }}
         >
-          Đăng xuất
+          {t('auth.logout')}
         </button>
       </div>
       <h3
@@ -161,7 +250,7 @@ export default function App() {
             padding: '8px 16px',
           }}
         >
-          Tra cứu kiến thức
+          {t('chat.title')}
         </button>
         <button
           onClick={() => setView('knowledgeadmin')}

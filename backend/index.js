@@ -15,6 +15,8 @@ import authRoutes from './routes/auth.js';
 import usageRoutes from './routes/usage.js';
 import conversationRoutes from './routes/conversation.js';
 import userRoutes from './routes/user.js';
+import passwordRoutes from './routes/password.js';
+import sessionRoutes from './routes/session.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -22,7 +24,13 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(cors());
+// CORS configuration to allow credentials (cookies)
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -40,6 +48,8 @@ app.use('/auth', authRoutes);
 app.use('/usage', usageRoutes);
 app.use('/conversations', conversationRoutes);
 app.use('/user', userRoutes);
+app.use('/auth/password', passwordRoutes);
+app.use('/auth/sessions', sessionRoutes);
 
 app.use(errorHandler);
 

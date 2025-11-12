@@ -1,20 +1,21 @@
--- Profile Management Schema
--- Thêm các columns mới vào bảng users cho Profile Management
+-- ==========================================
+-- Profile Management Schema Update (MySQL 8.4+)
+-- ==========================================
 
--- Kiểm tra và thêm các columns nếu chưa tồn tại
-ALTER TABLE users 
-  ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(255) NULL AFTER name,
-  ADD COLUMN IF NOT EXISTS display_name VARCHAR(100) NULL AFTER name,
-  ADD COLUMN IF NOT EXISTS bio TEXT NULL AFTER email,
-  ADD COLUMN IF NOT EXISTS timezone VARCHAR(50) DEFAULT 'Asia/Ho_Chi_Minh' AFTER bio,
-  ADD COLUMN IF NOT EXISTS language VARCHAR(10) DEFAULT 'vi' AFTER timezone,
-  ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE AFTER language,
-  ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(64) NULL AFTER email_verified,
-  ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP NULL AFTER email_verification_token,
-  ADD COLUMN IF NOT EXISTS account_status ENUM('active', 'suspended', 'deleted') DEFAULT 'active' AFTER last_login_at,
-  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER account_status;
+-- Thêm cột (chỉ thêm nếu chưa tồn tại)
+ALTER TABLE `users`
+  ADD COLUMN `display_name` VARCHAR(100) NULL AFTER `name`,
+  ADD COLUMN `avatar_url`   VARCHAR(255) NULL AFTER `display_name`,
+  ADD COLUMN `bio`          TEXT NULL AFTER `email`,
+  ADD COLUMN `timezone`     VARCHAR(50) NOT NULL DEFAULT 'Asia/Ho_Chi_Minh' AFTER `bio`,
+  ADD COLUMN `language`     VARCHAR(10) NOT NULL DEFAULT 'vi' AFTER `timezone`,
+  ADD COLUMN `email_verified` TINYINT(1) NOT NULL DEFAULT 0 AFTER `language`,
+  ADD COLUMN `email_verification_token` VARCHAR(64) NULL AFTER `email_verified`,
+  ADD COLUMN `last_login_at` TIMESTAMP NULL AFTER `email_verification_token`,
+  ADD COLUMN `account_status` ENUM('active','suspended','deleted') NOT NULL DEFAULT 'active' AFTER `last_login_at`,
+  ADD COLUMN `updated_at`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER `account_status`;
 
--- Tạo index cho các columns thường được query
-CREATE INDEX IF NOT EXISTS idx_users_email_verified ON users(email_verified);
-CREATE INDEX IF NOT EXISTS idx_users_account_status ON users(account_status);
-
+-- Tạo index (chỉ tạo nếu chưa tồn tại)
+ALTER TABLE `users`
+  ADD INDEX `idx_users_email_verified` (`email_verified`),
+  ADD INDEX `idx_users_account_status` (`account_status`);

@@ -2,6 +2,11 @@ import pool from '../db.js';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { fileURLToPath } from 'url';
+import { sendVerificationEmail } from '../services/emailService.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Lấy thông tin profile của user hiện tại
@@ -17,7 +22,8 @@ export async function getProfile(req, res) {
       `SELECT 
         id, name, email, role, created_at,
         avatar_url, display_name, bio, timezone, language,
-        email_verified, last_login_at, account_status, updated_at
+        email_verified, last_login_at, account_status, updated_at,
+        password_hash
       FROM users 
       WHERE id = ?`,
       [userId]
@@ -28,6 +34,8 @@ export async function getProfile(req, res) {
     }
 
     const user = rows[0];
+    const hasPassword = user.password_hash && user.password_hash.trim() !== '';
+    
     res.json({
       id: user.id,
       name: user.name,
@@ -38,11 +46,13 @@ export async function getProfile(req, res) {
       bio: user.bio || '',
       timezone: user.timezone || 'Asia/Ho_Chi_Minh',
       language: user.language || 'vi',
-      emailVerified: user.email_verified || false,
+      // Convert TINYINT(1) to boolean (MySQL returns 0/1, not true/false)
+      emailVerified: Boolean(user.email_verified),
       accountStatus: user.account_status || 'active',
       createdAt: user.created_at,
       lastLoginAt: user.last_login_at,
       updatedAt: user.updated_at,
+      hasPassword: hasPassword, // Indicate if user has password set
     });
   } catch (error) {
     console.error('❌ Error getting profile:', error);
@@ -60,7 +70,7 @@ export async function updateProfile(req, res) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { displayName, bio, timezone, language } = req.body;
+    const { displayName, bio, timezone, language, email } = req.body;
 
     // Validate
     if (displayName && displayName.length > 100) {
@@ -74,6 +84,35 @@ export async function updateProfile(req, res) {
     }
     if (language && !['vi', 'en'].includes(language)) {
       return res.status(400).json({ message: 'Language phải là vi hoặc en' });
+    }
+    
+    // Validate email if provided
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Email không hợp lệ' });
+      }
+      
+      // Check if email already exists (for another user)
+      const [existing] = await pool.execute(
+        'SELECT id FROM users WHERE email = ? AND id != ?',
+        [email, userId]
+      );
+      if (existing.length > 0) {
+        return res.status(400).json({ message: 'Email đã được sử dụng bởi tài khoản khác' });
+      }
+    }
+
+    // Get current user email to check if it changed
+    let currentEmail = null;
+    if (email !== undefined) {
+      const [currentUser] = await pool.execute(
+        'SELECT email FROM users WHERE id = ?',
+        [userId]
+      );
+      if (currentUser.length > 0) {
+        currentEmail = currentUser[0].email;
+      }
     }
 
     // Build update query
@@ -95,6 +134,17 @@ export async function updateProfile(req, res) {
     if (language !== undefined) {
       updates.push('language = ?');
       values.push(language);
+    }
+    if (email !== undefined) {
+      // Only update email and reset verification if email actually changed
+      if (email !== currentEmail) {
+        updates.push('email = ?');
+        values.push(email);
+        // Reset email verification when email changes
+        updates.push('email_verified = FALSE');
+        updates.push('email_verification_token = NULL');
+      }
+      // If email is the same, don't update it (preserve email_verified status)
     }
 
     if (updates.length === 0) {
@@ -143,9 +193,10 @@ export async function uploadAvatar(req, res) {
     }
 
     // Create avatars directory if not exists
-    const avatarsDir = path.join(process.cwd(), 'uploads', 'avatars');
+    const avatarsDir = path.join(__dirname, '..', 'uploads', 'avatars');
     if (!fs.existsSync(avatarsDir)) {
       fs.mkdirSync(avatarsDir, { recursive: true });
+      console.log('✅ Created avatars directory:', avatarsDir);
     }
 
     // Generate unique filename
@@ -155,10 +206,21 @@ export async function uploadAvatar(req, res) {
 
     // Copy file to avatars directory
     // Note: In production, consider using sharp or similar for resizing/optimization
-    fs.copyFileSync(req.file.path, outputPath);
+    try {
+      fs.copyFileSync(req.file.path, outputPath);
+      console.log('✅ File copied to:', outputPath);
+    } catch (copyError) {
+      console.error('❌ Error copying file:', copyError);
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(500).json({ message: 'Lỗi khi lưu file avatar' });
+    }
 
     // Delete original temp file
-    fs.unlinkSync(req.file.path);
+    if (fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
 
     // Get old avatar URL to delete old file
     const [oldRows] = await pool.execute(
@@ -176,11 +238,13 @@ export async function uploadAvatar(req, res) {
 
     // Delete old avatar file if exists
     if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
-      const oldPath = path.join(process.cwd(), oldAvatarUrl);
+      const oldPath = path.join(__dirname, '..', oldAvatarUrl);
       if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
       }
     }
+    
+    console.log('✅ Avatar uploaded successfully:', avatarUrl);
 
     res.json({ 
       message: 'Avatar uploaded successfully',
@@ -220,7 +284,7 @@ export async function deleteAvatar(req, res) {
 
     // Delete file if exists
     if (avatarUrl && avatarUrl.startsWith('/uploads/avatars/')) {
-      const filePath = path.join(process.cwd(), avatarUrl);
+      const filePath = path.join(__dirname, '..', avatarUrl);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
@@ -266,17 +330,32 @@ export async function sendEmailVerification(req, res) {
       [token, userId]
     );
 
-    // TODO: Send email với verification link
-    // For now, just return the token (in production, send via email)
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+    // Send verification email
+    const emailResult = await sendVerificationEmail(rows[0].email, token);
     
-    console.log(`📧 Email verification link for user ${userId}: ${verificationUrl}`);
-
-    res.json({ 
-      message: 'Verification email sent (check console for link in development)',
-      // In production, don't return the URL
-      ...(process.env.NODE_ENV === 'development' && { verificationUrl })
-    });
+    if (emailResult.success) {
+      res.json({ 
+        message: 'Email verification đã được gửi thành công! Vui lòng kiểm tra email của bạn (bao gồm cả Spam folder).'
+      });
+    } else {
+      // Email service not configured or failed, return token and URL as fallback
+      const verificationUrl = emailResult.verificationUrl || 
+        `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+      const formattedToken = token.match(/.{1,8}/g)?.join('-') || token;
+      
+      console.log(`📧 Email service not configured. Verification details:`);
+      console.log(`   Code: ${formattedToken}`);
+      console.log(`   URL: ${verificationUrl}`);
+      
+      res.json({ 
+        message: 'Verification email sent (check console for code - email service not configured)',
+        // Return token and URL in development mode or when email service fails
+        ...((process.env.NODE_ENV === 'development' || !emailResult.success) && { 
+          verificationUrl,
+          verificationCode: formattedToken 
+        })
+      });
+    }
   } catch (error) {
     console.error('❌ Error sending email verification:', error);
     res.status(500).json({ message: 'Error sending email verification' });

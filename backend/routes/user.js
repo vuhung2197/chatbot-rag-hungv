@@ -1,5 +1,8 @@
 import express from 'express';
 import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { verifyToken } from '../middlewares/authMiddleware.js';
 import {
   getProfile,
@@ -10,11 +13,20 @@ import {
   verifyEmail,
 } from '../controllers/profileController.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create temp directory if not exists
+const tempDir = path.join(__dirname, '..', 'uploads', 'temp');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+
 const router = express.Router();
 
 // Configure multer for avatar uploads
 const upload = multer({
-  dest: 'uploads/temp/',
+  dest: tempDir,
   limits: {
     fileSize: 2 * 1024 * 1024, // 2MB
   },
@@ -28,19 +40,17 @@ const upload = multer({
   },
 });
 
-// All routes require authentication
-router.use(verifyToken);
+// Profile routes (require authentication)
+router.get('/profile', verifyToken, getProfile);
+router.put('/profile', verifyToken, updateProfile);
 
-// Profile routes
-router.get('/profile', getProfile);
-router.put('/profile', updateProfile);
-
-// Avatar routes
-router.post('/avatar', upload.single('avatar'), uploadAvatar);
-router.delete('/avatar', deleteAvatar);
+// Avatar routes (require authentication)
+router.post('/avatar', verifyToken, upload.single('avatar'), uploadAvatar);
+router.delete('/avatar', verifyToken, deleteAvatar);
 
 // Email verification routes
-router.post('/verify-email', sendEmailVerification);
+router.post('/verify-email', verifyToken, sendEmailVerification);
+// Verify email with token doesn't require authentication (uses token from URL)
 router.get('/verify-email/:token', verifyEmail);
 
 export default router;

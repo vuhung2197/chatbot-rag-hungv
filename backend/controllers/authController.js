@@ -46,6 +46,11 @@ export async function googleCallback(req, res) {
   console.log('Cookies:', req.cookies);
   
   const { code, state } = req.query;
+  const oauthMode = req.cookies.oauth_mode; // 'link' or undefined (login)
+  const linkUserId = req.cookies.oauth_link_user_id;
+
+  console.log('OAuth mode:', oauthMode);
+  console.log('Link user ID:', linkUserId);
 
   // 1️⃣ Xác thực state bằng cookie chống CSRF
   if (!verifyStateCookie(req, state)) {
@@ -77,8 +82,67 @@ export async function googleCallback(req, res) {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}?error=no_email`);
     }
 
-    // 4️⃣ Tìm hoặc tạo user trong database
-    let [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
+    // Encrypt tokens (simple base64 for now, can improve with proper encryption)
+    const accessTokenEncrypted = Buffer.from(tokens.access_token || '').toString('base64');
+    const refreshTokenEncrypted = tokens.refresh_token 
+      ? Buffer.from(tokens.refresh_token).toString('base64')
+      : null;
+
+    // 4️⃣ Xử lý link mode hoặc login mode
+    if (oauthMode === 'link' && linkUserId) {
+      // Link mode: Link Google account to existing user
+      console.log('🔗 Linking Google account to user:', linkUserId);
+      res.clearCookie('oauth_link_user_id');
+      res.clearCookie('oauth_mode');
+
+      const userId = parseInt(linkUserId);
+      
+      // Verify user exists
+      const [users] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
+      if (users.length === 0) {
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}?error=user_not_found`);
+      }
+
+      // Check if this Google account is already linked to another user
+      const [existingLink] = await pool.execute(
+        'SELECT user_id FROM user_oauth_providers WHERE provider = ? AND provider_user_id = ?',
+        ['google', googleId]
+      );
+
+      if (existingLink.length > 0 && existingLink[0].user_id !== userId) {
+        return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}?error=already_linked_to_another_account`);
+      }
+
+      // Check if already linked to this user
+      const [alreadyLinked] = await pool.execute(
+        'SELECT * FROM user_oauth_providers WHERE user_id = ? AND provider = ?',
+        [userId, 'google']
+      );
+
+      if (alreadyLinked.length > 0) {
+        // Update existing link
+        await pool.execute(
+          `UPDATE user_oauth_providers 
+           SET provider_user_id = ?, provider_email = ?, access_token_encrypted = ?, refresh_token_encrypted = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE user_id = ? AND provider = ?`,
+          [googleId, email, accessTokenEncrypted, refreshTokenEncrypted, userId, 'google']
+        );
+      } else {
+        // Create new link
+        await pool.execute(
+          `INSERT INTO user_oauth_providers 
+           (user_id, provider, provider_user_id, provider_email, access_token_encrypted, refresh_token_encrypted)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [userId, 'google', googleId, email, accessTokenEncrypted, refreshTokenEncrypted]
+        );
+      }
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/profile?oauth_linked=google&success=true`);
+    }
+
+    // Login mode: Tìm hoặc tạo user trong database
+    const [users] = await pool.execute('SELECT * FROM users WHERE email = ?', [email]);
     let user = users[0];
 
     if (!user) {
@@ -141,11 +205,7 @@ export async function googleCallback(req, res) {
     }
 
     // 5️⃣ Lưu OAuth provider info vào user_oauth_providers
-    // Encrypt tokens (simple base64 for now, can improve with proper encryption)
-    const accessTokenEncrypted = Buffer.from(tokens.access_token || '').toString('base64');
-    const refreshTokenEncrypted = tokens.refresh_token 
-      ? Buffer.from(tokens.refresh_token).toString('base64')
-      : null;
+    // (accessTokenEncrypted và refreshTokenEncrypted đã được khai báo ở trên)
 
     // Check if OAuth provider already linked
     const [existingProviders] = await pool.execute(
@@ -264,6 +324,163 @@ export async function register(req, res) {
  * @param {object} req - Đối tượng request Express
  * @param {object} res - Đối tượng response Express
  */
+/**
+ * Link OAuth provider cho user đã đăng nhập
+ * POST /auth/oauth/:provider
+ */
+export async function linkOAuthProvider(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { provider } = req.params;
+    const supportedProviders = ['google', 'github', 'microsoft'];
+    
+    if (!supportedProviders.includes(provider)) {
+      return res.status(400).json({ message: 'Provider không được hỗ trợ' });
+    }
+
+    // Check if provider already linked
+    const [existing] = await pool.execute(
+      'SELECT * FROM user_oauth_providers WHERE user_id = ? AND provider = ?',
+      [userId, provider]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ message: `${provider} đã được liên kết với tài khoản này` });
+    }
+
+    // For now, only Google is implemented
+    if (provider === 'google') {
+      // Redirect to Google OAuth with link mode
+      const state = makeStateCookie(res);
+      res.cookie('oauth_link_user_id', userId.toString(), {
+        maxAge: 10 * 60 * 1000, // 10 minutes
+        httpOnly: true,
+        sameSite: 'lax',
+      });
+      res.cookie('oauth_mode', 'link', {
+        maxAge: 10 * 60 * 1000,
+        httpOnly: true,
+        sameSite: 'lax',
+      });
+
+      const url = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        prompt: 'consent',
+        scope: [
+          'https://www.googleapis.com/auth/userinfo.email',
+          'https://www.googleapis.com/auth/userinfo.profile'
+        ],
+        state,
+      });
+
+      return res.json({ 
+        message: 'Redirecting to OAuth provider...',
+        redirectUrl: url 
+      });
+    }
+
+    return res.status(501).json({ message: `Provider ${provider} chưa được triển khai` });
+  } catch (error) {
+    console.error('❌ Error linking OAuth provider:', error);
+    res.status(500).json({ message: 'Error linking OAuth provider' });
+  }
+}
+
+/**
+ * Unlink OAuth provider
+ * DELETE /auth/oauth/:provider
+ */
+export async function unlinkOAuthProvider(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const { provider } = req.params;
+    const supportedProviders = ['google', 'github', 'microsoft'];
+    
+    if (!supportedProviders.includes(provider)) {
+      return res.status(400).json({ message: 'Provider không được hỗ trợ' });
+    }
+
+    // Check if provider is linked
+    const [existing] = await pool.execute(
+      'SELECT * FROM user_oauth_providers WHERE user_id = ? AND provider = ?',
+      [userId, provider]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ message: `${provider} chưa được liên kết với tài khoản này` });
+    }
+
+    // Check if user has password (can't unlink if no password and this is the only auth method)
+    const [user] = await pool.execute(
+      'SELECT password_hash FROM users WHERE id = ?',
+      [userId]
+    );
+
+    if (user.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const hasPassword = user[0].password_hash && user[0].password_hash.trim() !== '';
+    
+    // Count linked providers
+    const [linkedProviders] = await pool.execute(
+      'SELECT COUNT(*) as count FROM user_oauth_providers WHERE user_id = ?',
+      [userId]
+    );
+
+    const providerCount = linkedProviders[0].count;
+
+    // Prevent unlinking if user has no password and this is the only provider
+    if (!hasPassword && providerCount === 1) {
+      return res.status(400).json({ 
+        message: 'Không thể hủy liên kết. Bạn cần có mật khẩu hoặc ít nhất một phương thức đăng nhập khác.' 
+      });
+    }
+
+    // Delete OAuth provider link
+    await pool.execute(
+      'DELETE FROM user_oauth_providers WHERE user_id = ? AND provider = ?',
+      [userId, provider]
+    );
+
+    res.json({ message: `${provider} đã được hủy liên kết thành công` });
+  } catch (error) {
+    console.error('❌ Error unlinking OAuth provider:', error);
+    res.status(500).json({ message: 'Error unlinking OAuth provider' });
+  }
+}
+
+/**
+ * Get linked OAuth providers for current user
+ * GET /auth/oauth
+ */
+export async function getLinkedOAuthProviders(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const [providers] = await pool.execute(
+      'SELECT provider, provider_email, created_at, updated_at FROM user_oauth_providers WHERE user_id = ?',
+      [userId]
+    );
+
+    res.json({ providers });
+  } catch (error) {
+    console.error('❌ Error getting linked OAuth providers:', error);
+    res.status(500).json({ message: 'Error getting linked OAuth providers' });
+  }
+}
+
 export async function login(req, res) {
   const { email, password } = req.body;
   const [rows] = await pool.execute('SELECT * FROM users WHERE email = ?', [

@@ -4,6 +4,7 @@ import AvatarUploader from './AvatarUploader';
 import EmailVerification from './EmailVerification';
 import ChangePassword from './ChangePassword';
 import SessionManagement from './SessionManagement';
+import OAuthProviders from './OAuthProviders';
 import { useLanguage } from './LanguageContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -418,6 +419,9 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
 
         {/* Session Management */}
         <SessionManagement darkMode={darkMode} />
+
+        {/* OAuth Providers Management */}
+        <OAuthProviders darkMode={darkMode} />
 
         {/* Save Button */}
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>

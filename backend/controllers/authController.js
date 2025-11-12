@@ -393,6 +393,11 @@ export async function linkOAuthProvider(req, res) {
 /**
  * Unlink OAuth provider
  * DELETE /auth/oauth/:provider
+ * 
+ * Note: Unlinking OAuth provider does NOT affect email verification status.
+ * Email verification and OAuth are independent concepts:
+ * - Email verification: Confirms email ownership in our system
+ * - OAuth: Just an authentication method
  */
 export async function unlinkOAuthProvider(req, res) {
   try {
@@ -408,6 +413,8 @@ export async function unlinkOAuthProvider(req, res) {
       return res.status(400).json({ message: 'Provider không được hỗ trợ' });
     }
 
+    console.log(`🔗 Attempting to unlink OAuth provider: ${provider} for user ${userId}`);
+
     // Check if provider is linked
     const [existing] = await pool.execute(
       'SELECT * FROM user_oauth_providers WHERE user_id = ? AND provider = ?',
@@ -415,12 +422,13 @@ export async function unlinkOAuthProvider(req, res) {
     );
 
     if (existing.length === 0) {
+      console.log(`⚠️ Provider ${provider} not linked to user ${userId}`);
       return res.status(404).json({ message: `${provider} chưa được liên kết với tài khoản này` });
     }
 
-    // Check if user has password (can't unlink if no password and this is the only auth method)
+    // Get user info for validation and logging
     const [user] = await pool.execute(
-      'SELECT password_hash FROM users WHERE id = ?',
+      'SELECT id, email, password_hash, email_verified FROM users WHERE id = ?',
       [userId]
     );
 
@@ -428,9 +436,11 @@ export async function unlinkOAuthProvider(req, res) {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const userEmail = user[0].email;
     const hasPassword = user[0].password_hash && user[0].password_hash.trim() !== '';
-    
-    // Count linked providers
+    const emailVerified = Boolean(user[0].email_verified);
+
+    // Count linked providers (before unlink)
     const [linkedProviders] = await pool.execute(
       'SELECT COUNT(*) as count FROM user_oauth_providers WHERE user_id = ?',
       [userId]
@@ -438,10 +448,19 @@ export async function unlinkOAuthProvider(req, res) {
 
     const providerCount = linkedProviders[0].count;
 
+    console.log(`📊 User ${userId} (${userEmail}) authentication status:`, {
+      hasPassword,
+      linkedProvidersCount: providerCount,
+      emailVerified,
+      providerToUnlink: provider
+    });
+
     // Prevent unlinking if user has no password and this is the only provider
     if (!hasPassword && providerCount === 1) {
+      console.warn(`⚠️ Cannot unlink ${provider}: User ${userId} has no password and this is the only auth method`);
       return res.status(400).json({ 
-        message: 'Không thể hủy liên kết. Bạn cần có mật khẩu hoặc ít nhất một phương thức đăng nhập khác.' 
+        message: 'Không thể hủy liên kết. Bạn cần có mật khẩu hoặc ít nhất một phương thức đăng nhập khác.',
+        suggestion: 'Vui lòng tạo mật khẩu trước khi hủy liên kết OAuth provider này.'
       });
     }
 
@@ -451,9 +470,51 @@ export async function unlinkOAuthProvider(req, res) {
       [userId, provider]
     );
 
-    res.json({ message: `${provider} đã được hủy liên kết thành công` });
+    // Check remaining authentication methods after unlink
+    const [remainingProviders] = await pool.execute(
+      'SELECT COUNT(*) as count FROM user_oauth_providers WHERE user_id = ?',
+      [userId]
+    );
+    const remainingProviderCount = remainingProviders[0].count;
+
+    // Log successful unlink with details
+    console.log(`✅ OAuth provider ${provider} unlinked successfully from user ${userId}`);
+    console.log(`   User: ${userEmail}`);
+    console.log(`   Remaining auth methods:`, {
+      hasPassword,
+      remainingOAuthProviders: remainingProviderCount,
+      emailVerified: emailVerified // Email verification unchanged (as expected)
+    });
+
+    // Warning if user has no authentication methods remaining (should not happen due to validation above)
+    if (!hasPassword && remainingProviderCount === 0) {
+      console.error(`🚨 WARNING: User ${userId} has no authentication methods remaining after unlink!`);
+      // This should not happen due to validation above, but log it for safety
+    }
+
+    // Prepare response
+    const response = {
+      message: `${provider} đã được hủy liên kết thành công`,
+      remainingAuthMethods: {
+        hasPassword,
+        oauthProvidersCount: remainingProviderCount
+      }
+    };
+
+    // Add warning if user only has one auth method left
+    if (!hasPassword && remainingProviderCount === 0) {
+      response.warning = 'Bạn nên tạo mật khẩu để đảm bảo có thể đăng nhập.';
+    } else if ((!hasPassword && remainingProviderCount === 1) || (hasPassword && remainingProviderCount === 0)) {
+      response.info = 'Bạn vẫn có thể đăng nhập bằng phương thức còn lại.';
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('❌ Error unlinking OAuth provider:', error);
+    console.error('   Error details:', {
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ message: 'Error unlinking OAuth provider' });
   }
 }
@@ -461,6 +522,8 @@ export async function unlinkOAuthProvider(req, res) {
 /**
  * Get linked OAuth providers for current user
  * GET /auth/oauth
+ * 
+ * Returns OAuth providers and authentication methods summary
  */
 export async function getLinkedOAuthProviders(req, res) {
   try {
@@ -469,12 +532,37 @@ export async function getLinkedOAuthProviders(req, res) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
+    // Get OAuth providers
     const [providers] = await pool.execute(
       'SELECT provider, provider_email, created_at, updated_at FROM user_oauth_providers WHERE user_id = ?',
       [userId]
     );
 
-    res.json({ providers });
+    // Get user authentication methods info
+    const [user] = await pool.execute(
+      'SELECT password_hash FROM users WHERE id = ?',
+      [userId]
+    );
+
+    const hasPassword = user.length > 0 && user[0].password_hash && user[0].password_hash.trim() !== '';
+    const oauthProvidersCount = providers.length;
+
+    // Calculate total authentication methods
+    const totalAuthMethods = (hasPassword ? 1 : 0) + oauthProvidersCount;
+
+    res.json({ 
+      providers,
+      authenticationMethods: {
+        hasPassword,
+        oauthProvidersCount,
+        totalAuthMethods,
+        // Warning if user has only one auth method
+        canUnlinkAll: totalAuthMethods > 1,
+        warning: totalAuthMethods === 1 
+          ? 'Bạn chỉ có một phương thức đăng nhập. Vui lòng tạo mật khẩu trước khi hủy liên kết OAuth provider.'
+          : null
+      }
+    });
   } catch (error) {
     console.error('❌ Error getting linked OAuth providers:', error);
     res.status(500).json({ message: 'Error getting linked OAuth providers' });

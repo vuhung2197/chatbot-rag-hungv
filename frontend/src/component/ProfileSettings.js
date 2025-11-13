@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import AvatarUploader from './AvatarUploader';
 import EmailVerification from './EmailVerification';
 import ChangePassword from './ChangePassword';
 import SessionManagement from './SessionManagement';
 import OAuthProviders from './OAuthProviders';
+import SubscriptionStatus from './SubscriptionStatus';
+import SubscriptionPlans from './SubscriptionPlans';
+import UsageDashboard from './UsageDashboard';
 import { useLanguage } from './LanguageContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -16,6 +19,9 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const containerRef = useRef(null);
+  const [subscriptionRefreshTrigger, setSubscriptionRefreshTrigger] = useState(0);
+  const [usageRefreshTrigger, setUsageRefreshTrigger] = useState(0);
 
   // Form fields
   const [displayName, setDisplayName] = useState('');
@@ -30,6 +36,12 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   const loadProfile = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setError(t('profile.loadError'));
+        setLoading(false);
+        return;
+      }
+      
       const res = await axios.get(`${API_URL}/user/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -45,8 +57,12 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         changeLanguage(userLanguage);
       }
     } catch (err) {
-      setError(t('profile.loadError'));
-      console.error(err);
+      // Don't set error if it's a 401 (session expired) - let axios interceptor handle it
+      // Only set error for other types of errors
+      if (err.response?.status !== 401) {
+        setError(t('profile.loadError'));
+      }
+      console.error('Error loading profile:', err);
     } finally {
       setLoading(false);
     }
@@ -74,14 +90,47 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       );
 
       setSuccess(t('profile.updateSuccess'));
-      // Language context is already updated when user changes dropdown
-      // Reload profile to get updated data
-      await loadProfile();
+      
+      // Update local state with saved values (no need to reload from API)
+      // This prevents potential 401 errors from triggering logout
+      setProfile((prev) => ({
+        ...prev,
+        displayName: displayName.trim() || prev.name,
+        email: email.trim(),
+        bio: bio.trim() || '',
+        timezone,
+        language,
+      }));
+      
+      // Scroll to top of profile settings
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      // Auto-hide success message after 3 seconds (but don't close the modal)
       setTimeout(() => {
-        if (onClose) onClose();
-      }, 1500);
+        setSuccess('');
+      }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || t('profile.updateError'));
+      // Handle errors - but don't redirect, stay in profile settings
+      const errorMessage = err.response?.data?.message || t('profile.updateError');
+      
+      // Check if it's a session/token error (axios interceptor will handle logout)
+      const isSessionError = err.response?.status === 401 && (
+        errorMessage.toLowerCase().includes('session') ||
+        errorMessage.toLowerCase().includes('token') ||
+        errorMessage.toLowerCase().includes('expired') ||
+        errorMessage.toLowerCase().includes('revoked')
+      );
+      
+      if (isSessionError) {
+        // Session error - axios interceptor will handle logout
+        // Don't set error here, just log it
+        console.error('Session expired during profile update:', errorMessage);
+      } else {
+        // For other errors (including generic 401 "Unauthorized"), show error but stay in profile
+        setError(errorMessage);
+      }
     } finally {
       setSaving(false);
     }
@@ -128,15 +177,18 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   const inputBorder = darkMode ? '#555' : '#ccc';
 
   return (
-    <div style={{
-      maxWidth: '800px',
-      margin: '0 auto',
-      padding: '24px',
-      backgroundColor: bgColor,
-      color: textColor,
-      borderRadius: '12px',
-      boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.1)',
-    }}>
+    <div 
+      ref={containerRef}
+      style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '24px',
+        backgroundColor: bgColor,
+        color: textColor,
+        borderRadius: '12px',
+        boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.1)',
+      }}
+    >
       {/* Header */}
       <div style={{
         display: 'flex',
@@ -413,6 +465,25 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             </div>
           )}
         </div>
+
+        {/* Subscription Status */}
+        <SubscriptionStatus 
+          darkMode={darkMode} 
+          refreshTrigger={subscriptionRefreshTrigger}
+        />
+
+        {/* Usage Dashboard */}
+        <UsageDashboard darkMode={darkMode} refreshTrigger={usageRefreshTrigger} />
+
+        {/* Subscription Plans */}
+        <SubscriptionPlans 
+          darkMode={darkMode} 
+          onUpgrade={() => {
+            // Trigger refresh for all subscription-related components
+            setSubscriptionRefreshTrigger(prev => prev + 1);
+          }}
+          refreshTrigger={subscriptionRefreshTrigger}
+        />
 
         {/* Password Management */}
         <ChangePassword darkMode={darkMode} />

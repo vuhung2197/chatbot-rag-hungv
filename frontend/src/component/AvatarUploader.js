@@ -1,10 +1,16 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
+import AvatarCropModal from './AvatarCropModal';
+import { useLanguage } from './LanguageContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkMode = false }) {
+  const { t } = useLanguage();
   const [preview, setPreview] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
+  const [croppedImage, setCroppedImage] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
@@ -15,29 +21,43 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
 
     // Validate file type
     if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
-      setError('Chỉ chấp nhận file JPG/PNG');
+      setError(t('avatar.invalidFileType'));
       return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      setError('File quá lớn (max 2MB)');
+      setError(t('avatar.fileTooLarge'));
       return;
     }
 
     setError('');
     
-    // Create preview
+    // Create preview and show crop modal
     const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result);
+      const imageUrl = reader.result;
+      setImageToCrop(imageUrl);
+      setShowCropModal(true);
     };
     reader.readAsDataURL(file);
   };
 
+  const handleCropComplete = (croppedBlob) => {
+    setCroppedImage(croppedBlob);
+    setShowCropModal(false);
+    
+    // Create preview from cropped image
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPreview(reader.result);
+    };
+    reader.readAsDataURL(croppedBlob);
+  };
+
   const handleUpload = async () => {
-    if (!fileInputRef.current?.files[0]) {
-      setError('Vui lòng chọn file');
+    if (!croppedImage) {
+      setError(t('avatar.noImageSelected'));
       return;
     }
 
@@ -46,7 +66,9 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
 
     try {
       const formData = new FormData();
-      formData.append('avatar', fileInputRef.current.files[0]);
+      // Create a File object from the blob with a proper filename
+      const file = new File([croppedImage], 'avatar.jpg', { type: 'image/jpeg' });
+      formData.append('avatar', file);
 
       const token = localStorage.getItem('token');
       const res = await axios.post(`${API_URL}/user/avatar`, formData, {
@@ -59,17 +81,21 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
       if (res.data.avatarUrl) {
         onAvatarUpdate(res.data.avatarUrl);
         setPreview(null);
-        fileInputRef.current.value = '';
+        setCroppedImage(null);
+        setImageToCrop(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Lỗi khi upload avatar');
+      setError(err.response?.data?.message || t('avatar.uploadError'));
     } finally {
       setUploading(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Bạn có chắc muốn xóa avatar?')) return;
+    if (!window.confirm(t('avatar.deleteConfirm'))) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -89,6 +115,21 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
   const displayUrl = preview || (currentAvatarUrl ? `${API_URL}${currentAvatarUrl}` : null);
 
   return (
+    <>
+      {showCropModal && imageToCrop && (
+        <AvatarCropModal
+          imageSrc={imageToCrop}
+          onCropComplete={handleCropComplete}
+          onCancel={() => {
+            setShowCropModal(false);
+            setImageToCrop(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+          }}
+          darkMode={darkMode}
+        />
+      )}
     <div style={{
       display: 'flex',
       flexDirection: 'column',
@@ -155,7 +196,7 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
             opacity: uploading ? 0.6 : 1,
           }}
         >
-          {preview ? 'Chọn lại' : 'Chọn ảnh'}
+          {preview ? t('avatar.selectAgain') : t('avatar.selectImage')}
         </button>
 
         {preview && (
@@ -173,7 +214,7 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
               opacity: uploading ? 0.6 : 1,
             }}
           >
-            {uploading ? 'Đang upload...' : 'Upload'}
+            {uploading ? t('avatar.uploading') : t('avatar.upload')}
           </button>
         )}
 
@@ -192,7 +233,7 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
               opacity: uploading ? 0.6 : 1,
             }}
           >
-            Xóa
+            {t('avatar.delete')}
           </button>
         )}
       </div>
@@ -215,9 +256,10 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
         color: darkMode ? '#999' : '#666',
         textAlign: 'center',
       }}>
-        JPG/PNG, tối đa 2MB
+        {t('avatar.fileInfo')}
       </div>
     </div>
+    </>
   );
 }
 

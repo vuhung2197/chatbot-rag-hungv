@@ -1,5 +1,4 @@
 import pool from '../db.js';
-import { verifyToken } from '../middlewares/authMiddleware.js';
 import crypto from 'crypto';
 
 /**
@@ -22,15 +21,16 @@ export async function getConversations(req, res) {
     const [rows] = await pool.execute(
       `SELECT 
         conversation_id,
-        conversation_title,
+        COALESCE(MAX(CASE WHEN conversation_title IS NOT NULL AND conversation_title != '' THEN conversation_title END), 
+                 MAX(conversation_title)) as conversation_title,
         COUNT(*) as message_count,
         MAX(created_at) as last_message_at,
         MIN(created_at) as created_at,
-        is_archived,
-        is_pinned
+        COALESCE(MAX(is_archived), 0) as is_archived,
+        COALESCE(MAX(is_pinned), 0) as is_pinned
        FROM user_questions 
        WHERE user_id = ? AND conversation_id IS NOT NULL
-       GROUP BY conversation_id, conversation_title, is_archived, is_pinned
+       GROUP BY conversation_id
        ORDER BY is_pinned DESC, last_message_at DESC
        LIMIT 100`,
       [userId]

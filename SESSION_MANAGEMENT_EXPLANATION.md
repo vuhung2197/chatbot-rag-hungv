@@ -107,26 +107,69 @@ res.redirect(`${frontendUrl}?token=${jwtToken}&role=${user.role}`);
 ### 2. **Khi User Gửi Request (Authentication)**
 
 ```javascript
-// Middleware: authMiddleware.js
-export function verifyToken(req, res, next) {
+// Middleware: authMiddleware.js (ĐÃ CẢI THIỆN)
+export async function verifyToken(req, res, next) {
   // 1. Lấy token từ header
   const token = req.headers.authorization?.split(' ')[1];
-  
-  // 2. Verify JWT token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  
-  // 3. Gán thông tin user vào req.user
-  req.user = decoded; // { id: 123, role: 'user' }
-  
-  // 4. Chuyển sang middleware tiếp theo
-  next();
+  if (!token) {
+    return res.status(401).json({ message: 'Token missing' });
+  }
+
+  try {
+    // 2. Verify JWT token signature và expiry
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 3. Hash token để kiểm tra trong database
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // 4. Kiểm tra session có trong database và chưa hết hạn
+    const [sessions] = await pool.execute(
+      `SELECT id, user_id, expires_at 
+       FROM user_sessions 
+       WHERE token_hash = ? AND expires_at > NOW()`,
+      [tokenHash]
+    );
+    
+    // 5. Nếu không tìm thấy session hoặc đã hết hạn
+    if (sessions.length === 0) {
+      return res.status(401).json({ 
+        message: 'Session expired or revoked. Please login again.' 
+      });
+    }
+    
+    // 6. Verify user_id trong session khớp với user_id trong token
+    const session = sessions[0];
+    if (session.user_id !== decoded.id) {
+      return res.status(401).json({ 
+        message: 'Session user mismatch' 
+      });
+    }
+    
+    // 7. Gán thông tin user vào req.user
+    req.user = decoded;
+    req.sessionId = session.id; // Thêm sessionId vào request
+    
+    // 8. Chuyển sang middleware tiếp theo
+    next();
+  } catch (error) {
+    // Xử lý lỗi JWT (invalid, expired, etc.)
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(403).json({ message: 'Invalid token' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token expired. Please login again.' });
+    }
+    return res.status(500).json({ message: 'Authentication error' });
+  }
 }
 ```
 
-**Lưu ý:** 
-- Middleware hiện tại **CHỈ verify JWT token**, không kiểm tra session trong database
-- Điều này có nghĩa là token vẫn hợp lệ cho đến khi hết hạn (30 ngày)
-- **Chưa có cơ chế revoke session** trong middleware (có thể cải thiện)
+**Cải thiện:** 
+- ✅ Middleware **ĐÃ kiểm tra session trong database**
+- ✅ Token sẽ không hợp lệ nếu session bị revoke
+- ✅ Token sẽ không hợp lệ nếu session đã hết hạn
+- ✅ Kiểm tra user_id khớp giữa token và session
+- ✅ Thêm `req.sessionId` để có thể dùng sau này
 
 ### 3. **Khi User Xem Sessions**
 
@@ -294,37 +337,20 @@ User có thể:
 
 ---
 
-## ⚠️ Hạn Chế Hiện Tại
+## ✅ Đã Cải Thiện
 
-### 1. **Middleware không kiểm tra session trong database**
+### 1. **Middleware đã kiểm tra session trong database** ✅
 
 ```javascript
-// authMiddleware.js - HIỆN TẠI
-export function verifyToken(req, res, next) {
-  const token = req.headers.authorization?.split(' ')[1];
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  req.user = decoded;
-  next();
-  // ❌ KHÔNG kiểm tra session có trong database không
-  // ❌ KHÔNG kiểm tra session đã bị revoke chưa
-}
-```
-
-**Vấn đề:**
-- Nếu user revoke session, token vẫn hợp lệ cho đến khi hết hạn
-- Attacker có token cũ vẫn có thể dùng
-
-**Giải pháp:**
-```javascript
-// CẢI THIỆN
+// authMiddleware.js - ĐÃ CẢI THIỆN
 export async function verifyToken(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   
-  // Kiểm tra session có trong database không
+  // ✅ Kiểm tra session có trong database không
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const [sessions] = await pool.execute(
-    'SELECT id FROM user_sessions WHERE token_hash = ? AND expires_at > NOW()',
+    'SELECT id, user_id FROM user_sessions WHERE token_hash = ? AND expires_at > NOW()',
     [tokenHash]
   );
   
@@ -332,22 +358,117 @@ export async function verifyToken(req, res, next) {
     return res.status(401).json({ message: 'Session expired or revoked' });
   }
   
+  // ✅ Verify user_id khớp
+  if (sessions[0].user_id !== decoded.id) {
+    return res.status(401).json({ message: 'Session user mismatch' });
+  }
+  
   req.user = decoded;
+  req.sessionId = sessions[0].id; // ✅ Thêm sessionId
   next();
 }
 ```
 
-### 2. **Logout không xóa session**
+**Đã giải quyết:**
+- ✅ Nếu user revoke session, token sẽ không hợp lệ ngay lập tức
+- ✅ Attacker có token cũ không thể dùng nếu session đã bị revoke
+- ✅ Kiểm tra session expiry trong database
+- ✅ Verify user_id khớp giữa token và session
 
-**Hiện tại:**
-- Logout chỉ xóa token ở frontend
-- Session vẫn còn trong database
+### 2. **Logout đã xóa session** ✅
 
-**Cải thiện:**
-- Tạo endpoint `/auth/logout`
-- Xóa session trong database khi logout
+**Đã cải thiện:**
+- ✅ Tạo endpoint `POST /auth/logout`
+- ✅ Xóa session trong database khi logout
+- ✅ Frontend gọi API logout trước khi xóa localStorage
 
-### 3. **Đổi mật khẩu không revoke sessions**
+**Cách hoạt động:**
+```javascript
+// Backend: POST /auth/logout
+export async function logout(req, res) {
+  const userId = req.user?.id;
+  const sessionId = req.sessionId; // Từ verifyToken middleware
+  
+  // Hash token để verify
+  const tokenHash = crypto.createHash('sha256')
+    .update(token).digest('hex');
+  
+  // Verify và xóa session
+  await pool.execute(
+    'DELETE FROM user_sessions WHERE id = ? AND user_id = ? AND token_hash = ?',
+    [sessionId, userId, tokenHash]
+  );
+  
+  res.json({ message: 'Logged out successfully' });
+}
+
+// Frontend: App.js
+async function handleLogout() {
+  try {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Gọi API để xóa session trong database
+      await axios.post(`${API_URL}/auth/logout`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    }
+  } catch (err) {
+    console.error('Logout API error:', err);
+  } finally {
+    // Luôn xóa localStorage dù API có lỗi hay không
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    localStorage.removeItem('userId');
+    setRole(null);
+  }
+}
+```
+
+### 3. **Auto-logout khi session bị revoke** ✅
+
+**Đã cải thiện:**
+- ✅ Tạo axios interceptor để tự động logout khi nhận 401 (session expired/revoked)
+- ✅ Khi revoke all other sessions, các thiết bị khác sẽ tự động logout ở request tiếp theo
+- ✅ User được thông báo rõ ràng khi bị logout do session bị revoke
+
+**Cách hoạt động:**
+```javascript
+// frontend/src/utils/axiosConfig.js
+export function setupAxiosInterceptor(onLogout) {
+  axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        const errorMessage = error.response?.data?.message || '';
+        const sessionErrors = [
+          'Session expired or revoked',
+          'Session expired',
+          'Token expired',
+          // ...
+        ];
+        
+        if (sessionErrors.some(msg => errorMessage.includes(msg))) {
+          // Clear localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('userId');
+          
+          // Call logout callback
+          onLogout();
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+}
+```
+
+**Kết quả:**
+- Khi user A revoke all other sessions từ thiết bị 1
+- User A ở thiết bị 2 sẽ tự động logout ở request tiếp theo
+- User A ở thiết bị 2 nhận được thông báo: "Phiên đăng nhập đã hết hạn hoặc bị hủy"
+
+### 4. **Đổi mật khẩu không revoke sessions**
 
 **Cải thiện:**
 - Khi đổi mật khẩu → Revoke tất cả sessions khác
@@ -390,15 +511,19 @@ export async function verifyToken(req, res, next) {
 2. Tạo session khi đăng nhập (password + OAuth)
 3. API xem danh sách sessions
 4. API revoke session (một hoặc tất cả)
-5. Session expiry (30 ngày)
-6. Cascade delete khi user bị xóa
+5. API logout để xóa session hiện tại
+6. Session expiry (30 ngày)
+7. Cascade delete khi user bị xóa
+8. Middleware verify session trong database
 
-### ⚠️ **Cần cải thiện:**
-1. Middleware verify session trong database
-2. Logout endpoint để xóa session
-3. Revoke sessions khi đổi mật khẩu
-4. Cleanup expired sessions (cron job)
-5. Session rotation cho sensitive operations
+### ✅ **Đã cải thiện:**
+1. ✅ Middleware verify session trong database - **ĐÃ HOÀN THÀNH**
+2. ✅ Logout endpoint để xóa session - **ĐÃ HOÀN THÀNH**
+
+### ⚠️ **Cần cải thiện tiếp:**
+1. Revoke sessions khi đổi mật khẩu
+2. Cleanup expired sessions (cron job)
+3. Session rotation cho sensitive operations
 
 ---
 

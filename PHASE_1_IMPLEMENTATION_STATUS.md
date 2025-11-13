@@ -17,7 +17,9 @@
 - ✅ Preview trước khi lưu - `frontend/src/component/AvatarUploader.js`
 - ✅ Default avatar nếu không upload - Hiển thị icon mặc định
 - ✅ Xóa avatar - `DELETE /user/avatar`
-- ⚠️ **Note**: Crop & resize tự động chưa có (nice to have, không bắt buộc)
+- ✅ **Crop & resize tự động** - Đã implement:
+  - Frontend: `AvatarCropModal.js` với `react-easy-crop` để crop ảnh
+  - Backend: `sharp` để resize về 200x200 JPEG, optimize quality
 
 #### **Personal Information** ✅
 - ✅ Display name - Có thể chỉnh sửa
@@ -67,12 +69,12 @@
    - Áp dụng ngay khi thay đổi
    - Hỗ trợ vi/en cho tất cả components
 
-### ⚠️ Nice to Have (Không bắt buộc):
+### ✅ Đã Hoàn Thiện Thêm:
 
-1. **Avatar Resize/Crop** (Optional)
-   - Hiện tại chỉ copy file, chưa resize về 200x200
-   - Có thể dùng thư viện như `sharp` hoặc `jimp`
-   - Không ảnh hưởng đến chức năng chính
+1. **Avatar Resize/Crop** ✅
+   - ✅ Frontend: `AvatarCropModal.js` với `react-easy-crop` để crop ảnh trước khi upload
+   - ✅ Backend: `sharp` để resize về 200x200 JPEG, optimize quality 90%
+   - ✅ Tự động crop và resize khi upload avatar
 
 ---
 
@@ -80,11 +82,12 @@
 
 ### ✅ Đã Triển Khai:
 
-#### **Social Login** ⚠️
+#### **Social Login** ✅
 - ✅ Google OAuth - Đã có (`backend/controllers/authController.js`)
+- ✅ Link/Unlink OAuth accounts - Đã có (`POST /auth/oauth/:provider`, `DELETE /auth/oauth/:provider`)
+- ✅ OAuth Providers Management UI - Đã có (`frontend/src/component/OAuthProviders.js`)
 - ❌ GitHub OAuth - **CHƯA CÓ** (Optional, có thể làm sau)
 - ❌ Microsoft OAuth - **CHƯA CÓ** (Optional, có thể làm sau)
-- ❌ Link multiple accounts - **CHƯA CÓ** (Optional, có thể làm sau)
 
 #### **Password Management** ✅
 - ✅ Change password - `POST /auth/password/change` - `backend/controllers/passwordController.js`
@@ -113,17 +116,20 @@
 - ✅ `GET /auth/sessions` - Lấy danh sách sessions
 - ✅ `DELETE /auth/sessions/:sessionId` - Revoke session
 - ✅ `DELETE /auth/sessions/all/others` - Revoke all other sessions
-- ❌ `POST /auth/oauth/:provider` - **CHƯA CÓ** (Optional, cho future OAuth providers)
-- ❌ `DELETE /auth/oauth/:provider` - **CHƯA CÓ** (Optional, cho future OAuth providers)
+- ✅ `GET /auth/oauth` - Lấy danh sách OAuth providers đã liên kết
+- ✅ `POST /auth/oauth/:provider` - Link OAuth provider (Google đã hỗ trợ)
+- ✅ `DELETE /auth/oauth/:provider` - Unlink OAuth provider
 
 #### **Frontend Components** ✅
 - ✅ `ChangePassword.js` - Form đổi mật khẩu với password strength indicator (hỗ trợ đa ngôn ngữ)
 - ✅ `ResetPasswordPage.js` - Page reset password với token (hỗ trợ đa ngôn ngữ)
 - ✅ `RequestPasswordReset.js` - Component request reset password (hỗ trợ đa ngôn ngữ)
 - ✅ `SessionManagement.js` - Quản lý sessions (hỗ trợ đa ngôn ngữ)
+- ✅ `OAuthProviders.js` - Quản lý liên kết OAuth providers (hỗ trợ đa ngôn ngữ)
 - ✅ Tích hợp vào `ProfileSettings.js`
 - ✅ Tích hợp "Quên mật khẩu?" vào `Login.js`
-- ✅ Route handling trong `App.js` cho reset password
+- ✅ Tích hợp "Login with Google" vào `Login.js`
+- ✅ Route handling trong `App.js` cho reset password và OAuth callbacks
 
 #### **Email Service** ✅
 - ✅ `sendPasswordResetEmail()` - `backend/services/emailService.js`
@@ -146,13 +152,13 @@ Tất cả các tính năng core của Phase 1 đã được triển khai đầy
 ### **🔮 Phase 2: Optional Enhancements**
 
 #### **1. Additional OAuth Providers** (Optional, 2-3 ngày)
-- GitHub OAuth
-- Microsoft OAuth
-- Link multiple accounts
+- GitHub OAuth (infrastructure đã sẵn sàng, chỉ cần implement provider)
+- Microsoft OAuth (infrastructure đã sẵn sàng, chỉ cần implement provider)
+- Link multiple accounts - ✅ **ĐÃ CÓ** (Google đã hỗ trợ, có thể mở rộng cho providers khác)
 
-#### **2. Avatar Enhancement** (Optional, 1-2 giờ)
-- Resize/crop tự động về 200x200
-- Có thể dùng thư viện như `sharp` hoặc `jimp`
+#### **2. Avatar Enhancement** ✅ **ĐÃ HOÀN THÀNH**
+- ✅ Resize/crop tự động về 200x200
+- ✅ Đã dùng `sharp` (backend) và `react-easy-crop` (frontend)
 
 #### **3. Advanced Features** (Phase 2+)
 - Two-factor authentication (2FA)
@@ -166,16 +172,17 @@ Tất cả các tính năng core của Phase 1 đã được triển khai đầy
 | Component | Status | Progress |
 |-----------|--------|----------|
 | **1.1 Profile Management** | 🟢 Hoàn thành | **100%** |
-| - Avatar Upload | ✅ | 100% (resize là optional) |
+| - Avatar Upload | ✅ | 100% (crop & resize đã có) |
 | - Personal Info | ✅ | 100% |
 | - Account Status | ✅ | 100% |
 | - Email Verification | ✅ | 100% |
 | - Language Preference | ✅ | 100% |
 | **1.2 Enhanced Authentication** | 🟢 Hoàn thành | **100%** |
 | - Google OAuth | ✅ | 100% |
+| - OAuth Link/Unlink | ✅ | 100% |
 | - Password Management | ✅ | 100% |
 | - Session Management | ✅ | 100% |
-| - Additional OAuth | ⚠️ | 0% (Optional, Phase 2+) |
+| - Additional OAuth Providers | ⚠️ | 0% (Optional, Phase 2+) |
 
 **Tổng tiến độ Phase 1: ✅ 100% HOÀN THÀNH**
 
@@ -183,8 +190,10 @@ Tất cả các tính năng core của Phase 1 đã được triển khai đầy
 
 #### **Backend Files:**
 - ✅ `backend/controllers/profileController.js` - Profile management
+- ✅ `backend/controllers/authController.js` - Authentication + OAuth (Google login, link/unlink)
 - ✅ `backend/controllers/passwordController.js` - Password management
 - ✅ `backend/controllers/sessionController.js` - Session management
+- ✅ `backend/routes/auth.js` - Auth routes (login, register, OAuth)
 - ✅ `backend/routes/password.js` - Password routes
 - ✅ `backend/routes/session.js` - Session routes
 - ✅ `backend/services/emailService.js` - Email service (verification + reset)
@@ -198,6 +207,9 @@ Tất cả các tính năng core của Phase 1 đã được triển khai đầy
 - ✅ `ResetPasswordPage.js` - Reset password page
 - ✅ `RequestPasswordReset.js` - Request password reset
 - ✅ `SessionManagement.js` - Session management
+- ✅ `OAuthProviders.js` - OAuth providers management (link/unlink)
+- ✅ `SetPasswordPage.js` - Set password cho OAuth users mới
+- ✅ `Login.js` - Login với Google OAuth button
 - ✅ `LanguageContext.js` - Language context với translations đầy đủ
 
 #### **Database:**
@@ -225,6 +237,8 @@ Tất cả các tính năng core của Phase 1 đã được triển khai đầy
 
 3. **Test Tất Cả Tính Năng**
    - ✅ Test Profile Management
+   - ✅ Test Google OAuth Login
+   - ✅ Test OAuth Link/Unlink (từ Profile Settings)
    - ✅ Test Password Management (change + reset)
    - ✅ Test Session Management
    - ✅ Test Email Verification
@@ -245,6 +259,10 @@ Tất cả các tính năng core của Phase 1 đã được triển khai đầy
   - Fallback: Log token/URL to console nếu chưa config
 - ✅ **Password Strength**: Đã implement password strength indicator trong `ChangePassword.js`
 - ✅ **Session Tracking**: Đã implement session tracking và management
+- ✅ **OAuth Management**: Đã implement link/unlink OAuth providers (Google đã hỗ trợ)
+  - Backend: `linkOAuthProvider`, `unlinkOAuthProvider`, `getLinkedOAuthProviders`
+  - Frontend: `OAuthProviders.js` component với UI đầy đủ
+  - Infrastructure sẵn sàng cho GitHub, Microsoft (chỉ cần implement provider logic)
 
 ### **Cần Setup:**
 - ⚠️ **Email Service Configuration**: Cần setup Gmail App Password hoặc email service khác

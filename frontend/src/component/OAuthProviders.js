@@ -73,7 +73,10 @@ export default function OAuthProviders({ darkMode = false }) {
   };
 
   const handleUnlink = async (provider) => {
-    if (!window.confirm(t('oauth.unlinkConfirm', { provider }))) {
+    const providerName = getProviderName(provider);
+    const confirmMessage = t('oauth.unlinkConfirm').replace('{provider}', providerName);
+    
+    if (!window.confirm(confirmMessage)) {
       return;
     }
 
@@ -86,7 +89,6 @@ export default function OAuthProviders({ darkMode = false }) {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const providerName = getProviderName(provider);
       const successMessage = t('oauth.unlinkSuccess').replace('{provider}', providerName);
       setSuccess(successMessage);
       // Reload providers list

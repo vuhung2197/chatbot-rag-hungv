@@ -520,6 +520,60 @@ export async function unlinkOAuthProvider(req, res) {
 }
 
 /**
+ * Logout user - Delete current session from database
+ * POST /auth/logout
+ * 
+ * Requires authentication (verifyToken middleware)
+ * Deletes the session associated with the current token
+ */
+export async function logout(req, res) {
+  try {
+    const userId = req.user?.id;
+    const sessionId = req.sessionId; // From verifyToken middleware
+    
+    if (!userId || !sessionId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Get token from header to hash and verify
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Token missing' });
+    }
+
+    // Hash token to find session
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Verify session belongs to user and delete it
+    const [sessions] = await pool.execute(
+      'SELECT id FROM user_sessions WHERE id = ? AND user_id = ? AND token_hash = ?',
+      [sessionId, userId, tokenHash]
+    );
+
+    if (sessions.length === 0) {
+      // Session already deleted or doesn't exist
+      return res.json({ message: 'Logged out successfully' });
+    }
+
+    // Delete session from database
+    await pool.execute(
+      'DELETE FROM user_sessions WHERE id = ? AND user_id = ?',
+      [sessionId, userId]
+    );
+
+    console.log(`✅ User ${userId} logged out. Session ${sessionId} deleted.`);
+
+    res.json({ 
+      message: 'Logged out successfully',
+      sessionDeleted: true
+    });
+  } catch (error) {
+    console.error('❌ Error in logout:', error);
+    res.status(500).json({ message: 'Error during logout' });
+  }
+}
+
+/**
  * Get linked OAuth providers for current user
  * GET /auth/oauth
  * 

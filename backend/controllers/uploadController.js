@@ -5,6 +5,7 @@ import mammoth from 'mammoth';
 import { updateChunksForKnowledge } from '../services/updateChunks.js';
 import pool from '../db.js';
 import { StatusCodes } from 'http-status-codes';
+import { incrementUsage } from './usageController.js';
 
 /**
  * Xử lý upload file kiến thức và huấn luyện tự động.
@@ -66,6 +67,27 @@ export async function uploadAndTrain(req, res) {
     );
 
     await updateChunksForKnowledge(result.insertId, title, content);
+    
+    // Track usage: file upload count and size
+    const userId = req.user?.id;
+    if (userId) {
+      try {
+        const fileSizeMB = file.size / (1024 * 1024);
+        console.log(`📊 Tracking usage for user ${userId}: file upload (${fileSizeMB.toFixed(2)} MB)`);
+        
+        await incrementUsage(userId, 'file_upload', 1);
+        console.log(`✅ Tracked file_upload count for user ${userId}`);
+        
+        await incrementUsage(userId, 'file_size', fileSizeMB);
+        console.log(`✅ Tracked file_size (${fileSizeMB.toFixed(2)} MB) for user ${userId}`);
+      } catch (usageError) {
+        console.error('❌ Error tracking usage (non-fatal):', usageError);
+        // Don't fail the upload if usage tracking fails
+      }
+    } else {
+      console.warn('⚠️ No user ID found in request, skipping usage tracking');
+    }
+    
     res.json({ message: '✅ File đã được huấn luyện thành công!' });
   } catch (err) {
     console.error('❌ Lỗi khi xử lý file:', err);

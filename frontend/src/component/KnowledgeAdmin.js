@@ -10,6 +10,10 @@ export default function KnowledgeAdmin() {
   const [chunkPreview, setChunkPreview] = useState({ id: null, chunks: [] });
   const [unanswered, setUnanswered] = useState([]);
   const [showChunkModal, setShowChunkModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadFileName, setUploadFileName] = useState('');
+  const [uploadStatus, setUploadStatus] = useState(null); // 'loading', 'success', 'error'
+  const [uploadMessage, setUploadMessage] = useState('');
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -89,21 +93,77 @@ export default function KnowledgeAdmin() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Set uploading state
+    setUploading(true);
+    setUploadStatus('loading');
+    setUploadFileName(file.name);
+    setUploadMessage('');
+
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const res = await axios.post(`${API_URL}/upload`, formData);
-
-      if (res.status === 409) {
-        alert(res.data.error);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setUploadStatus('error');
+        setUploadMessage('Vui lòng đăng nhập để upload file');
+        setTimeout(() => {
+          setUploading(false);
+          setUploadStatus(null);
+          setUploadFileName('');
+        }, 3000);
         return;
       }
 
-      alert(res.data.message || 'Tải lên thành công');
+      const res = await axios.post(`${API_URL}/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (res.status === 409) {
+        setUploadStatus('error');
+        setUploadMessage(res.data.error || 'File đã tồn tại');
+        setTimeout(() => {
+          setUploading(false);
+          setUploadStatus(null);
+          setUploadFileName('');
+        }, 3000);
+        return;
+      }
+
+      // Success
+      setUploadStatus('success');
+      setUploadMessage(res.data.message || '✅ File đã được huấn luyện thành công!');
       fetchList();
+      
+      // Trigger refresh for Usage Dashboard
+      window.dispatchEvent(new Event('fileUploaded'));
+
+      // Auto close after 2 seconds
+      setTimeout(() => {
+        setUploading(false);
+        setUploadStatus(null);
+        setUploadFileName('');
+        setUploadMessage('');
+      }, 2000);
     } catch (err) {
-      alert(`Lỗi khi tải lên file: ${err.message}`);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setUploadStatus('error');
+      setUploadMessage(`Lỗi khi tải lên file: ${errorMessage}`);
+      console.error('Upload error:', err);
+      
+      // Auto close after 3 seconds
+      setTimeout(() => {
+        setUploading(false);
+        setUploadStatus(null);
+        setUploadFileName('');
+        setUploadMessage('');
+      }, 3000);
+    } finally {
+      // Reset file input
+      e.target.value = '';
     }
   };
 
@@ -299,6 +359,98 @@ export default function KnowledgeAdmin() {
           )}
         </div>
       </div>
+
+      {/* Upload Loading Modal */}
+      {uploading && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+            <div className="modal-body">
+              <div style={{ marginBottom: '20px', padding: '20px' }}>
+                {uploadStatus === 'loading' && (
+                  <>
+                    <div className="loading-spinner" style={{
+                      width: '60px',
+                      height: '60px',
+                      border: '4px solid #f3f3f3',
+                      borderTop: '4px solid #3498db',
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite',
+                      margin: '0 auto 20px'
+                    }}></div>
+                    <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#333' }}>
+                      Đang xử lý file...
+                    </h3>
+                    <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
+                      {uploadFileName && `File: ${uploadFileName}`}
+                    </p>
+                    <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: '#999' }}>
+                      Vui lòng đợi trong khi file đang được upload và huấn luyện
+                    </p>
+                  </>
+                )}
+                
+                {uploadStatus === 'success' && (
+                  <>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      backgroundColor: '#d4edda',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 20px',
+                      fontSize: '36px'
+                    }}>
+                      ✅
+                    </div>
+                    <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#28a745' }}>
+                      Thành công!
+                    </h3>
+                    <p style={{ margin: '0', fontSize: '14px', color: '#666', lineHeight: '1.5' }}>
+                      {uploadMessage || 'File đã được huấn luyện thành công!'}
+                    </p>
+                    {uploadFileName && (
+                      <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: '#999' }}>
+                        File: {uploadFileName}
+                      </p>
+                    )}
+                  </>
+                )}
+                
+                {uploadStatus === 'error' && (
+                  <>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      backgroundColor: '#f8d7da',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 20px',
+                      fontSize: '36px'
+                    }}>
+                      ❌
+                    </div>
+                    <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#dc3545' }}>
+                      Lỗi!
+                    </h3>
+                    <p style={{ margin: '0', fontSize: '14px', color: '#666', lineHeight: '1.5' }}>
+                      {uploadMessage || 'Đã xảy ra lỗi khi upload file'}
+                    </p>
+                    {uploadFileName && (
+                      <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: '#999' }}>
+                        File: {uploadFileName}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Chunk Modal */}
       {showChunkModal && (

@@ -58,9 +58,17 @@ export default function SessionManagement({ darkMode = false }) {
     setRevoking('all');
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/auth/sessions/all/others`, {
+      const res = await axios.delete(`${API_URL}/auth/sessions/all/others`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      
+      // Show success message with details
+      if (res.data.revokedCount > 0) {
+        const message = res.data.messageDetail || res.data.message || 'Đã hủy tất cả phiên khác';
+        setError(''); // Clear any previous errors
+        // Note: We could add a success state here, but for now just reload
+      }
+      
       // Reload sessions
       await loadSessions();
     } catch (err) {

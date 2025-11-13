@@ -1,5 +1,6 @@
 // 📁 src/App.jsx
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Chat from './component/Chat';
 import KnowledgeAdmin from './component/KnowledgeAdmin';
 import Login from './component/Login';
@@ -11,6 +12,7 @@ import ResetPasswordPage from './component/ResetPasswordPage';
 import SetPasswordPage from './component/SetPasswordPage';
 import { useDarkMode } from './component/DarkModeContext';
 import { useLanguage } from './component/LanguageContext';
+import { setupAxiosInterceptor } from './utils/axiosConfig';
 
 export default function App() {
   const [view, setView] = useState('chat');
@@ -116,12 +118,44 @@ export default function App() {
     if (role) setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
   }, [role]);
 
-  function handleLogout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    localStorage.removeItem('userId');
-    setRole(null);
-    setPage('login');
+  // Setup axios interceptor to handle 401 errors (session expired/revoked)
+  useEffect(() => {
+    const handleAutoLogout = () => {
+      // Close profile settings if open
+      setShowProfile(false);
+      setRole(null);
+      setPage('login');
+      showToast('Phiên đăng nhập đã hết hạn hoặc bị hủy. Vui lòng đăng nhập lại.');
+    };
+    
+    setupAxiosInterceptor(handleAutoLogout);
+  }, []);
+
+  async function handleLogout() {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Call logout API to delete session in database
+        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        await axios.post(
+          `${API_URL}/auth/logout`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      }
+    } catch (err) {
+      // Even if API call fails, still clear local storage
+      console.error('Logout API error:', err);
+    } finally {
+      // Always clear local storage and reset state
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      localStorage.removeItem('userId');
+      setRole(null);
+      setPage('login');
+    }
   }
 
   // Show set password page if new OAuth user

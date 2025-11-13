@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import sharp from 'sharp';
 import { sendVerificationEmail } from '../services/emailService.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -199,22 +200,28 @@ export async function uploadAvatar(req, res) {
       console.log('✅ Created avatars directory:', avatarsDir);
     }
 
-    // Generate unique filename
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const filename = `${userId}_${Date.now()}${ext}`;
+    // Generate unique filename (always use .jpg for consistency)
+    const filename = `${userId}_${Date.now()}.jpg`;
     const outputPath = path.join(avatarsDir, filename);
 
-    // Copy file to avatars directory
-    // Note: In production, consider using sharp or similar for resizing/optimization
+    // Resize and optimize image using sharp
+    // Resize to 200x200, crop to center, convert to JPEG
     try {
-      fs.copyFileSync(req.file.path, outputPath);
-      console.log('✅ File copied to:', outputPath);
-    } catch (copyError) {
-      console.error('❌ Error copying file:', copyError);
+      await sharp(req.file.path)
+        .resize(200, 200, {
+          fit: 'cover',
+          position: 'center',
+        })
+        .jpeg({ quality: 90 })
+        .toFile(outputPath);
+      
+      console.log('✅ Avatar resized and saved to:', outputPath);
+    } catch (sharpError) {
+      console.error('❌ Error processing image with sharp:', sharpError);
       if (fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
-      return res.status(500).json({ message: 'Lỗi khi lưu file avatar' });
+      return res.status(500).json({ message: 'Lỗi khi xử lý ảnh avatar' });
     }
 
     // Delete original temp file

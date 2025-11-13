@@ -103,13 +103,27 @@ export async function revokeAllOtherSessions(req, res) {
 
     const currentTokenHash = crypto.createHash('sha256').update(currentToken).digest('hex');
 
+    // Get count of sessions to be deleted
+    const [sessionsToDelete] = await pool.execute(
+      'SELECT COUNT(*) as count FROM user_sessions WHERE user_id = ? AND token_hash != ?',
+      [userId, currentTokenHash]
+    );
+    
+    const deletedCount = sessionsToDelete[0].count;
+
     // Delete all sessions except current
     await pool.execute(
       'DELETE FROM user_sessions WHERE user_id = ? AND token_hash != ?',
       [userId, currentTokenHash]
     );
 
-    res.json({ message: 'All other sessions revoked successfully' });
+    console.log(`✅ Revoked ${deletedCount} other session(s) for user ${userId}. Current session kept.`);
+
+    res.json({ 
+      message: 'All other sessions revoked successfully',
+      revokedCount: deletedCount,
+      messageDetail: `${deletedCount} session(s) đã bị hủy. Các thiết bị khác sẽ bị đăng xuất tự động.`
+    });
   } catch (error) {
     console.error('❌ Error revoking all other sessions:', error);
     res.status(500).json({ message: 'Error revoking sessions' });

@@ -34,7 +34,8 @@
     "nodemailer": "^7.0.10",
     "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",
-    "sentence-splitter": "^5.0.0"
+    "sentence-splitter": "^5.0.0",
+    "sharp": "^0.34.5"
   },
   "type": "module",
   "devDependencies": {

@@ -33,13 +33,15 @@ export default function UsageCounter({ darkMode }) {
     return null;
   }
 
-  const { queries, advanced_rag } = usage.usage;
-  const { queries: queriesLimit, advanced_rag: advancedRagLimit } = usage.limits;
-  const queriesPercent = usage.percentage.queries;
-  const advancedRagPercent = usage.percentage.advanced_rag;
-
-  const isNearLimit = queriesPercent >= 80 || advancedRagPercent >= 80;
-  const isAtLimit = queriesPercent >= 100 || advancedRagPercent >= 100;
+  // Get usage values from backend response
+  const queriesCount = Number(usage.usage?.queries_count) || 0;
+  const advancedRagCount = Number(usage.usage?.advanced_rag_count) || 0;
+  const queriesLimit = usage.limits?.queries_per_day || 50;
+  const queriesPercent = usage.percentage?.queries || 0;
+  
+  // Advanced RAG doesn't have a limit in the response, so we'll just show the count
+  const isNearLimit = queriesPercent >= 80;
+  const isAtLimit = queriesPercent >= 100;
 
   return (
     <div
@@ -69,57 +71,44 @@ export default function UsageCounter({ darkMode }) {
             fontWeight: 600,
             color: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : darkMode ? '#68d391' : '#48bb78'
           }}>
-            {queries} / {queriesLimit}
+            {queriesCount} / {queriesLimit === -1 ? '∞' : queriesLimit}
           </span>
         </div>
-        <div
-          style={{
-            height: 4,
-            background: darkMode ? '#4a5568' : '#e2e8f0',
-            borderRadius: 2,
-            overflow: 'hidden',
-          }}
-        >
+        {queriesLimit !== -1 && (
           <div
             style={{
-              height: '100%',
-              width: `${Math.min(100, queriesPercent)}%`,
-              background: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : '#48bb78',
-              transition: 'width 0.3s ease',
+              height: 4,
+              background: darkMode ? '#4a5568' : '#e2e8f0',
+              borderRadius: 2,
+              overflow: 'hidden',
             }}
-          />
-        </div>
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min(100, queriesPercent)}%`,
+                background: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : '#48bb78',
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Advanced RAG */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-          <span style={{ color: darkMode ? '#cbd5e0' : '#4a5568' }}>Advanced RAG:</span>
-          <span style={{ 
-            fontWeight: 600,
-            color: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : darkMode ? '#68d391' : '#48bb78'
-          }}>
-            {advanced_rag} / {advancedRagLimit}
-          </span>
+      {advancedRagCount > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
+            <span style={{ color: darkMode ? '#cbd5e0' : '#4a5568' }}>Advanced RAG:</span>
+            <span style={{ 
+              fontWeight: 600,
+              color: darkMode ? '#68d391' : '#48bb78'
+            }}>
+              {advancedRagCount}
+            </span>
+          </div>
         </div>
-        <div
-          style={{
-            height: 4,
-            background: darkMode ? '#4a5568' : '#e2e8f0',
-            borderRadius: 2,
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: `${Math.min(100, advancedRagPercent)}%`,
-              background: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : '#48bb78',
-              transition: 'width 0.3s ease',
-            }}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Alert */}
       {isAtLimit && (

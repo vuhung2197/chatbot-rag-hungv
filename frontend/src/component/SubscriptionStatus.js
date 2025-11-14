@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function SubscriptionStatus({ darkMode = false, refreshTrigger }) {
   const { t, language } = useLanguage();
+  const { confirm } = useConfirmContext();
   const [subscription, setSubscription] = useState(null);
   const [tier, setTier] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,9 +36,13 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
   };
 
   const handleUpgrade = async (tierName) => {
-    if (!window.confirm(t('subscription.upgradeConfirm'))) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('subscription.upgradeConfirm'),
+      message: t('subscription.upgradeConfirm'),
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     setUpgrading(true);
     try {
@@ -58,9 +64,13 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
   };
 
   const handleCancel = async () => {
-    if (!window.confirm(t('subscription.cancelConfirm'))) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('subscription.cancelConfirm'),
+      message: t('subscription.cancelConfirm'),
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -109,8 +119,14 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
   const cardBg = darkMode ? '#1a1a1a' : '#fff';
 
   const formatDate = (dateString) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US');
+    if (!dateString || dateString === '0' || dateString === 0) return '';
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US');
+    } catch (e) {
+      return '';
+    }
   };
 
   const getTierColor = (tierName) => {
@@ -193,10 +209,10 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
               )}
             </div>
             <div style={{ textAlign: 'right' }}>
-              {tier.price_monthly > 0 ? (
+              {tier.price_monthly && Number(tier.price_monthly) > 0 ? (
                 <>
                   <div style={{ fontSize: '24px', fontWeight: '600', color: textColor }}>
-                    ${tier.price_monthly}
+                    ${Number(tier.price_monthly)}
                   </div>
                   <div style={{ fontSize: '12px', color: darkMode ? '#999' : '#666' }}>
                     /{t('subscription.month')}
@@ -224,7 +240,7 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
               <div style={{ marginBottom: '8px' }}>
                 <strong>{t('subscription.periodEnd')}:</strong> {formatDate(subscription.current_period_end)}
               </div>
-              {subscription.cancel_at_period_end && (
+              {Boolean(subscription.cancel_at_period_end) && (
                 <div style={{
                   color: '#ffc107',
                   marginTop: '8px',
@@ -238,41 +254,45 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
             </div>
           )}
 
-          {subscription && subscription.cancel_at_period_end && (
-            <button
-              onClick={handleRenew}
-              style={{
-                marginTop: '12px',
-                padding: '8px 16px',
-                backgroundColor: '#28a745',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-              }}
-            >
-              {t('subscription.renew')}
-            </button>
-          )}
+          <div style={{
+            marginTop: '12px',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}>
+            {subscription && Boolean(subscription.cancel_at_period_end) && (
+              <button
+                onClick={handleRenew}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#28a745',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                {t('subscription.renew')}
+              </button>
+            )}
 
-          {subscription && subscription.status === 'active' && !subscription.cancel_at_period_end && tier.name !== 'free' && (
-            <button
-              onClick={handleCancel}
-              style={{
-                marginTop: '12px',
-                padding: '8px 16px',
-                backgroundColor: '#dc3545',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-              }}
-            >
-              {t('subscription.cancel')}
-            </button>
-          )}
+            {subscription && subscription.status === 'active' && !Boolean(subscription.cancel_at_period_end) && tier.name !== 'free' && (
+              <button
+                onClick={handleCancel}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc3545',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                {t('subscription.cancel')}
+              </button>
+            )}
+          </div>
         </div>
       )}
 
@@ -298,7 +318,7 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
             ) : (
               <li>{tier.features.queries_per_day} {t('subscription.queriesPerDay')}</li>
             )}
-            {tier.features.advanced_rag && (
+            {Boolean(tier.features.advanced_rag) && (
               <li>{t('subscription.advancedRAG')}</li>
             )}
             {tier.features.file_upload_mb === -1 ? (
@@ -311,13 +331,13 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
             ) : (
               <li>{tier.features.chat_history_days} {t('subscription.daysHistory')}</li>
             )}
-            {tier.features.priority_support && (
+            {Boolean(tier.features.priority_support) && (
               <li>{t('subscription.prioritySupport')}</li>
             )}
-            {tier.features.api_access && (
+            {Boolean(tier.features.api_access) && (
               <li>{t('subscription.apiAccess')}</li>
             )}
-            {tier.features.team_collaboration && (
+            {Boolean(tier.features.team_collaboration) && (
               <li>{t('subscription.teamCollaboration')}</li>
             )}
           </ul>

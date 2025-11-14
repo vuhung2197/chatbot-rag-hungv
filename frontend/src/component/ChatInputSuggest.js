@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
+import styles from '../styles/components/ChatInputSuggest.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -51,64 +52,21 @@ export default function ChatInputSuggest({
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div className={styles.container}>
       <textarea
         value={value}
         onChange={handleInput}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        style={{
-          width: '100%',
-          minHeight: '48px',
-          maxHeight: '120px',
-          padding: '12px 16px',
-          fontSize: '15px',
-          borderRadius: '12px',
-          border: '1px solid #d1d5db',
-          boxSizing: 'border-box',
-          resize: 'none',
-          fontFamily: 'inherit',
-          lineHeight: '1.5',
-          backgroundColor: disabled ? '#f9fafb' : '#ffffff',
-          color: disabled ? '#6b7280' : '#1f2937',
-          outline: 'none',
-          transition: 'all 0.2s ease',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-        }}
+        className={styles.textarea}
         placeholder={placeholder}
         autoFocus
-        onFocus={(e) => {
-          e.target.style.borderColor = '#10a37f';
-          e.target.style.boxShadow = '0 0 0 3px rgba(16, 163, 127, 0.1)';
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = '#d1d5db';
-          e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-        }}
       />
       {/* Send Button */}
       <button
         onClick={() => !disabled && value.trim() && onSend()}
         disabled={disabled || !value.trim()}
-        style={{
-          position: 'absolute',
-          right: '8px',
-          bottom: '8px',
-          background: disabled || !value.trim() ? '#d1d5db' : '#10a37f',
-          border: 'none',
-          borderRadius: '8px',
-          width: '32px',
-          height: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#fff',
-          fontSize: '14px',
-          cursor: disabled || !value.trim() ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s ease',
-          zIndex: 2,
-          padding: 0,
-        }}
+        className={styles.sendButton}
         tabIndex={-1}
         title='Gửi tin nhắn'
       >
@@ -126,70 +84,25 @@ export default function ChatInputSuggest({
 
       {/* Suggestion Text */}
       {value && suggest && !loadingSuggest && !disabled && (
-        <span
-          style={{
-            position: 'absolute',
-            left: '16px',
-            bottom: '8px',
-            color: '#9ca3af',
-            fontSize: '14px',
-            pointerEvents: 'none',
-            userSelect: 'none',
-            backgroundColor: '#f9fafb',
-            padding: '2px 6px',
-            borderRadius: '4px',
-            border: '1px solid #e5e7eb'
-          }}
-        >
+        <span className={styles.suggestionText}>
           {suggest}
         </span>
       )}
 
       {/* Loading Indicator */}
       {loadingSuggest && (
-        <div
-          style={{
-            position: 'absolute',
-            right: '48px',
-            bottom: '8px',
-            color: '#9ca3af',
-            fontSize: '14px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px'
-          }}
-        >
-          <div style={{
-            width: '12px',
-            height: '12px',
-            border: '2px solid #e5e7eb',
-            borderTop: '2px solid #10a37f',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
+        <div className={styles.loadingIndicator}>
+          <div className={styles.spinner}></div>
           <span>Đang gợi ý...</span>
         </div>
       )}
 
       {/* Help Text */}
-      <div style={{ 
-        fontSize: '12px', 
-        color: '#6b7280', 
-        marginTop: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
+      <div className={styles.helpText}>
         {suggest ? (
           <>
             <span>Nhấn <b>Tab</b> để chèn gợi ý:</span>
-            <span style={{ 
-              color: '#10a37f', 
-              backgroundColor: '#f0fdf4',
-              padding: '2px 6px',
-              borderRadius: '4px',
-              border: '1px solid #bbf7d0'
-            }}>
+            <span className={styles.suggestionBadge}>
               {suggest}
             </span>
           </>
@@ -197,14 +110,6 @@ export default function ChatInputSuggest({
           <span>💡 Gợi ý từ tiếp theo tự động</span>
         )}
       </div>
-
-      {/* CSS for animations */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

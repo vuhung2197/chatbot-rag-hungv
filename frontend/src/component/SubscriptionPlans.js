@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function SubscriptionPlans({ darkMode = false, onUpgrade, refreshTrigger }) {
   const { t, language } = useLanguage();
+  const { confirm } = useConfirmContext();
   const [tiers, setTiers] = useState([]);
   const [currentTier, setCurrentTier] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,9 +49,13 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
       return; // Already on this tier
     }
 
-    if (!window.confirm(t('subscription.upgradeConfirm'))) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('subscription.upgradeConfirm'),
+      message: t('subscription.upgradeConfirm'),
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     setUpgrading(tierName);
     try {

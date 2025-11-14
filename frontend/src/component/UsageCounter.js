@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import styles from '../styles/components/UsageCounter.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -43,53 +44,42 @@ export default function UsageCounter({ darkMode }) {
   const isNearLimit = queriesPercent >= 80;
   const isAtLimit = queriesPercent >= 100;
 
+  const containerClasses = [
+    styles.container,
+    darkMode ? styles.darkMode : '',
+    isAtLimit ? styles.atLimit : isNearLimit ? styles.nearLimit : ''
+  ].filter(Boolean).join(' ');
+
+  const valueClasses = [
+    styles.value,
+    darkMode ? styles.darkMode : '',
+    isAtLimit ? styles.atLimit : isNearLimit ? styles.nearLimit : ''
+  ].filter(Boolean).join(' ');
+
+  const progressFillClasses = [
+    styles.progressFill,
+    isAtLimit ? styles.atLimit : isNearLimit ? styles.nearLimit : ''
+  ].filter(Boolean).join(' ');
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 10,
-        right: 10,
-        background: darkMode ? '#2d3748' : '#fff',
-        border: `1px solid ${isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : darkMode ? '#4a5568' : '#e2e8f0'}`,
-        borderRadius: 8,
-        padding: '8px 12px',
-        fontSize: '12px',
-        zIndex: 1000,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-        minWidth: 200,
-      }}
-    >
-      <div style={{ fontWeight: 600, marginBottom: 6, color: darkMode ? '#f7fafc' : '#1a202c' }}>
+    <div className={containerClasses}>
+      <div className={`${styles.title} ${darkMode ? styles.darkMode : ''}`}>
         📊 Usage Today
       </div>
       
       {/* Queries */}
-      <div style={{ marginBottom: 4 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-          <span style={{ color: darkMode ? '#cbd5e0' : '#4a5568' }}>Queries:</span>
-          <span style={{ 
-            fontWeight: 600,
-            color: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : darkMode ? '#68d391' : '#48bb78'
-          }}>
+      <div className={styles.queriesSection}>
+        <div className={styles.row}>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>Queries:</span>
+          <span className={valueClasses}>
             {queriesCount} / {queriesLimit === -1 ? '∞' : queriesLimit}
           </span>
         </div>
         {queriesLimit !== -1 && (
-          <div
-            style={{
-              height: 4,
-              background: darkMode ? '#4a5568' : '#e2e8f0',
-              borderRadius: 2,
-              overflow: 'hidden',
-            }}
-          >
+          <div className={`${styles.progressBar} ${darkMode ? styles.darkMode : ''}`}>
             <div
-              style={{
-                height: '100%',
-                width: `${Math.min(100, queriesPercent)}%`,
-                background: isAtLimit ? '#ef4444' : isNearLimit ? '#f59e0b' : '#48bb78',
-                transition: 'width 0.3s ease',
-              }}
+              className={progressFillClasses}
+              style={{ width: `${Math.min(100, queriesPercent)}%` }}
             />
           </div>
         )}
@@ -97,13 +87,10 @@ export default function UsageCounter({ darkMode }) {
 
       {/* Advanced RAG */}
       {advancedRagCount > 0 && (
-        <div style={{ marginTop: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-            <span style={{ color: darkMode ? '#cbd5e0' : '#4a5568' }}>Advanced RAG:</span>
-            <span style={{ 
-              fontWeight: 600,
-              color: darkMode ? '#68d391' : '#48bb78'
-            }}>
+        <div className={styles.advancedRagSection}>
+          <div className={styles.row}>
+            <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>Advanced RAG:</span>
+            <span className={`${styles.value} ${darkMode ? styles.darkMode : ''}`}>
               {advancedRagCount}
             </span>
           </div>
@@ -112,32 +99,12 @@ export default function UsageCounter({ darkMode }) {
 
       {/* Alert */}
       {isAtLimit && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: 6,
-            background: '#fee2e2',
-            color: '#991b1b',
-            borderRadius: 4,
-            fontSize: '11px',
-            textAlign: 'center',
-          }}
-        >
+        <div className={`${styles.alert} ${styles.alertAtLimit}`}>
           ⚠️ Limit reached!
         </div>
       )}
       {isNearLimit && !isAtLimit && (
-        <div
-          style={{
-            marginTop: 8,
-            padding: 6,
-            background: '#fef3c7',
-            color: '#92400e',
-            borderRadius: 4,
-            fontSize: '11px',
-            textAlign: 'center',
-          }}
-        >
+        <div className={`${styles.alert} ${styles.alertNearLimit}`}>
           ⚠️ Near limit
         </div>
       )}

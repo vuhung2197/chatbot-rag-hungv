@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useToastContext } from '../context/ToastContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function ConversationsList({ darkMode, onSelectConversation, currentConversationId }) {
+  const { error: showError } = useToastContext();
+  const { confirm } = useConfirmContext();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
@@ -56,7 +60,7 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
       setEditTitle('');
     } catch (err) {
       console.error('Error renaming conversation:', err);
-      alert('Không thể đổi tên cuộc trò chuyện');
+      showError('Không thể đổi tên cuộc trò chuyện');
     }
   };
 
@@ -77,7 +81,7 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
       );
     } catch (err) {
       console.error('Error archiving conversation:', err);
-      alert('Không thể lưu trữ cuộc trò chuyện');
+      showError('Không thể lưu trữ cuộc trò chuyện');
     }
   };
 
@@ -98,14 +102,18 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
       );
     } catch (err) {
       console.error('Error pinning conversation:', err);
-      alert('Không thể ghim cuộc trò chuyện');
+      showError('Không thể ghim cuộc trò chuyện');
     }
   };
 
   const handleDelete = async (conversationId) => {
-    if (!window.confirm('Bạn có chắc muốn xóa cuộc trò chuyện này?')) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: 'Xác nhận xóa',
+      message: 'Bạn có chắc muốn xóa cuộc trò chuyện này?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+    });
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem('token');
@@ -118,7 +126,7 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
       }
     } catch (err) {
       console.error('Error deleting conversation:', err);
-      alert('Không thể xóa cuộc trò chuyện');
+      showError('Không thể xóa cuộc trò chuyện');
     }
   };
 

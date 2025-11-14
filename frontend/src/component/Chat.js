@@ -5,10 +5,14 @@ import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
 import ConversationsList from './ConversationsList';
 import axios from 'axios';
+import { useToastContext } from '../context/ToastContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function Chat({ darkMode = false }) {
+  const { error: showError, success: showSuccess } = useToastContext();
+  const { confirm } = useConfirmContext();
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -368,8 +372,14 @@ export default function Chat({ darkMode = false }) {
           
           {history.length > 0 && (
             <button
-              onClick={() => {
-                if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?')) {
+              onClick={async () => {
+                const confirmed = await confirm({
+                  title: 'Xác nhận xóa',
+                  message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?',
+                  confirmText: 'Xóa',
+                  cancelText: 'Hủy',
+                });
+                if (confirmed) {
                   setHistory([]);
                   localStorage.removeItem('chatbot_history');
                   localStorage.removeItem('chatbot_cache');
@@ -833,12 +843,14 @@ export default function Chat({ darkMode = false }) {
 
                   <button
                     onClick={async () => {
-                      if (
-                        !window.confirm(
-                          'Bạn có chắc chắn muốn xóa câu hỏi này?'
-                        )
-                      )
-                        return;
+                      const confirmed = await confirm({
+                        title: 'Xác nhận xóa',
+                        message: 'Bạn có chắc chắn muốn xóa câu hỏi này?',
+                        confirmText: 'Xóa',
+                        cancelText: 'Hủy',
+                      });
+                      if (!confirmed) return;
+                      
                       try {
                         const res = await axios.delete(
                           `${API_URL}/chat/history/${item.id}`,
@@ -852,13 +864,14 @@ export default function Chat({ darkMode = false }) {
                           setQuestionHistory(prev =>
                             prev.filter(q => q.id !== item.id)
                           );
+                          showSuccess('Đã xóa câu hỏi thành công!');
                         } else {
-                          alert('Xóa thất bại!');
+                          showError('Xóa thất bại!');
                         }
                       } catch (err) {
                         // eslint-disable-next-line no-console
                         console.error('Lỗi khi xóa câu hỏi:', err);
-                        alert('Đã xảy ra lỗi khi xóa!');
+                        showError('Đã xảy ra lỗi khi xóa!');
                       }
                     }}
                     style={{

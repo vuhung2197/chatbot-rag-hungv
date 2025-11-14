@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -31,9 +32,13 @@ export default function SessionManagement({ darkMode = false }) {
   };
 
   const handleRevoke = async (sessionId) => {
-    if (!window.confirm(t('session.revokeConfirm'))) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('session.revokeConfirm') || 'Xác nhận',
+      message: t('session.revokeConfirm'),
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     setRevoking(sessionId);
     try {
@@ -51,9 +56,13 @@ export default function SessionManagement({ darkMode = false }) {
   };
 
   const handleRevokeAllOthers = async () => {
-    if (!window.confirm(t('session.revokeAllConfirm'))) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('session.revokeAllConfirm') || 'Xác nhận',
+      message: t('session.revokeAllConfirm'),
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     setRevoking('all');
     try {

@@ -1,0 +1,119 @@
+.container {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  min-width: 200px;
+}
+
+.container.darkMode {
+  background: #2d3748;
+  border-color: #4a5568;
+}
+
+.container.nearLimit {
+  border-color: #f59e0b;
+}
+
+.container.atLimit {
+  border-color: #ef4444;
+}
+
+.title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #1a202c;
+}
+
+.title.darkMode {
+  color: #f7fafc;
+}
+
+.queriesSection {
+  margin-bottom: 4px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.label {
+  color: #4a5568;
+}
+
+.label.darkMode {
+  color: #cbd5e0;
+}
+
+.value {
+  font-weight: 600;
+  color: #48bb78;
+}
+
+.value.darkMode {
+  color: #68d391;
+}
+
+.value.nearLimit {
+  color: #f59e0b;
+}
+
+.value.atLimit {
+  color: #ef4444;
+}
+
+.progressBar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBar.darkMode {
+  background: #4a5568;
+}
+
+.progressFill {
+  height: 100%;
+  background: #48bb78;
+  transition: width 0.3s ease;
+}
+
+.progressFill.nearLimit {
+  background: #f59e0b;
+}
+
+.progressFill.atLimit {
+  background: #ef4444;
+}
+
+.advancedRagSection {
+  margin-top: 8px;
+}
+
+.alert {
+  margin-top: 8px;
+  padding: 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.alertAtLimit {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.alertNearLimit {
+  background: #fef3c7;
+  color: #92400e;
+}
+

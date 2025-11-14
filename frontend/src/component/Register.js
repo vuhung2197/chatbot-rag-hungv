@@ -1,10 +1,12 @@
 // 📁 src/components/Register.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useToastContext } from '../context/ToastContext';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function Register({ onRegister }) {
+  const { success: showSuccess } = useToastContext();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +24,7 @@ export default function Register({ onRegister }) {
       });
       const data = res.data;
       if (res.status === 200) {
-        alert('Đăng ký thành công. Hãy đăng nhập.');
+        showSuccess('Đăng ký thành công. Hãy đăng nhập.');
         onRegister();
       } else {
         setError(data.message || 'Đăng ký thất bại');

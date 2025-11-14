@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function OAuthProviders({ darkMode = false }) {
   const { t, language } = useLanguage();
+  const { confirm } = useConfirmContext();
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -76,9 +78,13 @@ export default function OAuthProviders({ darkMode = false }) {
     const providerName = getProviderName(provider);
     const confirmMessage = t('oauth.unlinkConfirm').replace('{provider}', providerName);
     
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('oauth.unlinkConfirm') || 'Xác nhận hủy liên kết',
+      message: confirmMessage,
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     try {
       setError('');

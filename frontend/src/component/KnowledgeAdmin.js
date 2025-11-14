@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import '../styles/KnowledgeAdmin.css';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function KnowledgeAdmin() {
+  const { confirm } = useConfirmContext();
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ title: '', content: '', id: null });
   const [chunkPreview, setChunkPreview] = useState({ id: null, chunks: [] });
@@ -14,6 +16,8 @@ export default function KnowledgeAdmin() {
   const [uploadFileName, setUploadFileName] = useState('');
   const [uploadStatus, setUploadStatus] = useState(null); // 'loading', 'success', 'error'
   const [uploadMessage, setUploadMessage] = useState('');
+  const [showFullContentModal, setShowFullContentModal] = useState(false);
+  const [fullContent, setFullContent] = useState('');
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -50,7 +54,13 @@ export default function KnowledgeAdmin() {
   };
 
   const handleDelete = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa kiến thức này?')) {
+    const confirmed = await confirm({
+      title: 'Xác nhận xóa',
+      message: 'Bạn có chắc chắn muốn xóa kiến thức này?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+    });
+    if (confirmed) {
       await axios.delete(`${API_URL}/knowledge/${id}`);
       setList(list.filter(item => item.id !== id));
       if (form.id === id) setForm({ title: '', content: '', id: null });
@@ -83,7 +93,13 @@ export default function KnowledgeAdmin() {
   };
 
   const handleDeleteUnanswered = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
+    const confirmed = await confirm({
+      title: 'Xác nhận xóa',
+      message: 'Bạn có chắc chắn muốn xóa câu hỏi này?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+    });
+    if (confirmed) {
       await axios.delete(`${API_URL}/unanswered/${id}`);
       setUnanswered(unanswered.filter(item => item.id !== id));
     }
@@ -302,10 +318,8 @@ export default function KnowledgeAdmin() {
                       <button 
                         className="btn btn-sm btn-outline"
                         onClick={() => {
-                          const fullText = item.content;
-                          if (window.confirm(`Nội dung đầy đủ:\n\n${fullText}`)) {
-                            // User can copy or do something with full text
-                          }
+                          setFullContent(item.content);
+                          setShowFullContentModal(true);
                         }}
                       >
                         Xem đầy đủ
@@ -486,6 +500,26 @@ export default function KnowledgeAdmin() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Content Modal */}
+      {showFullContentModal && (
+        <div className="modal-overlay" onClick={() => setShowFullContentModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <h3>Nội dung đầy đủ</h3>
+              <button
+                onClick={() => setShowFullContentModal(false)}
+                className="modal-close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{fullContent}</pre>
             </div>
           </div>
         </div>

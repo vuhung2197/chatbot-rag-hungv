@@ -2,11 +2,13 @@ import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import AvatarCropModal from './AvatarCropModal';
 import { useLanguage } from './LanguageContext';
+import { useConfirmContext } from '../context/ConfirmContext';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkMode = false }) {
   const { t } = useLanguage();
+  const { confirm } = useConfirmContext();
   const [preview, setPreview] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
   const [imageToCrop, setImageToCrop] = useState(null);
@@ -95,7 +97,13 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(t('avatar.deleteConfirm'))) return;
+    const confirmed = await confirm({
+      title: t('avatar.deleteConfirm') || 'Xác nhận xóa',
+      message: t('avatar.deleteConfirm'),
+      confirmText: t('common.confirm') || 'Xác nhận',
+      cancelText: t('common.cancel') || 'Hủy',
+    });
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem('token');

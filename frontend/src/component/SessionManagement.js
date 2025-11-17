@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/SessionManagement.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -110,64 +114,25 @@ export default function SessionManagement({ darkMode = false }) {
     return '💻';
   };
 
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const cardBg = darkMode ? '#1a1a1a' : '#fff';
-  const buttonBg = '#7137ea';
-  const dangerBg = '#dc3545';
-
   if (loading) {
     return (
-        <div style={{
-          padding: '20px',
-          backgroundColor: bgColor,
-          borderRadius: '8px',
-          border: `1px solid ${borderColor}`,
-          marginTop: '20px',
-          textAlign: 'center',
-          color: textColor,
-        }}>
-          {t('session.loading')}
-        </div>
+      <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''} ${styles.loading}`}>
+        {t('session.loading')}
+      </div>
     );
   }
 
   return (
-    <div style={{
-      padding: '20px',
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      border: `1px solid ${borderColor}`,
-      marginTop: '20px',
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '20px',
-      }}>
-        <h3 style={{
-          margin: 0,
-          fontSize: '18px',
-          color: textColor,
-        }}>
+    <div className={`${shared.container} ${darkMode ? shared.darkMode : ''} ${styles.container}`}>
+      <div className={styles.header}>
+        <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
           🔐 {t('session.title')}
         </h3>
         {sessions.length > 1 && (
           <button
             onClick={handleRevokeAllOthers}
             disabled={revoking === 'all'}
-            style={{
-              padding: '6px 12px',
-              backgroundColor: dangerBg,
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: revoking === 'all' ? 'not-allowed' : 'pointer',
-              fontSize: '12px',
-              opacity: revoking === 'all' ? 0.6 : 1,
-            }}
+            className={`${buttons.button} ${buttons.buttonDanger} ${buttons.buttonSmall} ${darkMode ? buttons.darkMode : ''}`}
           >
             {revoking === 'all' ? t('session.revoking') : t('session.revokeAll')}
           </button>
@@ -175,76 +140,37 @@ export default function SessionManagement({ darkMode = false }) {
       </div>
 
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-          color: darkMode ? '#ff6b6b' : '#dc3545',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          border: `1px solid ${darkMode ? '#6b2b2b' : '#fcc'}`,
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
           {error}
         </div>
       )}
 
       {sessions.length === 0 ? (
-        <div style={{
-          padding: '20px',
-          textAlign: 'center',
-          color: darkMode ? '#999' : '#666',
-        }}>
+        <div className={`${shared.emptyState} ${darkMode ? shared.darkMode : ''}`}>
           {t('session.noSessions')}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className={styles.sessionsList}>
           {sessions.map((session) => (
             <div
               key={session.id}
-              style={{
-                padding: '16px',
-                backgroundColor: cardBg,
-                borderRadius: '6px',
-                border: `1px solid ${borderColor}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
+              className={`${styles.sessionCard} ${darkMode ? styles.darkMode : ''}`}
             >
-              <div style={{ flex: 1 }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '8px',
-                }}>
-                  <span style={{ fontSize: '20px' }}>
+              <div className={styles.sessionInfo}>
+                <div className={styles.sessionHeader}>
+                  <span className={styles.deviceIcon}>
                     {getDeviceIcon(session.userAgent)}
                   </span>
                   <div>
-                    <div style={{
-                      fontWeight: '500',
-                      color: textColor,
-                      fontSize: '14px',
-                    }}>
+                    <div className={styles.deviceName}>
                       {session.deviceInfo}
                       {session.isCurrent && (
-                        <span style={{
-                          marginLeft: '8px',
-                          padding: '2px 8px',
-                          backgroundColor: '#28a745',
-                          color: '#fff',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                        }}>
+                        <span className={styles.currentBadge}>
                           {t('session.current')}
                         </span>
                       )}
                     </div>
-                    <div style={{
-                      fontSize: '12px',
-                      color: darkMode ? '#999' : '#666',
-                      marginTop: '4px',
-                    }}>
+                    <div className={styles.sessionMeta}>
                       {session.ipAddress} • {formatDate(session.createdAt)}
                     </div>
                   </div>
@@ -254,16 +180,7 @@ export default function SessionManagement({ darkMode = false }) {
                 <button
                   onClick={() => handleRevoke(session.id)}
                   disabled={revoking === session.id}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: 'transparent',
-                    color: dangerBg,
-                    border: `1px solid ${dangerBg}`,
-                    borderRadius: '6px',
-                    cursor: revoking === session.id ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                    opacity: revoking === session.id ? 0.6 : 1,
-                  }}
+                  className={`${buttons.button} ${buttons.buttonSmall} ${buttons.buttonDanger} ${darkMode ? buttons.darkMode : ''}`}
                 >
                   {revoking === session.id ? t('session.revoking') : t('session.revoke')}
                 </button>
@@ -273,14 +190,7 @@ export default function SessionManagement({ darkMode = false }) {
         </div>
       )}
 
-      <div style={{
-        marginTop: '16px',
-        padding: '12px',
-        backgroundColor: darkMode ? '#1a1a1a' : '#f0f0f0',
-        borderRadius: '6px',
-        fontSize: '12px',
-        color: darkMode ? '#999' : '#666',
-      }}>
+      <div className={styles.tipBox}>
         💡 {t('session.tip')}
       </div>
     </div>

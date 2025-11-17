@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/ChangePassword.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -169,87 +174,40 @@ export default function ChangePassword({ darkMode = false }) {
     }
   };
 
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const inputBg = darkMode ? '#1a1a1a' : '#fff';
-  const inputBorder = darkMode ? '#444' : '#ccc';
-  const buttonBg = '#7137ea';
-  const successColor = '#28a745';
-  const errorColor = '#dc3545';
-
   return (
-    <div style={{
-      padding: '20px',
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      border: `1px solid ${borderColor}`,
-      marginTop: '20px',
-    }}>
-      <h3 style={{
-        marginTop: 0,
-        marginBottom: '20px',
-        fontSize: '18px',
-        color: textColor,
-      }}>
+    <div className={`${shared.container} ${darkMode ? shared.darkMode : ''}`}>
+      <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
         🔐 {t('password.change')}
       </h3>
 
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-          color: darkMode ? '#ff6b6b' : errorColor,
-          borderRadius: '6px',
-          marginBottom: '16px',
-          border: `1px solid ${darkMode ? '#6b2b2b' : '#fcc'}`,
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
           {error}
         </div>
       )}
 
       {success && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#1f4a1f' : '#efe',
-          color: darkMode ? '#6bff6b' : successColor,
-          borderRadius: '6px',
-          marginBottom: '16px',
-          border: `1px solid ${darkMode ? '#2b6b2b' : '#cfc'}`,
-        }}>
+        <div className={`${messages.success} ${darkMode ? messages.darkMode : ''}`}>
           {success}
         </div>
       )}
 
       {checkingPassword ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: textColor }}>
+        <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''}`}>
           {t('common.loading')}...
         </div>
       ) : !hasPassword ? (
         <>
           {/* Set password form (for OAuth users without password) */}
           <div>
-          <div style={{
-            padding: '12px',
-            backgroundColor: darkMode ? '#2d3a4a' : '#e3f2fd',
-            color: darkMode ? '#90caf9' : '#1976d2',
-            borderRadius: '6px',
-            marginBottom: '16px',
-            fontSize: '14px',
-          }}>
+          <div className={`${messages.info} ${darkMode ? messages.darkMode : ''}`}>
             ℹ️ {language === 'vi' 
               ? 'Bạn đã đăng nhập bằng Google và chưa có mật khẩu. Vui lòng thiết lập mật khẩu để có thể đăng nhập bằng email sau này.'
               : 'You logged in with Google and don\'t have a password yet. Please set a password so you can log in with email later.'}
           </div>
-          <form onSubmit={handleSetPassword}>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                fontSize: '14px',
-                color: textColor,
-              }}>
+          <form onSubmit={handleSetPassword} className={forms.form}>
+            <div className={forms.formGroup}>
+              <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
                 {t('password.new')}
               </label>
               <input
@@ -258,46 +216,25 @@ export default function ChangePassword({ darkMode = false }) {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder={t('password.newPlaceholder')}
                 required
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: `1px solid ${inputBorder}`,
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  backgroundColor: inputBg,
-                  color: textColor,
-                  boxSizing: 'border-box',
-                }}
+                className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
                 minLength={8}
               />
               {newPassword && (
-                <div style={{ marginTop: '8px' }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: '4px',
-                  }}>
-                    <div style={{
-                      flex: 1,
-                      height: '4px',
-                      backgroundColor: darkMode ? '#444' : '#e0e0e0',
-                      borderRadius: '2px',
-                      overflow: 'hidden',
-                    }}>
-                      <div style={{
-                        width: `${(passwordStrength.strength + 1) * 20}%`,
-                        height: '100%',
-                        backgroundColor: passwordStrength.color,
-                        transition: 'width 0.3s ease',
-                      }} />
+                <div className={styles.strengthContainer}>
+                  <div className={styles.strengthBarContainer}>
+                    <div className={`${styles.strengthBarWrapper} ${darkMode ? styles.darkMode : ''}`}>
+                      <div 
+                        className={styles.strengthBarFill}
+                        style={{
+                          width: `${(passwordStrength.strength + 1) * 20}%`,
+                          backgroundColor: passwordStrength.color,
+                        }}
+                      />
                     </div>
-                    <span style={{
-                      fontSize: '12px',
-                      color: passwordStrength.color,
-                      fontWeight: '500',
-                      minWidth: '60px',
-                    }}>
+                    <span 
+                      className={`${forms.textSmall} ${styles.strengthLabel}`}
+                      style={{ color: passwordStrength.color }}
+                    >
                       {passwordStrength.label}
                     </span>
                   </div>
@@ -305,14 +242,8 @@ export default function ChangePassword({ darkMode = false }) {
               )}
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{
-                display: 'block',
-                marginBottom: '8px',
-                fontWeight: '500',
-                fontSize: '14px',
-                color: textColor,
-              }}>
+            <div className={forms.formGroup}>
+              <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
                 {t('password.confirm')}
               </label>
               <input
@@ -321,23 +252,10 @@ export default function ChangePassword({ darkMode = false }) {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder={t('password.confirmPlaceholder')}
                 required
-                style={{
-                  width: '100%',
-                  padding: '10px 12px',
-                  border: `1px solid ${inputBorder}`,
-                  borderRadius: '6px',
-                  fontSize: '14px',
-                  backgroundColor: inputBg,
-                  color: textColor,
-                  boxSizing: 'border-box',
-                }}
+                className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
               />
               {confirmPassword && newPassword !== confirmPassword && (
-                <div style={{
-                  marginTop: '4px',
-                  fontSize: '12px',
-                  color: errorColor,
-                }}>
+                <div className={forms.errorText}>
                   ⚠️ {t('password.mismatch')}
                 </div>
               )}
@@ -346,18 +264,7 @@ export default function ChangePassword({ darkMode = false }) {
             <button
               type="submit"
               disabled={loading}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: buttonBg,
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-                opacity: loading ? 0.6 : 1,
-                width: '100%',
-              }}
+              className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth} ${darkMode ? buttons.darkMode : ''}`}
             >
               {loading ? t('common.loading') : (language === 'vi' ? 'Thiết lập mật khẩu' : 'Set Password')}
             </button>
@@ -367,15 +274,9 @@ export default function ChangePassword({ darkMode = false }) {
       ) : (
         <>
           {/* Change password form (for users with existing password) */}
-          <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '500',
-              fontSize: '14px',
-              color: textColor,
-            }}>
+          <form onSubmit={handleSubmit} className={forms.form}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               {t('password.current')}
             </label>
             <input
@@ -383,28 +284,13 @@ export default function ChangePassword({ darkMode = false }) {
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder={t('password.currentPlaceholder')}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${inputBorder}`,
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: inputBg,
-                color: textColor,
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
               required
             />
           </div>
 
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '500',
-              fontSize: '14px',
-              color: textColor,
-            }}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               {t('password.new')}
             </label>
             <input
@@ -412,54 +298,30 @@ export default function ChangePassword({ darkMode = false }) {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder={t('password.newPlaceholder')}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${inputBorder}`,
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: inputBg,
-                color: textColor,
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
               required
               minLength={8}
             />
             {newPassword && (
-              <div style={{ marginTop: '8px' }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  marginBottom: '4px',
-                }}>
-                  <div style={{
-                    flex: 1,
-                    height: '4px',
-                    backgroundColor: darkMode ? '#444' : '#e0e0e0',
-                    borderRadius: '2px',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: `${(passwordStrength.strength + 1) * 20}%`,
-                      height: '100%',
-                      backgroundColor: passwordStrength.color,
-                      transition: 'width 0.3s ease',
-                    }} />
+              <div className={styles.strengthContainer}>
+                <div className={styles.strengthBarContainer}>
+                  <div className={`${styles.strengthBarWrapper} ${darkMode ? styles.darkMode : ''}`}>
+                    <div 
+                      className={styles.strengthBarFill}
+                      style={{
+                        width: `${(passwordStrength.strength + 1) * 20}%`,
+                        backgroundColor: passwordStrength.color,
+                      }}
+                    />
                   </div>
-                  <span style={{
-                    fontSize: '12px',
-                    color: passwordStrength.color,
-                    fontWeight: '500',
-                    minWidth: '60px',
-                  }}>
+                  <span 
+                    className={forms.textSmall}
+                    style={{ color: passwordStrength.color, fontWeight: 500, minWidth: '60px' }}
+                  >
                     {passwordStrength.label}
                   </span>
                 </div>
-                <div style={{
-                  fontSize: '12px',
-                  color: darkMode ? '#999' : '#666',
-                }}>
+                <div className={`${forms.hint} ${darkMode ? forms.darkMode : ''}`}>
                   {newPassword.length < 8 && `⚠️ ${t('password.minLength')}`}
                   {newPassword.length >= 8 && !/[a-z]/.test(newPassword) && !/[A-Z]/.test(newPassword) && `💡 ${t('password.addCase')}`}
                   {newPassword.length >= 8 && !/\d/.test(newPassword) && `💡 ${t('password.addNumber')}`}
@@ -469,14 +331,8 @@ export default function ChangePassword({ darkMode = false }) {
             )}
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '500',
-              fontSize: '14px',
-              color: textColor,
-            }}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               {t('password.confirm')}
             </label>
             <input
@@ -484,24 +340,11 @@ export default function ChangePassword({ darkMode = false }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder={t('password.confirmPlaceholder')}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${inputBorder}`,
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: inputBg,
-                color: textColor,
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
               required
             />
             {confirmPassword && newPassword !== confirmPassword && (
-              <div style={{
-                marginTop: '4px',
-                fontSize: '12px',
-                color: errorColor,
-              }}>
+              <div className={forms.errorText}>
                 ⚠️ {t('password.mismatch')}
               </div>
             )}
@@ -510,18 +353,7 @@ export default function ChangePassword({ darkMode = false }) {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: buttonBg,
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              opacity: loading ? 0.6 : 1,
-              width: '100%',
-            }}
+            className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth} ${darkMode ? buttons.darkMode : ''}`}
           >
             {loading ? t('common.loading') : t('password.change')}
           </button>

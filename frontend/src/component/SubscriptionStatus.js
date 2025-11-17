@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/SubscriptionStatus.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -107,16 +111,11 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
 
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: darkMode ? '#fff' : '#333' }}>
+      <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''}`}>
         {t('common.loading')}...
       </div>
     );
   }
-
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const cardBg = darkMode ? '#1a1a1a' : '#fff';
 
   const formatDate = (dateString) => {
     if (!dateString || dateString === '0' || dateString === 0) return '';
@@ -129,78 +128,40 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
     }
   };
 
-  const getTierColor = (tierName) => {
+  const getTierColorClass = (tierName) => {
     switch (tierName) {
       case 'free':
-        return darkMode ? '#666' : '#999';
+        return styles.free;
       case 'pro':
-        return '#7137ea';
+        return styles.pro;
       case 'team':
-        return '#28a745';
+        return styles.team;
       default:
-        return textColor;
+        return '';
     }
   };
 
   return (
-    <div style={{
-      padding: '20px',
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      border: `1px solid ${borderColor}`,
-      marginTop: '20px',
-    }}>
-      <h3 style={{
-        marginTop: 0,
-        marginBottom: '20px',
-        fontSize: '18px',
-        color: textColor,
-      }}>
+    <div className={`${shared.container} ${darkMode ? shared.darkMode : ''}`}>
+      <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
         💳 {t('subscription.title')}
       </h3>
 
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-          color: darkMode ? '#ff6b6b' : '#c33',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          fontSize: '14px',
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
           {error}
         </div>
       )}
 
       {tier && (
-        <div style={{
-          padding: '16px',
-          backgroundColor: cardBg,
-          borderRadius: '6px',
-          border: `1px solid ${borderColor}`,
-          marginBottom: '16px',
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '12px',
-          }}>
+        <div className={`${shared.card} ${darkMode ? shared.darkMode : ''}`}>
+          <div className={styles.cardHeader}>
             <div>
-              <h4 style={{
-                margin: 0,
-                fontSize: '20px',
-                color: getTierColor(tier.name),
-                fontWeight: '600',
-              }}>
+              <h4 className={`${styles.tierName} ${getTierColorClass(tier.name)} ${darkMode ? styles.darkMode : ''}`}>
                 {tier.display_name}
               </h4>
               {subscription && (
-                <div style={{
-                  fontSize: '12px',
-                  color: darkMode ? '#999' : '#666',
-                  marginTop: '4px',
-                }}>
+                <div className={`${styles.status} ${darkMode ? styles.darkMode : ''}`}>
                   {subscription.status === 'active' ? '✓ ' + t('subscription.active') :
                    subscription.status === 'trial' ? '⏱ ' + t('subscription.trial') :
                    subscription.status === 'cancelled' ? '⚠ ' + t('subscription.cancelled') :
@@ -208,18 +169,18 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
                 </div>
               )}
             </div>
-            <div style={{ textAlign: 'right' }}>
+            <div className={styles.priceContainer}>
               {tier.price_monthly && Number(tier.price_monthly) > 0 ? (
                 <>
-                  <div style={{ fontSize: '24px', fontWeight: '600', color: textColor }}>
+                  <div className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
                     ${Number(tier.price_monthly)}
                   </div>
-                  <div style={{ fontSize: '12px', color: darkMode ? '#999' : '#666' }}>
+                  <div className={`${styles.priceLabel} ${darkMode ? styles.darkMode : ''}`}>
                     /{t('subscription.month')}
                   </div>
                 </>
               ) : (
-                <div style={{ fontSize: '24px', fontWeight: '600', color: textColor }}>
+                <div className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
                   {t('subscription.free')}
                 </div>
               )}
@@ -227,50 +188,26 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
           </div>
 
           {subscription && (
-            <div style={{
-              fontSize: '14px',
-              color: darkMode ? '#ccc' : '#666',
-              marginTop: '12px',
-              paddingTop: '12px',
-              borderTop: `1px solid ${borderColor}`,
-            }}>
-              <div style={{ marginBottom: '8px' }}>
+            <div className={`${styles.subscriptionInfo} ${darkMode ? styles.darkMode : ''}`}>
+              <div className={styles.infoRow}>
                 <strong>{t('subscription.periodStart')}:</strong> {formatDate(subscription.current_period_start)}
               </div>
-              <div style={{ marginBottom: '8px' }}>
+              <div className={styles.infoRow}>
                 <strong>{t('subscription.periodEnd')}:</strong> {formatDate(subscription.current_period_end)}
               </div>
               {Boolean(subscription.cancel_at_period_end) && (
-                <div style={{
-                  color: '#ffc107',
-                  marginTop: '8px',
-                  padding: '8px',
-                  backgroundColor: darkMode ? '#3d3d1f' : '#fff3cd',
-                  borderRadius: '4px',
-                }}>
+                <div className={`${messages.warning} ${darkMode ? messages.darkMode : ''}`}>
                   ⚠ {t('subscription.willCancel')}
                 </div>
               )}
             </div>
           )}
 
-          <div style={{
-            marginTop: '12px',
-            display: 'flex',
-            justifyContent: 'flex-end',
-          }}>
+          <div className={styles.buttonContainer}>
             {subscription && Boolean(subscription.cancel_at_period_end) && (
               <button
                 onClick={handleRenew}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#28a745',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
+                className={`${buttons.button} ${buttons.buttonSuccess}`}
               >
                 {t('subscription.renew')}
               </button>
@@ -279,15 +216,7 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
             {subscription && subscription.status === 'active' && !Boolean(subscription.cancel_at_period_end) && tier.name !== 'free' && (
               <button
                 onClick={handleCancel}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#dc3545',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
+                className={`${buttons.button} ${buttons.buttonDanger}`}
               >
                 {t('subscription.cancel')}
               </button>
@@ -298,21 +227,11 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
 
       {/* Features List */}
       {tier && tier.features && (
-        <div style={{
-          padding: '16px',
-          backgroundColor: cardBg,
-          borderRadius: '6px',
-          border: `1px solid ${borderColor}`,
-        }}>
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: textColor }}>
+        <div className={`${styles.featuresCard} ${darkMode ? styles.darkMode : ''}`}>
+          <h4 className={`${styles.featuresTitle} ${darkMode ? styles.darkMode : ''}`}>
             {t('subscription.features')}
           </h4>
-          <ul style={{
-            margin: 0,
-            paddingLeft: '20px',
-            color: darkMode ? '#ccc' : '#666',
-            fontSize: '14px',
-          }}>
+          <ul className={`${styles.featuresList} ${darkMode ? styles.darkMode : ''}`}>
             {tier.features.queries_per_day === -1 ? (
               <li>{t('subscription.unlimitedQueries')}</li>
             ) : (

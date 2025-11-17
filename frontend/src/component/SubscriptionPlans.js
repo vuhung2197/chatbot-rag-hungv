@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/SubscriptionPlans.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -89,27 +93,22 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
 
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center', color: darkMode ? '#fff' : '#333' }}>
+      <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''}`}>
         {t('common.loading')}...
       </div>
     );
   }
 
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const cardBg = darkMode ? '#1a1a1a' : '#fff';
-
-  const getTierColor = (tierName) => {
+  const getTierColorClass = (tierName) => {
     switch (tierName) {
       case 'free':
-        return darkMode ? '#666' : '#999';
+        return styles.free;
       case 'pro':
-        return '#7137ea';
+        return styles.pro;
       case 'team':
-        return '#28a745';
+        return styles.team;
       default:
-        return textColor;
+        return '';
     }
   };
 
@@ -143,152 +142,92 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
   };
 
   return (
-    <div style={{
-      padding: '20px',
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      border: `1px solid ${borderColor}`,
-      marginTop: '20px',
-    }}>
-      <h3 style={{
-        marginTop: 0,
-        marginBottom: '20px',
-        fontSize: '18px',
-        color: textColor,
-      }}>
+    <div className={`${shared.container} ${darkMode ? shared.darkMode : ''}`}>
+      <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
         📦 {t('subscription.plans')}
       </h3>
 
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-          color: darkMode ? '#ff6b6b' : '#c33',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          fontSize: '14px',
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
           {error}
         </div>
       )}
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '20px',
-      }}>
+      <div className={styles.plansGrid}>
         {tiers.map((tier) => {
           const features = parseFeatures(tier.features);
           const isCurrent = tier.name === currentTier;
           const isUpgrading = upgrading === tier.name;
           const canUpgradeToThis = canUpgrade(tier.name);
           const isLowerTier = !isCurrent && !canUpgradeToThis;
+          const tierColorClass = getTierColorClass(tier.name);
 
           return (
             <div
               key={tier.id}
-              style={{
-                padding: '24px',
-                backgroundColor: cardBg,
-                borderRadius: '8px',
-                border: `2px solid ${isCurrent ? getTierColor(tier.name) : borderColor}`,
-                position: 'relative',
-                opacity: isCurrent ? 1 : 0.9,
-              }}
+              className={`${styles.planCard} ${isCurrent ? styles.current : ''} ${isCurrent ? tierColorClass : ''} ${darkMode ? styles.darkMode : ''}`}
             >
               {isCurrent && (
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  padding: '4px 8px',
-                  backgroundColor: getTierColor(tier.name),
-                  color: '#fff',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: '500',
-                }}>
+                <div className={`${styles.currentBadge} ${tierColorClass} ${darkMode ? styles.darkMode : ''}`}>
                   {t('subscription.current')}
                 </div>
               )}
 
-              <h4 style={{
-                margin: '0 0 8px 0',
-                fontSize: '20px',
-                color: getTierColor(tier.name),
-                fontWeight: '600',
-              }}>
+              <h4 className={`${styles.planName} ${tierColorClass} ${darkMode ? styles.darkMode : ''}`}>
                 {tier.display_name}
               </h4>
 
-              <div style={{ marginBottom: '16px' }}>
+              <div className={styles.priceContainer}>
                 {tier.price_monthly > 0 ? (
                   <>
-                    <span style={{ fontSize: '32px', fontWeight: '700', color: textColor }}>
+                    <span className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
                       ${tier.price_monthly}
                     </span>
-                    <span style={{ fontSize: '14px', color: darkMode ? '#999' : '#666', marginLeft: '4px' }}>
+                    <span className={`${styles.priceLabel} ${darkMode ? styles.darkMode : ''}`}>
                       /{t('subscription.month')}
                     </span>
                   </>
                 ) : (
-                  <span style={{ fontSize: '32px', fontWeight: '700', color: textColor }}>
+                  <span className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
                     {t('subscription.free')}
                   </span>
                 )}
               </div>
 
-              <ul style={{
-                listStyle: 'none',
-                padding: 0,
-                margin: '0 0 20px 0',
-                fontSize: '14px',
-                color: darkMode ? '#ccc' : '#666',
-              }}>
+              <ul className={`${styles.featuresList} ${darkMode ? styles.darkMode : ''}`}>
                 {features.queries_per_day === -1 ? (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.unlimitedQueries')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.unlimitedQueries')}</li>
                 ) : (
-                  <li style={{ marginBottom: '8px' }}>✓ {features.queries_per_day} {t('subscription.queriesPerDay')}</li>
+                  <li className={styles.featureItem}>✓ {features.queries_per_day} {t('subscription.queriesPerDay')}</li>
                 )}
                 {features.advanced_rag && (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.advancedRAG')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.advancedRAG')}</li>
                 )}
                 {features.file_upload_mb === -1 ? (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.unlimitedFileUpload')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.unlimitedFileUpload')}</li>
                 ) : (
-                  <li style={{ marginBottom: '8px' }}>✓ {features.file_upload_mb}MB {t('subscription.fileUpload')}</li>
+                  <li className={styles.featureItem}>✓ {features.file_upload_mb}MB {t('subscription.fileUpload')}</li>
                 )}
                 {features.chat_history_days === -1 ? (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.unlimitedHistory')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.unlimitedHistory')}</li>
                 ) : (
-                  <li style={{ marginBottom: '8px' }}>✓ {features.chat_history_days} {t('subscription.daysHistory')}</li>
+                  <li className={styles.featureItem}>✓ {features.chat_history_days} {t('subscription.daysHistory')}</li>
                 )}
                 {features.priority_support && (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.prioritySupport')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.prioritySupport')}</li>
                 )}
                 {features.api_access && (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.apiAccess')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.apiAccess')}</li>
                 )}
                 {features.team_collaboration && (
-                  <li style={{ marginBottom: '8px' }}>✓ {t('subscription.teamCollaboration')}</li>
+                  <li className={styles.featureItem}>✓ {t('subscription.teamCollaboration')}</li>
                 )}
               </ul>
 
               <button
                 onClick={() => handleUpgrade(tier.name)}
                 disabled={isCurrent || isUpgrading || isLowerTier}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  backgroundColor: isCurrent ? '#999' : isLowerTier ? '#ccc' : getTierColor(tier.name),
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: (isCurrent || isUpgrading || isLowerTier) ? 'not-allowed' : 'pointer',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  opacity: (isCurrent || isUpgrading || isLowerTier) ? 0.6 : 1,
-                }}
+                className={`${buttons.button} ${buttons.buttonFullWidth} ${isLowerTier ? buttons.buttonSecondary : tier.name === 'pro' ? buttons.buttonPrimary : tier.name === 'team' ? buttons.buttonSuccess : ''} ${darkMode ? buttons.darkMode : ''}`}
               >
                 {isCurrent
                   ? t('subscription.currentPlan')

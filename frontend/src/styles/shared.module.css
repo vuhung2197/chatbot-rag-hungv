@@ -1,0 +1,161 @@
+/* ============================================
+   SHARED CSS MODULE - Tái sử dụng cho tất cả components
+   ============================================ */
+
+/* Container & Card Styles */
+.container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-top: 20px;
+}
+
+.container.darkMode {
+  background-color: #2d2d2d;
+  border-color: #555;
+}
+
+.card {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.card.darkMode {
+  background-color: #1a1a1a;
+  border-color: #555;
+}
+
+/* Typography */
+.title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  color: #333;
+  font-weight: 600;
+}
+
+.title.darkMode {
+  color: #f0f0f0;
+}
+
+.titleLarge {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.titleLarge.darkMode {
+  color: #f0f0f0;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.subtitle.darkMode {
+  color: #999;
+}
+
+.text {
+  font-size: 14px;
+  color: #333;
+}
+
+.text.darkMode {
+  color: #f0f0f0;
+}
+
+.textSecondary {
+  font-size: 14px;
+  color: #666;
+}
+
+.textSecondary.darkMode {
+  color: #999;
+}
+
+.textSmall {
+  font-size: 12px;
+  color: #666;
+}
+
+.textSmall.darkMode {
+  color: #999;
+}
+
+/* Loading States */
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: #333;
+}
+
+.loading.darkMode {
+  color: #fff;
+}
+
+.emptyState {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
+
+.emptyState.darkMode {
+  color: #aaa;
+}
+
+/* Spacing Utilities */
+.marginTop {
+  margin-top: 20px;
+}
+
+.marginBottom {
+  margin-bottom: 16px;
+}
+
+.padding {
+  padding: 16px;
+}
+
+/* Flex Utilities */
+.flex {
+  display: flex;
+}
+
+.flexColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.flexCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap {
+  gap: 16px;
+}
+
+.gapSmall {
+  gap: 8px;
+}
+
+/* Grid Utilities */
+.grid {
+  display: grid;
+}
+
+.gridAutoFit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+

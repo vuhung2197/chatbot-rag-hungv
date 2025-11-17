@@ -1,0 +1,91 @@
+/* EmailVerification specific styles - chỉ giữ lại những styles unique cho component này */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.badgeVerified {
+  background-color: #28a745;
+}
+
+.badgeUnverified {
+  background-color: #ffc107;
+}
+
+.tokenHintBox {
+  background-color: #f5f5f5;
+  border: 2px dashed #7137ea;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.tokenHintBox.darkMode {
+  background-color: #1a1a1a;
+  border-color: #555;
+}
+
+.tokenInputGroup {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tokenInput {
+  flex: 1;
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.container {
+  margin-top: 16px;
+}
+
+.descriptionText {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.tokenHintText {
+  margin-bottom: 4px;
+}
+
+.tokenHintTextBottom {
+  margin-bottom: 8px;
+}
+
+.successMessage {
+  font-size: 13px;
+}
+
+.errorMessage {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.successMessageTop {
+  font-size: 13px;
+  margin-top: 8px;
+}

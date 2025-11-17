@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/ResetPasswordPage.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -69,66 +74,20 @@ export default function ResetPasswordPage({ darkMode = false }) {
     }
   };
 
-  const bgColor = darkMode ? '#1a1a1a' : '#f5f5f5';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const cardBg = darkMode ? '#2d2d2d' : '#fff';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const inputBg = darkMode ? '#1a1a1a' : '#fff';
-  const inputBorder = darkMode ? '#444' : '#ccc';
-  const buttonBg = '#7137ea';
-  const successColor = '#28a745';
-  const errorColor = '#dc3545';
-
   if (success) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: bgColor,
-        padding: '20px',
-      }}>
-        <div style={{
-          backgroundColor: cardBg,
-          borderRadius: '12px',
-          padding: '40px',
-          maxWidth: '500px',
-          width: '100%',
-          boxShadow: darkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
-          textAlign: 'center',
-        }}>
-          <div style={{
-            fontSize: '64px',
-            marginBottom: '20px',
-          }}>
-            ✅
-          </div>
-          <h2 style={{
-            color: successColor,
-            marginBottom: '16px',
-          }}>
-            {t('password.resetSuccess')}
-          </h2>
-          <p style={{
-            color: darkMode ? '#ccc' : '#666',
-            marginBottom: '24px',
-            lineHeight: '1.6',
-          }}>
-            {t('password.resetSuccessMessage')}
-          </p>
+      <div className={styles.pageContainer}>
+      <div className={`${shared.card} ${darkMode ? shared.darkMode : ''} ${styles.card}`}>
+        <div className={styles.successIcon}>✅</div>
+        <h2 className={`${messages.success} ${styles.successTitle}`}>
+          {t('password.resetSuccess')}
+        </h2>
+        <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.successText}`}>
+          {t('password.resetSuccessMessage')}
+        </p>
           <button
             onClick={() => window.location.href = '/'}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: buttonBg,
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-            }}
+            className={`${buttons.button} ${buttons.buttonPrimary}`}
           >
             {t('password.backToLogin')}
           </button>
@@ -138,67 +97,27 @@ export default function ResetPasswordPage({ darkMode = false }) {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: bgColor,
-      padding: '20px',
-    }}>
-      <div style={{
-        backgroundColor: cardBg,
-        borderRadius: '12px',
-        padding: '40px',
-        maxWidth: '500px',
-        width: '100%',
-        boxShadow: darkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
-      }}>
-        <h2 style={{
-          marginTop: 0,
-          marginBottom: '24px',
-          fontSize: '24px',
-          color: textColor,
-          textAlign: 'center',
-        }}>
+    <div className={styles.pageContainer}>
+      <div className={`${shared.card} ${darkMode ? shared.darkMode : ''} ${styles.cardForm}`}>
+        <h2 className={`${shared.titleLarge} ${darkMode ? shared.darkMode : ''} ${styles.title}`}>
           🔐 {t('password.reset')}
         </h2>
 
         {error && (
-          <div style={{
-            padding: '12px',
-            backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-            color: darkMode ? '#ff6b6b' : errorColor,
-            borderRadius: '6px',
-            marginBottom: '16px',
-            border: `1px solid ${darkMode ? '#6b2b2b' : '#fcc'}`,
-          }}>
+          <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
             {error}
           </div>
         )}
 
         {!token && (
-          <div style={{
-            padding: '12px',
-            backgroundColor: darkMode ? '#3a3a1a' : '#fff3cd',
-            color: darkMode ? '#ffd700' : '#856404',
-            borderRadius: '6px',
-            marginBottom: '16px',
-            border: `1px solid ${darkMode ? '#5a5a2a' : '#ffc107'}`,
-          }}>
+          <div className={`${messages.warning} ${darkMode ? messages.darkMode : ''}`}>
             ⚠️ {t('password.noToken')}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '500',
-              fontSize: '14px',
-              color: textColor,
-            }}>
+        <form onSubmit={handleSubmit} className={forms.form}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               {t('password.new')}
             </label>
             <input
@@ -206,29 +125,14 @@ export default function ResetPasswordPage({ darkMode = false }) {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder={t('password.newPlaceholder')}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${inputBorder}`,
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: inputBg,
-                color: textColor,
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
               required
               minLength={8}
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: '500',
-              fontSize: '14px',
-              color: textColor,
-            }}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               {t('password.confirm')}
             </label>
             <input
@@ -236,24 +140,11 @@ export default function ResetPasswordPage({ darkMode = false }) {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder={t('password.confirmPlaceholder')}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${inputBorder}`,
-                borderRadius: '6px',
-                fontSize: '14px',
-                backgroundColor: inputBg,
-                color: textColor,
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
               required
             />
             {confirmPassword && newPassword !== confirmPassword && (
-              <div style={{
-                marginTop: '4px',
-                fontSize: '12px',
-                color: errorColor,
-              }}>
+              <div className={forms.errorText}>
                 ⚠️ {t('password.mismatch')}
               </div>
             )}
@@ -262,34 +153,16 @@ export default function ResetPasswordPage({ darkMode = false }) {
           <button
             type="submit"
             disabled={loading || !token}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: buttonBg,
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: (loading || !token) ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              opacity: (loading || !token) ? 0.6 : 1,
-            }}
+            className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth} ${darkMode ? buttons.darkMode : ''}`}
           >
             {loading ? t('common.loading') : t('password.reset')}
           </button>
         </form>
 
-        <div style={{
-          marginTop: '20px',
-          textAlign: 'center',
-        }}>
+        <div className={styles.backLinkContainer}>
           <a
             href="/"
-            style={{
-              color: '#7137ea',
-              textDecoration: 'none',
-              fontSize: '14px',
-            }}
+            className={styles.backLink}
           >
             {t('password.backToLoginLink')}
           </a>

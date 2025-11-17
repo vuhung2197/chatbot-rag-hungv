@@ -1,0 +1,75 @@
+/* KnowledgeAdmin specific styles - chỉ giữ lại những styles unique cho component này */
+
+.loadingSpinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.statusIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #d4edda;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 36px;
+}
+
+.statusIconError {
+  background-color: #f8d7da;
+}
+
+.modalOverlay {
+  z-index: 10000;
+}
+
+.modalContent {
+  max-width: 400px;
+  text-align: center;
+}
+
+.modalBody {
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.modalTitle {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+}
+
+.modalText {
+  margin: 0;
+  font-size: 14px;
+}
+
+.modalTextSmall {
+  margin: 10px 0 0 0;
+}
+
+.modalTextWithLineHeight {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modalContentFull {
+  max-width: 600px;
+}
+
+.modalPre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

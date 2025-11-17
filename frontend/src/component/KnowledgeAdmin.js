@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import '../styles/KnowledgeAdmin.css';
 import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/KnowledgeAdmin.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -376,91 +381,61 @@ export default function KnowledgeAdmin() {
 
       {/* Upload Loading Modal */}
       {uploading && (
-        <div className="modal-overlay" style={{ zIndex: 10000 }}>
-          <div className="modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
-            <div className="modal-body">
-              <div style={{ marginBottom: '20px', padding: '20px' }}>
-                {uploadStatus === 'loading' && (
-                  <>
-                    <div className="loading-spinner" style={{
-                      width: '60px',
-                      height: '60px',
-                      border: '4px solid #f3f3f3',
-                      borderTop: '4px solid #3498db',
-                      borderRadius: '50%',
-                      animation: 'spin 1s linear infinite',
-                      margin: '0 auto 20px'
-                    }}></div>
-                    <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#333' }}>
-                      Đang xử lý file...
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '14px', color: '#666' }}>
-                      {uploadFileName && `File: ${uploadFileName}`}
+        <div className={`modal-overlay ${styles.modalOverlay}`}>
+          <div className={`modal-content ${styles.modalContent}`}>
+            <div className={`modal-body ${styles.modalBody}`}>
+              {uploadStatus === 'loading' && (
+                <>
+                  <div className={styles.loadingSpinner}></div>
+                  <h3 className={`${shared.title} ${styles.modalTitle}`}>
+                    Đang xử lý file...
+                  </h3>
+                  <p className={`${shared.text} ${styles.modalText}`}>
+                    {uploadFileName && `File: ${uploadFileName}`}
+                  </p>
+                  <p className={`${shared.textSmall} ${styles.modalTextSmall}`}>
+                    Vui lòng đợi trong khi file đang được upload và huấn luyện
+                  </p>
+                </>
+              )}
+              
+              {uploadStatus === 'success' && (
+                <>
+                  <div className={styles.statusIcon}>
+                    ✅
+                  </div>
+                  <h3 className={`${messages.success} ${styles.modalTitle}`}>
+                    Thành công!
+                  </h3>
+                  <p className={`${shared.text} ${styles.modalTextWithLineHeight}`}>
+                    {uploadMessage || 'File đã được huấn luyện thành công!'}
+                  </p>
+                  {uploadFileName && (
+                    <p className={`${shared.textSmall} ${styles.modalTextSmall}`}>
+                      File: {uploadFileName}
                     </p>
-                    <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: '#999' }}>
-                      Vui lòng đợi trong khi file đang được upload và huấn luyện
+                  )}
+                </>
+              )}
+              
+              {uploadStatus === 'error' && (
+                <>
+                  <div className={`${styles.statusIcon} ${styles.statusIconError}`}>
+                    ❌
+                  </div>
+                  <h3 className={`${messages.error} ${styles.modalTitle}`}>
+                    Lỗi!
+                  </h3>
+                  <p className={`${shared.text} ${styles.modalTextWithLineHeight}`}>
+                    {uploadMessage || 'Đã xảy ra lỗi khi upload file'}
+                  </p>
+                  {uploadFileName && (
+                    <p className={`${shared.textSmall} ${styles.modalTextSmall}`}>
+                      File: {uploadFileName}
                     </p>
-                  </>
-                )}
-                
-                {uploadStatus === 'success' && (
-                  <>
-                    <div style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      backgroundColor: '#d4edda',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 20px',
-                      fontSize: '36px'
-                    }}>
-                      ✅
-                    </div>
-                    <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#28a745' }}>
-                      Thành công!
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '14px', color: '#666', lineHeight: '1.5' }}>
-                      {uploadMessage || 'File đã được huấn luyện thành công!'}
-                    </p>
-                    {uploadFileName && (
-                      <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: '#999' }}>
-                        File: {uploadFileName}
-                      </p>
-                    )}
-                  </>
-                )}
-                
-                {uploadStatus === 'error' && (
-                  <>
-                    <div style={{
-                      width: '60px',
-                      height: '60px',
-                      borderRadius: '50%',
-                      backgroundColor: '#f8d7da',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      margin: '0 auto 20px',
-                      fontSize: '36px'
-                    }}>
-                      ❌
-                    </div>
-                    <h3 style={{ margin: '0 0 10px 0', fontSize: '18px', color: '#dc3545' }}>
-                      Lỗi!
-                    </h3>
-                    <p style={{ margin: '0', fontSize: '14px', color: '#666', lineHeight: '1.5' }}>
-                      {uploadMessage || 'Đã xảy ra lỗi khi upload file'}
-                    </p>
-                    {uploadFileName && (
-                      <p style={{ margin: '10px 0 0 0', fontSize: '13px', color: '#999' }}>
-                        File: {uploadFileName}
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -508,7 +483,7 @@ export default function KnowledgeAdmin() {
       {/* Full Content Modal */}
       {showFullContentModal && (
         <div className="modal-overlay" onClick={() => setShowFullContentModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+          <div className={`modal-content ${styles.modalContentFull}`} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Nội dung đầy đủ</h3>
               <button
@@ -519,7 +494,7 @@ export default function KnowledgeAdmin() {
               </button>
             </div>
             <div className="modal-body">
-              <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{fullContent}</pre>
+              <pre className={styles.modalPre}>{fullContent}</pre>
             </div>
           </div>
         </div>

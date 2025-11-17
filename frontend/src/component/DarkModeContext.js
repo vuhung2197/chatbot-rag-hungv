@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import styles from '../styles/components/DarkModeContext.module.css';
 
 const DarkModeContext = createContext();
 
@@ -53,18 +54,7 @@ export function DarkModeProvider({ children }) {
 
   return (
     <DarkModeContext.Provider value={{ darkMode, toggleDarkMode }}>
-      <div
-        style={{
-          maxWidth: 600,
-          margin: '30px auto',
-          fontFamily: 'sans-serif',
-          background: darkMode ? '#23272f' : '#fff',
-          color: darkMode ? '#fafafa' : '#222',
-          minHeight: '100vh',
-          position: 'relative',
-          transition: 'background 0.3s, color 0.3s',
-        }}
-      >
+      <div className={`${styles.wrapper} ${darkMode ? styles.darkMode : ''}`}>
         {children}
       </div>
     </DarkModeContext.Provider>

@@ -9,6 +9,11 @@ import SubscriptionStatus from './SubscriptionStatus';
 import SubscriptionPlans from './SubscriptionPlans';
 import UsageDashboard from './UsageDashboard';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/ProfileSettings.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -148,11 +153,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
 
   if (loading) {
     return (
-      <div style={{
-        padding: '40px',
-        textAlign: 'center',
-        color: darkMode ? '#fff' : '#333',
-      }}>
+      <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''} ${styles.loading}`}>
         {t('common.loading')}
       </div>
     );
@@ -160,63 +161,26 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
 
   if (!profile) {
     return (
-      <div style={{
-        padding: '40px',
-        textAlign: 'center',
-        color: darkMode ? '#fff' : '#333',
-      }}>
+      <div className={`${messages.error} ${darkMode ? messages.darkMode : ''} ${styles.error}`}>
         {t('profile.loadError')}
       </div>
     );
   }
 
-  const bgColor = darkMode ? '#1a1a1a' : '#fff';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#444' : '#ddd';
-  const inputBg = darkMode ? '#2d2d2d' : '#fff';
-  const inputBorder = darkMode ? '#555' : '#ccc';
-
   return (
     <div 
       ref={containerRef}
-      style={{
-        maxWidth: '800px',
-        margin: '0 auto',
-        padding: '24px',
-        backgroundColor: bgColor,
-        color: textColor,
-        borderRadius: '12px',
-        boxShadow: darkMode ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.1)',
-      }}
+      className={styles.container}
     >
       {/* Header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '24px',
-        paddingBottom: '16px',
-        borderBottom: `1px solid ${borderColor}`,
-      }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>
           ⚙️ Cài đặt Profile
         </h2>
         {onClose && (
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '24px',
-              cursor: 'pointer',
-              color: textColor,
-              padding: '0',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className={styles.closeButton}
           >
             ×
           </button>
@@ -225,34 +189,20 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
 
       {/* Messages */}
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-          color: darkMode ? '#ff6b6b' : '#c33',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          border: `1px solid ${darkMode ? '#6b2b2b' : '#fcc'}`,
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
           {error}
         </div>
       )}
 
       {success && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#1f4a1f' : '#efe',
-          color: darkMode ? '#6bff6b' : '#3c3',
-          borderRadius: '6px',
-          marginBottom: '16px',
-          border: `1px solid ${darkMode ? '#2b6b2b' : '#cfc'}`,
-        }}>
+        <div className={`${messages.success} ${darkMode ? messages.darkMode : ''}`}>
           {success}
         </div>
       )}
 
       {/* Avatar Section */}
-      <div style={{ marginBottom: '32px' }}>
-        <h3 style={{ marginBottom: '16px', fontSize: '18px' }}>{t('profile.avatar')}</h3>
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>{t('profile.avatar')}</h3>
         <AvatarUploader
           currentAvatarUrl={profile.avatarUrl}
           onAvatarUpdate={handleAvatarUpdate}
@@ -261,15 +211,10 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       </div>
 
       {/* Profile Form */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div className={forms.form}>
         {/* Display Name */}
-        <div>
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500',
-            fontSize: '14px',
-          }}>
+        <div className={forms.formGroup}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
             {t('profile.displayName')}
           </label>
           <input
@@ -278,34 +223,16 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder={t('profile.displayName')}
             maxLength={100}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${inputBorder}`,
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: inputBg,
-              color: textColor,
-              boxSizing: 'border-box',
-            }}
+            className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
           />
-          <div style={{
-            fontSize: '12px',
-            color: darkMode ? '#999' : '#666',
-            marginTop: '4px',
-          }}>
+          <div className={`${forms.hint} ${darkMode ? forms.darkMode : ''}`}>
             {t('profile.displayNameHint')}
           </div>
         </div>
 
         {/* Email */}
-        <div>
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500',
-            fontSize: '14px',
-          }}>
+        <div className={forms.formGroup}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
             Email
           </label>
           <input
@@ -313,24 +240,11 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${inputBorder}`,
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: inputBg,
-              color: textColor,
-              boxSizing: 'border-box',
-            }}
+            className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
           />
-          <div style={{
-            fontSize: '12px',
-            color: darkMode ? '#999' : '#666',
-            marginTop: '4px',
-          }}>
+          <div className={`${forms.hint} ${darkMode ? forms.darkMode : ''}`}>
             {email !== profile.email && (
-              <span style={{ color: '#ffc107' }}>⚠ Email sẽ được cập nhật và cần xác thực lại</span>
+              <span className={messages.warning}>⚠ Email sẽ được cập nhật và cần xác thực lại</span>
             )}
           </div>
         </div>
@@ -344,13 +258,8 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         />
 
         {/* Bio */}
-        <div>
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500',
-            fontSize: '14px',
-          }}>
+        <div className={forms.formGroup}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
             {t('profile.bio')}
           </label>
           <textarea
@@ -359,51 +268,22 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             placeholder={t('profile.bioPlaceholder')}
             maxLength={500}
             rows={4}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${inputBorder}`,
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: inputBg,
-              color: textColor,
-              boxSizing: 'border-box',
-              resize: 'vertical',
-              fontFamily: 'inherit',
-            }}
+            className={`${forms.textarea} ${darkMode ? forms.darkMode : ''}`}
           />
-          <div style={{
-            fontSize: '12px',
-            color: darkMode ? '#999' : '#666',
-            marginTop: '4px',
-          }}>
+          <div className={`${forms.hint} ${darkMode ? forms.darkMode : ''}`}>
             {bio.length}/500 ký tự
           </div>
         </div>
 
         {/* Timezone */}
-        <div>
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500',
-            fontSize: '14px',
-          }}>
+        <div className={forms.formGroup}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
             {t('profile.timezone')}
           </label>
           <select
             value={timezone}
             onChange={(e) => setTimezone(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${inputBorder}`,
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: inputBg,
-              color: textColor,
-              boxSizing: 'border-box',
-            }}
+            className={`${forms.select} ${darkMode ? forms.darkMode : ''}`}
           >
             <option value="Asia/Ho_Chi_Minh">Asia/Ho_Chi_Minh (GMT+7)</option>
             <option value="UTC">UTC (GMT+0)</option>
@@ -414,13 +294,8 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         </div>
 
         {/* Language */}
-        <div>
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500',
-            fontSize: '14px',
-          }}>
+        <div className={forms.formGroup}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
             {t('profile.language')}
           </label>
           <select
@@ -430,16 +305,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
               // Apply language immediately
               changeLanguage(newLang);
             }}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${inputBorder}`,
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: inputBg,
-              color: textColor,
-              boxSizing: 'border-box',
-            }}
+            className={`${forms.select} ${darkMode ? forms.darkMode : ''}`}
           >
             <option value="vi">Tiếng Việt</option>
             <option value="en">English</option>
@@ -447,20 +313,15 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         </div>
 
         {/* Account Info */}
-        <div style={{
-          padding: '16px',
-          backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
-          borderRadius: '6px',
-          fontSize: '14px',
-        }}>
-          <div style={{ marginBottom: '8px' }}>
+        <div className={styles.accountInfo}>
+          <div className={styles.infoRow}>
             <strong>{t('profile.accountStatus')}:</strong> {profile.accountStatus === 'active' ? (language === 'vi' ? '✓ Hoạt động' : '✓ Active') : profile.accountStatus}
           </div>
-          <div style={{ marginBottom: '8px' }}>
+          <div className={styles.infoRow}>
             <strong>{t('profile.createdAt')}:</strong> {new Date(profile.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
           </div>
           {profile.lastLoginAt && (
-            <div>
+            <div className={styles.infoRow}>
               <strong>{t('profile.lastLogin')}:</strong> {new Date(profile.lastLoginAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
             </div>
           )}
@@ -495,21 +356,12 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         <OAuthProviders darkMode={darkMode} />
 
         {/* Save Button */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px' }}>
+        <div className={styles.buttonContainer}>
           {onClose && (
             <button
               onClick={onClose}
               disabled={saving}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: 'transparent',
-                color: textColor,
-                border: `1px solid ${borderColor}`,
-                borderRadius: '6px',
-                cursor: saving ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                opacity: saving ? 0.6 : 1,
-              }}
+              className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
             >
               {t('common.cancel')}
             </button>
@@ -517,17 +369,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#7137ea',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: saving ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              opacity: saving ? 0.6 : 1,
-            }}
+            className={`${buttons.button} ${buttons.buttonPrimary} ${darkMode ? buttons.darkMode : ''}`}
           >
             {saving ? t('profile.saving') : t('profile.saveChanges')}
           </button>

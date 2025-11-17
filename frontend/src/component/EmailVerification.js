@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/EmailVerification.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -87,57 +92,23 @@ export default function EmailVerification({
     }
   };
 
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const inputBg = darkMode ? '#1a1a1a' : '#fff';
-  const inputBorder = darkMode ? '#444' : '#ccc';
-  const buttonBg = darkMode ? '#7137ea' : '#7137ea';
-  const successColor = '#28a745';
-  const errorColor = '#dc3545';
-
   return (
-    <div style={{
-      padding: '16px',
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      border: `1px solid ${borderColor}`,
-      marginTop: '16px',
-    }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: '12px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '18px' }}>
+    <div className={`${shared.container} ${darkMode ? shared.darkMode : ''} ${styles.container}`}>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          <span className={styles.icon}>
             {emailVerified ? '✅' : '⚠️'}
           </span>
           <div>
-            <div style={{
-              fontWeight: '500',
-              fontSize: '14px',
-              color: textColor,
-            }}>
+            <div className={`${shared.subtitle} ${darkMode ? shared.darkMode : ''}`}>
               Email Verification
             </div>
-            <div style={{
-              fontSize: '12px',
-              color: darkMode ? '#999' : '#666',
-            }}>
+            <div className={`${shared.textSmall} ${darkMode ? shared.darkMode : ''}`}>
               {email}
             </div>
           </div>
         </div>
-        <div style={{
-          padding: '4px 12px',
-          borderRadius: '12px',
-          fontSize: '12px',
-          fontWeight: '500',
-          backgroundColor: emailVerified ? successColor : '#ffc107',
-          color: '#fff',
-        }}>
+        <div className={`${styles.badge} ${emailVerified ? styles.badgeVerified : styles.badgeUnverified}`}>
           {emailVerified ? 'Đã xác thực' : 'Chưa xác thực'}
         </div>
       </div>
@@ -146,63 +117,31 @@ export default function EmailVerification({
         <div>
           {!showTokenInput ? (
             <div>
-              <p style={{
-                fontSize: '13px',
-                color: darkMode ? '#ccc' : '#666',
-                marginBottom: '12px',
-              }}>
+              <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.descriptionText}`}>
                 Email của bạn chưa được xác thực. Vui lòng xác thực để đảm bảo tính bảo mật của tài khoản.
               </p>
               <button
                 onClick={handleSendVerification}
                 disabled={sending}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: buttonBg,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: sending ? 'not-allowed' : 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  opacity: sending ? 0.6 : 1,
-                }}
+                className={`${buttons.button} ${buttons.buttonPrimary} ${darkMode ? buttons.darkMode : ''}`}
               >
                 {sending ? 'Đang gửi...' : '📧 Gửi email xác thực'}
               </button>
             </div>
           ) : (
             <div>
-              <p style={{
-                fontSize: '13px',
-                color: darkMode ? '#ccc' : '#666',
-                marginBottom: '12px',
-              }}>
+              <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.descriptionText}`}>
                 Vui lòng kiểm tra email và copy <strong>mã xác thực</strong> vào ô bên dưới:
               </p>
-              <div style={{
-                backgroundColor: darkMode ? '#1a1a1a' : '#f5f5f5',
-                border: `2px dashed ${darkMode ? '#555' : '#7137ea'}`,
-                borderRadius: '6px',
-                padding: '12px',
-                marginBottom: '12px',
-                textAlign: 'center',
-              }}>
-                <div style={{
-                  fontSize: '11px',
-                  color: darkMode ? '#999' : '#666',
-                  marginBottom: '4px',
-                }}>
+              <div className={styles.tokenHintBox}>
+                <div className={`${shared.textSmall} ${darkMode ? shared.darkMode : ''} ${styles.tokenHintText}`}>
                   💡 Mẹo: Mã xác thực nằm trong email, có thể có dấu gạch ngang (-)
                 </div>
-                <div style={{
-                  fontSize: '12px',
-                  color: darkMode ? '#999' : '#666',
-                }}>
+                <div className={`${shared.textSmall} ${darkMode ? shared.darkMode : ''}`}>
                   Bạn có thể paste mã có hoặc không có dấu gạch ngang
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <div className={styles.tokenInputGroup}>
                 <input
                   type="text"
                   value={token}
@@ -212,18 +151,7 @@ export default function EmailVerification({
                     setToken(cleaned);
                   }}
                   placeholder="Dán mã xác thực từ email (có thể có dấu -)"
-                  style={{
-                    flex: 1,
-                    padding: '10px 12px',
-                    border: `1px solid ${inputBorder}`,
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    backgroundColor: inputBg,
-                    color: textColor,
-                    boxSizing: 'border-box',
-                    fontFamily: 'monospace',
-                    letterSpacing: '1px',
-                  }}
+                  className={`${forms.input} ${styles.tokenInput} ${darkMode ? forms.darkMode : ''}`}
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       handleVerify();
@@ -240,26 +168,12 @@ export default function EmailVerification({
                 <button
                   onClick={handleVerify}
                   disabled={verifying || !token.trim()}
-                  style={{
-                    padding: '10px 20px',
-                    backgroundColor: buttonBg,
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: (verifying || !token.trim()) ? 'not-allowed' : 'pointer',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    opacity: (verifying || !token.trim()) ? 0.6 : 1,
-                  }}
+                  className={`${buttons.button} ${buttons.buttonSuccess} ${darkMode ? buttons.darkMode : ''}`}
                 >
                   {verifying ? 'Đang xác thực...' : '✅ Xác thực'}
                 </button>
               </div>
-              <div style={{
-                fontSize: '12px',
-                color: darkMode ? '#999' : '#666',
-                marginBottom: '8px',
-              }}>
+              <div className={`${shared.textSmall} ${darkMode ? shared.darkMode : ''} ${styles.tokenHintTextBottom}`}>
                 Hoặc nhấp vào link trong email để xác thực tự động
               </div>
               <button
@@ -269,15 +183,7 @@ export default function EmailVerification({
                   setError('');
                   setSuccess('');
                 }}
-                style={{
-                  padding: '4px 12px',
-                  backgroundColor: 'transparent',
-                  color: textColor,
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                }}
+                className={`${buttons.button} ${buttons.buttonSmall} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
               >
                 Hủy
               </button>
@@ -287,39 +193,19 @@ export default function EmailVerification({
       )}
 
       {emailVerified && (
-        <div style={{
-          padding: '8px 12px',
-          backgroundColor: darkMode ? '#1a3a1a' : '#d4edda',
-          borderRadius: '6px',
-          fontSize: '13px',
-          color: successColor,
-        }}>
+        <div className={`${messages.success} ${darkMode ? messages.darkMode : ''} ${styles.successMessage}`}>
           ✅ Email của bạn đã được xác thực thành công!
         </div>
       )}
 
       {error && (
-        <div style={{
-          padding: '8px 12px',
-          backgroundColor: darkMode ? '#3a1a1a' : '#f8d7da',
-          borderRadius: '6px',
-          fontSize: '13px',
-          color: errorColor,
-          marginTop: '8px',
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''} ${styles.errorMessage}`}>
           ⚠️ {error}
         </div>
       )}
 
       {success && (
-        <div style={{
-          padding: '8px 12px',
-          backgroundColor: darkMode ? '#1a3a1a' : '#d4edda',
-          borderRadius: '6px',
-          fontSize: '13px',
-          color: successColor,
-          marginTop: '8px',
-        }}>
+        <div className={`${messages.success} ${darkMode ? messages.darkMode : ''} ${styles.successMessageTop}`}>
           ✅ {success}
         </div>
       )}

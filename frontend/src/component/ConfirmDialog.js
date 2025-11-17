@@ -1,5 +1,7 @@
 import React from 'react';
-import './ConfirmDialog.css';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import styles from '../styles/components/ConfirmDialog.module.css';
 
 export default function ConfirmDialog({ 
   isOpen, 
@@ -14,48 +16,31 @@ export default function ConfirmDialog({
 }) {
   if (!isOpen) return null;
 
-  const bgColor = darkMode ? '#2d2d2d' : '#fff';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-
   return (
-    <div className="confirm-dialog-overlay" onClick={onCancel}>
+    <div className={styles.overlay} onClick={onCancel}>
       <div 
-        className="confirm-dialog-content"
+        className={`${styles.content} ${darkMode ? styles.darkMode : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          backgroundColor: bgColor,
-          color: textColor,
-          border: `1px solid ${borderColor}`,
-        }}
       >
         {title && (
-          <h3 className="confirm-dialog-title" style={{ color: textColor }}>
+          <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
             {title}
           </h3>
         )}
-        <p className="confirm-dialog-message" style={{ color: textColor }}>
+        <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.message}`}>
           {message}
         </p>
-        <div className="confirm-dialog-actions">
+        <div className={styles.actions}>
           <button
-            className="confirm-dialog-button confirm-dialog-button-cancel"
+            className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
             onClick={onCancel}
-            style={{
-              backgroundColor: darkMode ? '#555' : '#f0f0f0',
-              color: textColor,
-              border: `1px solid ${borderColor}`,
-            }}
           >
             {cancelText}
           </button>
           <button
-            className="confirm-dialog-button confirm-dialog-button-confirm"
+            className={`${buttons.button} ${buttons.buttonDanger}`}
             onClick={onConfirm}
-            style={{
-              backgroundColor: confirmColor,
-              color: '#fff',
-            }}
+            style={{ backgroundColor: confirmColor }}
           >
             {confirmText}
           </button>

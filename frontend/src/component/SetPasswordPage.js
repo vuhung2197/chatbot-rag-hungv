@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/SetPasswordPage.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -70,39 +75,15 @@ export default function SetPasswordPage({ darkMode = false }) {
     }
   };
 
-  const bgColor = darkMode ? '#1a1a1a' : '#f5f5f5';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const cardBg = darkMode ? '#2d2d2d' : '#fff';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const inputBg = darkMode ? '#1a1a1a' : '#fff';
-  const buttonBg = '#7137ea';
-  const successColor = '#28a745';
-  const errorColor = '#dc3545';
-
   if (success) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: bgColor,
-        padding: '20px',
-      }}>
-        <div style={{
-          background: cardBg,
-          padding: '40px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          maxWidth: '400px',
-          width: '100%',
-          textAlign: 'center',
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '20px' }}>✅</div>
-          <h2 style={{ color: successColor, marginBottom: '16px' }}>
+      <div className={styles.pageContainer}>
+        <div className={`${shared.card} ${darkMode ? shared.darkMode : ''} ${styles.card}`}>
+          <div className={styles.successIcon}>✅</div>
+          <h2 className={`${messages.success} ${styles.successTitle}`}>
             Mật khẩu đã được thiết lập thành công!
           </h2>
-          <p style={{ color: textColor, marginBottom: '20px' }}>
+          <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.successText}`}>
             Bạn sẽ được chuyển đến trang chủ trong giây lát...
           </p>
         </div>
@@ -111,61 +92,24 @@ export default function SetPasswordPage({ darkMode = false }) {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: bgColor,
-      padding: '20px',
-    }}>
-      <div style={{
-        background: cardBg,
-        padding: '40px',
-        borderRadius: '12px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-        maxWidth: '400px',
-        width: '100%',
-      }}>
-        <h2 style={{ 
-          color: textColor, 
-          marginBottom: '8px',
-          textAlign: 'center',
-        }}>
+    <div className={styles.pageContainer}>
+      <div className={`${shared.card} ${darkMode ? shared.darkMode : ''} ${styles.cardForm}`}>
+        <h2 className={`${shared.titleLarge} ${darkMode ? shared.darkMode : ''} ${styles.title}`}>
           🔐 Thiết lập mật khẩu
         </h2>
-        <p style={{ 
-          color: textColor, 
-          marginBottom: '24px',
-          fontSize: '14px',
-          textAlign: 'center',
-          opacity: 0.8,
-        }}>
+        <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.description}`}>
           Bạn đã đăng nhập bằng Google. Vui lòng thiết lập mật khẩu để có thể đăng nhập bằng email sau này.
         </p>
 
         {error && (
-          <div style={{
-            background: errorColor + '20',
-            color: errorColor,
-            padding: '12px',
-            borderRadius: '6px',
-            marginBottom: '20px',
-            fontSize: '14px',
-          }}>
+          <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              color: textColor,
-              marginBottom: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-            }}>
+        <form onSubmit={handleSubmit} className={forms.form}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               Mật khẩu mới
             </label>
             <input
@@ -174,27 +118,12 @@ export default function SetPasswordPage({ darkMode = false }) {
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Nhập mật khẩu mới (tối thiểu 8 ký tự)"
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '6px',
-                border: `1px solid ${borderColor}`,
-                background: inputBg,
-                color: textColor,
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
             />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              color: textColor,
-              marginBottom: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-            }}>
+          <div className={forms.formGroup}>
+            <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
               Xác nhận mật khẩu
             </label>
             <input
@@ -203,34 +132,14 @@ export default function SetPasswordPage({ darkMode = false }) {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Nhập lại mật khẩu"
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '6px',
-                border: `1px solid ${borderColor}`,
-                background: inputBg,
-                color: textColor,
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
+              className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: loading ? '#999' : buttonBg,
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontSize: '16px',
-              fontWeight: '500',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s',
-            }}
+            className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth} ${darkMode ? buttons.darkMode : ''}`}
           >
             {loading ? 'Đang xử lý...' : 'Thiết lập mật khẩu'}
           </button>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import shared from '../styles/shared.module.css';
+import messages from '../styles/messages.module.css';
 import styles from '../styles/components/UsageCounter.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -99,12 +101,12 @@ export default function UsageCounter({ darkMode }) {
 
       {/* Alert */}
       {isAtLimit && (
-        <div className={`${styles.alert} ${styles.alertAtLimit}`}>
+        <div className={`${messages.error} ${messages.darkMode} ${styles.alertCompact}`}>
           ⚠️ Limit reached!
         </div>
       )}
       {isNearLimit && !isAtLimit && (
-        <div className={`${styles.alert} ${styles.alertNearLimit}`}>
+        <div className={`${messages.warning} ${messages.darkMode} ${styles.alertCompact}`}>
           ⚠️ Near limit
         </div>
       )}

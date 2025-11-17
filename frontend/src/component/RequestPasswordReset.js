@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/RequestPasswordReset.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -36,40 +41,14 @@ export default function RequestPasswordReset({ darkMode = false, onSuccess }) {
     }
   };
 
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const inputBg = darkMode ? '#1a1a1a' : '#fff';
-  const inputBorder = darkMode ? '#444' : '#ccc';
-  const buttonBg = '#7137ea';
-
   if (success) {
     return (
-      <div style={{
-        padding: '20px',
-        backgroundColor: bgColor,
-        borderRadius: '8px',
-        border: `1px solid ${borderColor}`,
-        textAlign: 'center',
-      }}>
-        <div style={{
-          fontSize: '48px',
-          marginBottom: '16px',
-        }}>
-          ✅
-        </div>
-        <h3 style={{
-          margin: 0,
-          marginBottom: '12px',
-          color: textColor,
-        }}>
+      <div className={`${shared.container} ${darkMode ? shared.darkMode : ''} ${styles.container}`}>
+        <div className={styles.successIcon}>✅</div>
+        <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''} ${styles.title}`}>
           {t('password.forgotEmailSent')}
         </h3>
-        <p style={{
-          margin: 0,
-          color: darkMode ? '#ccc' : '#666',
-          fontSize: '14px',
-        }}>
+        <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.text}`}>
           {t('password.forgotMessage')}
         </p>
       </div>
@@ -77,42 +56,20 @@ export default function RequestPasswordReset({ darkMode = false, onSuccess }) {
   }
 
   return (
-    <div style={{
-      padding: '20px',
-      backgroundColor: bgColor,
-      borderRadius: '8px',
-      border: `1px solid ${borderColor}`,
-    }}>
-      <h3 style={{
-        marginTop: 0,
-        marginBottom: '16px',
-        fontSize: '18px',
-        color: textColor,
-      }}>
+    <div className={`${shared.container} ${darkMode ? shared.darkMode : ''}`}>
+      <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
         🔐 {t('password.forgotTitle')}
       </h3>
 
       {error && (
-        <div style={{
-          padding: '12px',
-          backgroundColor: darkMode ? '#4a1f1f' : '#fee',
-          color: darkMode ? '#ff6b6b' : '#dc3545',
-          borderRadius: '6px',
-          marginBottom: '16px',
-        }}>
+        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{
-            display: 'block',
-            marginBottom: '8px',
-            fontWeight: '500',
-            fontSize: '14px',
-            color: textColor,
-          }}>
+      <form onSubmit={handleSubmit} className={forms.form}>
+        <div className={forms.formGroup}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
             {t('auth.email')}
           </label>
           <input
@@ -120,16 +77,7 @@ export default function RequestPasswordReset({ darkMode = false, onSuccess }) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder={t('password.forgotPlaceholder')}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${inputBorder}`,
-              borderRadius: '6px',
-              fontSize: '14px',
-              backgroundColor: inputBg,
-              color: textColor,
-              boxSizing: 'border-box',
-            }}
+            className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
             required
           />
         </div>
@@ -137,18 +85,7 @@ export default function RequestPasswordReset({ darkMode = false, onSuccess }) {
         <button
           type="submit"
           disabled={loading}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: buttonBg,
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            fontWeight: '500',
-            opacity: loading ? 0.6 : 1,
-          }}
+          className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth} ${darkMode ? buttons.darkMode : ''}`}
         >
           {loading ? t('password.forgotSending') : t('password.forgotButton')}
         </button>

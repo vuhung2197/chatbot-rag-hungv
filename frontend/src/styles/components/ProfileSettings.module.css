@@ -1,0 +1,117 @@
+/* ProfileSettings specific styles - chỉ giữ lại những styles unique cho component này */
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #fff;
+  color: #333;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.container.darkMode {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #ddd;
+}
+
+.header.darkMode {
+  border-bottom-color: #444;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.title.darkMode {
+  color: #f0f0f0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.closeButton.darkMode {
+  color: #f0f0f0;
+}
+
+.closeButton:hover {
+  color: #666;
+}
+
+.closeButton.darkMode:hover {
+  color: #aaa;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: #333;
+}
+
+.sectionTitle.darkMode {
+  color: #f0f0f0;
+}
+
+.accountInfo {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.accountInfo.darkMode {
+  background-color: #2d2d2d;
+}
+
+.infoRow {
+  margin-bottom: 8px;
+}
+
+.infoRow:last-child {
+  margin-bottom: 0;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.loading {
+  padding: 40px;
+}
+
+.error {
+  padding: 40px;
+  text-align: center;
+}

@@ -1,13 +1,10 @@
 import React from 'react';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import styles from '../styles/components/UsageLimits.module.css';
 
 export default function UsageLimits({ usage, limits, darkMode = false }) {
   const { t } = useLanguage();
-
-  const bgColor = darkMode ? '#2d2d2d' : '#f9f9f9';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const cardBg = darkMode ? '#1a1a1a' : '#fff';
 
   const getPercentage = (used, limit) => {
     if (limit === -1) return 0; // Unlimited
@@ -15,10 +12,10 @@ export default function UsageLimits({ usage, limits, darkMode = false }) {
     return Math.min(100, (used / limit) * 100);
   };
 
-  const getColor = (percentage) => {
-    if (percentage >= 100) return '#dc3545'; // Red
-    if (percentage >= 80) return '#ffc107'; // Yellow
-    return '#28a745'; // Green
+  const getColorClass = (percentage) => {
+    if (percentage >= 100) return styles.red;
+    if (percentage >= 80) return styles.yellow;
+    return styles.green;
   };
 
   // Ensure values are numbers
@@ -29,107 +26,62 @@ export default function UsageLimits({ usage, limits, darkMode = false }) {
   const fileSizePercentage = getPercentage(fileSizeMB, limits.file_size_mb);
 
   return (
-    <div style={{
-      padding: '16px',
-      backgroundColor: cardBg,
-      borderRadius: '6px',
-      border: `1px solid ${borderColor}`,
-      marginBottom: '16px',
-    }}>
-      <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: textColor }}>
+    <div className={`${shared.card} ${darkMode ? shared.darkMode : ''} ${shared.marginBottom}`}>
+      <h4 className={`${shared.subtitle} ${darkMode ? shared.darkMode : ''}`}>
         {t('usage.todayUsage')}
       </h4>
 
       {/* Queries Usage */}
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '8px',
-          fontSize: '14px',
-        }}>
-          <span style={{ color: textColor }}>{t('usage.queries')}</span>
-          <span style={{ color: textColor }}>
+      <div className={styles.section}>
+        <div className={styles.sectionRow}>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>{t('usage.queries')}</span>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>
             {queriesCount} / {limits.queries_per_day === -1 ? '∞' : limits.queries_per_day}
           </span>
         </div>
         {limits.queries_per_day !== -1 && (
-          <div style={{
-            width: '100%',
-            height: '8px',
-            backgroundColor: darkMode ? '#333' : '#e0e0e0',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              width: `${queriesPercentage}%`,
-              height: '100%',
-              backgroundColor: getColor(queriesPercentage),
-              transition: 'width 0.3s ease',
-            }} />
+          <div className={`${styles.progressBar} ${darkMode ? styles.darkMode : ''}`}>
+            <div
+              className={`${styles.progressFill} ${getColorClass(queriesPercentage)}`}
+              style={{ width: `${queriesPercentage}%` }}
+            />
           </div>
         )}
         {queriesPercentage >= 80 && limits.queries_per_day !== -1 && (
-          <div style={{
-            fontSize: '12px',
-            color: queriesPercentage >= 100 ? '#dc3545' : '#ffc107',
-            marginTop: '4px',
-          }}>
+          <div className={`${styles.warning} ${queriesPercentage >= 100 ? styles.red : styles.yellow}`}>
             {queriesPercentage >= 100 ? '⚠ ' + t('usage.limitReached') : '⚠ ' + t('usage.nearLimit')}
           </div>
         )}
       </div>
 
       {/* File Uploads Usage */}
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '8px',
-          fontSize: '14px',
-        }}>
-          <span style={{ color: textColor }}>{t('usage.fileUploads')}</span>
-          <span style={{ color: textColor }}>
+      <div className={styles.section}>
+        <div className={styles.sectionRow}>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>{t('usage.fileUploads')}</span>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>
             {Number(usage.usage.file_uploads_count) || 0}
           </span>
         </div>
       </div>
 
       {/* File Size Usage */}
-      <div>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: '8px',
-          fontSize: '14px',
-        }}>
-          <span style={{ color: textColor }}>{t('usage.fileSize')}</span>
-          <span style={{ color: textColor }}>
+      <div className={styles.section}>
+        <div className={styles.sectionRow}>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>{t('usage.fileSize')}</span>
+          <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>
             {fileSizeMB.toFixed(2)} MB / {limits.file_size_mb === -1 ? '∞' : limits.file_size_mb + ' MB'}
           </span>
         </div>
         {limits.file_size_mb !== -1 && (
-          <div style={{
-            width: '100%',
-            height: '8px',
-            backgroundColor: darkMode ? '#333' : '#e0e0e0',
-            borderRadius: '4px',
-            overflow: 'hidden',
-          }}>
-            <div style={{
-              width: `${fileSizePercentage}%`,
-              height: '100%',
-              backgroundColor: getColor(fileSizePercentage),
-              transition: 'width 0.3s ease',
-            }} />
+          <div className={`${styles.progressBar} ${darkMode ? styles.darkMode : ''}`}>
+            <div
+              className={`${styles.progressFill} ${getColorClass(fileSizePercentage)}`}
+              style={{ width: `${fileSizePercentage}%` }}
+            />
           </div>
         )}
         {fileSizePercentage >= 80 && limits.file_size_mb !== -1 && (
-          <div style={{
-            fontSize: '12px',
-            color: fileSizePercentage >= 100 ? '#dc3545' : '#ffc107',
-            marginTop: '4px',
-          }}>
+          <div className={`${styles.warning} ${fileSizePercentage >= 100 ? styles.red : styles.yellow}`}>
             {fileSizePercentage >= 100 ? '⚠ ' + t('usage.limitReached') : '⚠ ' + t('usage.nearLimit')}
           </div>
         )}
@@ -137,14 +89,10 @@ export default function UsageLimits({ usage, limits, darkMode = false }) {
 
       {/* Advanced RAG Usage */}
       {(Number(usage.usage.advanced_rag_count) || 0) > 0 && (
-        <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: `1px solid ${borderColor}` }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            fontSize: '14px',
-          }}>
-            <span style={{ color: textColor }}>{t('usage.advancedRAG')}</span>
-            <span style={{ color: textColor }}>
+        <div className={`${styles.advancedRagSection} ${darkMode ? styles.darkMode : ''}`}>
+          <div className={styles.sectionRow}>
+            <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>{t('usage.advancedRAG')}</span>
+            <span className={`${styles.label} ${darkMode ? styles.darkMode : ''}`}>
               {Number(usage.usage.advanced_rag_count) || 0}
             </span>
           </div>

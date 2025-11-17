@@ -3,6 +3,11 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import RequestPasswordReset from './RequestPasswordReset';
 import { useLanguage } from './LanguageContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/Login.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -41,16 +46,10 @@ export default function Login({ onLogin }) {
           darkMode={false}
           onSuccess={() => setShowResetPassword(false)}
         />
-        <p style={{ marginTop: 10, textAlign: 'center' }}>
+        <p className={styles.backLink}>
           <button
             onClick={() => setShowResetPassword(false)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#7137ea',
-              cursor: 'pointer',
-              textDecoration: 'underline',
-            }}
+            className={styles.backLinkButton}
           >
             {t('password.backToLoginLink')}
           </button>
@@ -62,21 +61,16 @@ export default function Login({ onLogin }) {
   return (
     <form
       onSubmit={handleLogin}
-      style={{
-        background: '#fff',
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: '0 2px 12px #ccc',
-      }}
+      className={styles.form}
     >
-      <h2 style={{ marginBottom: 16, color: '#333' }}>🔐 Đăng nhập</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h2 className={shared.titleLarge}>🔐 Đăng nhập</h2>
+      {error && <p className={messages.error}>{error}</p>}
       <input
         value={email}
         onChange={e => setEmail(e.target.value)}
         placeholder='Email'
         required
-        style={{ width: '100%', marginBottom: 12, padding: 8 }}
+        className={`${forms.input} ${shared.marginBottom}`}
       />
       <input
         type='password'
@@ -84,49 +78,28 @@ export default function Login({ onLogin }) {
         onChange={e => setPassword(e.target.value)}
         placeholder='Mật khẩu'
         required
-        style={{ width: '100%', marginBottom: 8, padding: 8 }}
+        className={`${forms.input} ${shared.marginBottom}`}
       />
-      <div style={{ marginBottom: 16, textAlign: 'right' }}>
+      <div className={styles.passwordActions}>
         <button
           type='button'
           onClick={() => setShowResetPassword(true)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: '#7137ea',
-            cursor: 'pointer',
-            fontSize: '12px',
-            textDecoration: 'underline',
-            padding: 0,
-          }}
+          className={styles.forgotPassword}
         >
           {t('password.forgot')}
         </button>
       </div>
       <button
         type='submit'
-        style={{
-          padding: '8px 16px',
-          background: '#7137ea',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 6,
-          width: '100%',
-          marginBottom: 12,
-        }}
+        className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth} ${shared.marginBottom}`}
       >
         {t('auth.login')}
       </button>
       
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        margin: '16px 0',
-        color: '#666',
-      }}>
-        <div style={{ flex: 1, height: 1, background: '#ddd' }}></div>
-        <span style={{ padding: '0 12px', fontSize: '12px' }}>{t('auth.or')}</span>
-        <div style={{ flex: 1, height: 1, background: '#ddd' }}></div>
+      <div className={styles.divider}>
+        <div className={styles.dividerLine}></div>
+        <span className={styles.dividerText}>{t('auth.or')}</span>
+        <div className={styles.dividerLine}></div>
       </div>
       
       <button
@@ -135,19 +108,7 @@ export default function Login({ onLogin }) {
           const backendUrl = process.env.REACT_APP_API_URL || 'http://localhost:3001';
           window.location.href = `${backendUrl}/auth/google`;
         }}
-        style={{
-          padding: '8px 16px',
-          background: '#fff',
-          color: '#333',
-          border: '1px solid #ddd',
-          borderRadius: 6,
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          cursor: 'pointer',
-        }}
+        className={styles.googleButton}
       >
         <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
           <g fill="none" fillRule="evenodd">

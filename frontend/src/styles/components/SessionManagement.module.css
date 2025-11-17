@@ -1,0 +1,95 @@
+/* SessionManagement specific styles - chỉ giữ lại những styles unique cho component này */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.sessionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sessionCard {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sessionCard.darkMode {
+  background-color: #1a1a1a;
+  border-color: #555;
+}
+
+.sessionInfo {
+  flex: 1;
+}
+
+.sessionHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.deviceIcon {
+  font-size: 20px;
+}
+
+.deviceName {
+  font-weight: 500;
+  color: #333;
+  font-size: 14px;
+}
+
+.deviceName.darkMode {
+  color: #f0f0f0;
+}
+
+.currentBadge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  background-color: #28a745;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.sessionMeta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.sessionMeta.darkMode {
+  color: #999;
+}
+
+.tipBox {
+  margin-top: 16px;
+  padding: 12px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.tipBox.darkMode {
+  background-color: #1a1a1a;
+  color: #999;
+}
+
+.container {
+  margin-top: 20px;
+}
+
+.loading {
+  margin-top: 20px;
+}

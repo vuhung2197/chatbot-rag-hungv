@@ -3,6 +3,10 @@ import axios from 'axios';
 import AvatarCropModal from './AvatarCropModal';
 import { useLanguage } from './LanguageContext';
 import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/AvatarUploader.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -138,42 +142,17 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
           darkMode={darkMode}
         />
       )}
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '16px',
-      padding: '20px',
-      backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
-      borderRadius: '12px',
-    }}>
+    <div className={styles.container}>
       {/* Avatar Preview */}
-      <div style={{
-        width: '120px',
-        height: '120px',
-        borderRadius: '50%',
-        overflow: 'hidden',
-        border: `3px solid ${darkMode ? '#555' : '#ddd'}`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-      }}>
+      <div className={`${styles.avatarPreview} ${darkMode ? styles.darkMode : ''}`}>
         {displayUrl ? (
           <img
             src={displayUrl}
             alt="Avatar"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
+            className={styles.avatarImage}
           />
         ) : (
-          <div style={{
-            fontSize: '48px',
-            color: darkMode ? '#666' : '#999',
-          }}>
+          <div className={styles.avatarPlaceholder}>
             👤
           </div>
         )}
@@ -185,24 +164,15 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
         type="file"
         accept="image/jpeg,image/jpg,image/png"
         onChange={handleFileSelect}
-        style={{ display: 'none' }}
+        className={styles.hiddenInput}
       />
 
       {/* Buttons */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className={styles.buttonGroup}>
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: darkMode ? '#7137ea' : '#7137ea',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: uploading ? 'not-allowed' : 'pointer',
-            fontSize: '14px',
-            opacity: uploading ? 0.6 : 1,
-          }}
+          className={`${buttons.button} ${buttons.buttonPrimary} ${darkMode ? buttons.darkMode : ''}`}
         >
           {preview ? t('avatar.selectAgain') : t('avatar.selectImage')}
         </button>
@@ -211,16 +181,7 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
           <button
             onClick={handleUpload}
             disabled={uploading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: darkMode ? '#28a745' : '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: uploading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              opacity: uploading ? 0.6 : 1,
-            }}
+            className={`${buttons.button} ${buttons.buttonSuccess} ${darkMode ? buttons.darkMode : ''}`}
           >
             {uploading ? t('avatar.uploading') : t('avatar.upload')}
           </button>
@@ -230,16 +191,7 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
           <button
             onClick={handleDelete}
             disabled={uploading}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: darkMode ? '#dc3545' : '#dc3545',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: uploading ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              opacity: uploading ? 0.6 : 1,
-            }}
+            className={`${buttons.button} ${buttons.buttonDanger} ${darkMode ? buttons.darkMode : ''}`}
           >
             {t('avatar.delete')}
           </button>
@@ -248,22 +200,13 @@ export default function AvatarUploader({ currentAvatarUrl, onAvatarUpdate, darkM
 
       {/* Error Message */}
       {error && (
-        <div style={{
-          color: '#dc3545',
-          fontSize: '14px',
-          textAlign: 'center',
-          marginTop: '8px',
-        }}>
+        <div className={messages.error}>
           {error}
         </div>
       )}
 
       {/* Info */}
-      <div style={{
-        fontSize: '12px',
-        color: darkMode ? '#999' : '#666',
-        textAlign: 'center',
-      }}>
+      <div className={`${shared.textSmall} ${darkMode ? shared.darkMode : ''} ${styles.infoText}`}>
         {t('avatar.fileInfo')}
       </div>
     </div>

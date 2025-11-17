@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/VerifyEmailPage.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -47,49 +51,16 @@ export default function VerifyEmailPage({ darkMode = false }) {
     }
   };
 
-  const bgColor = darkMode ? '#1a1a1a' : '#f5f5f5';
-  const textColor = darkMode ? '#f0f0f0' : '#333';
-  const cardBg = darkMode ? '#2d2d2d' : '#fff';
-  const borderColor = darkMode ? '#555' : '#ddd';
-  const successColor = '#28a745';
-  const errorColor = '#dc3545';
-
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: bgColor,
-      padding: '20px',
-    }}>
-      <div style={{
-        backgroundColor: cardBg,
-        borderRadius: '12px',
-        padding: '40px',
-        maxWidth: '500px',
-        width: '100%',
-        boxShadow: darkMode ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.1)',
-        textAlign: 'center',
-      }}>
+    <div className={styles.pageContainer}>
+      <div className={`${shared.card} ${darkMode ? shared.darkMode : ''} ${styles.card}`}>
         {status === 'verifying' && (
           <>
-            <div style={{
-              fontSize: '48px',
-              marginBottom: '20px',
-            }}>
-              ⏳
-            </div>
-            <h2 style={{
-              color: textColor,
-              marginBottom: '16px',
-            }}>
+            <div className={styles.statusIcon}>⏳</div>
+            <h2 className={`${shared.titleLarge} ${darkMode ? shared.darkMode : ''} ${styles.title}`}>
               Đang xác thực email...
             </h2>
-            <p style={{
-              color: darkMode ? '#999' : '#666',
-              fontSize: '14px',
-            }}>
+            <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.text}`}>
               {message}
             </p>
           </>
@@ -97,37 +68,16 @@ export default function VerifyEmailPage({ darkMode = false }) {
 
         {status === 'success' && (
           <>
-            <div style={{
-              fontSize: '64px',
-              marginBottom: '20px',
-            }}>
-              ✅
-            </div>
-            <h2 style={{
-              color: successColor,
-              marginBottom: '16px',
-            }}>
+            <div className={styles.statusIconLarge}>✅</div>
+            <h2 className={`${messages.success} ${styles.successTitle}`}>
               Xác thực thành công!
             </h2>
-            <p style={{
-              color: darkMode ? '#ccc' : '#666',
-              marginBottom: '24px',
-              lineHeight: '1.6',
-            }}>
+            <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.successText}`}>
               Email của bạn đã được xác thực thành công. Bạn sẽ được chuyển đến trang chủ trong giây lát...
             </p>
             <button
               onClick={() => window.location.href = '/'}
-              style={{
-                padding: '12px 24px',
-                backgroundColor: '#7137ea',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500',
-              }}
+              className={`${buttons.button} ${buttons.buttonPrimary}`}
             >
               Về trang chủ
             </button>
@@ -136,56 +86,23 @@ export default function VerifyEmailPage({ darkMode = false }) {
 
         {status === 'error' && (
           <>
-            <div style={{
-              fontSize: '64px',
-              marginBottom: '20px',
-            }}>
-              ❌
-            </div>
-            <h2 style={{
-              color: errorColor,
-              marginBottom: '16px',
-            }}>
+            <div className={styles.statusIconLarge}>❌</div>
+            <h2 className={`${messages.error} ${styles.errorTitle}`}>
               Xác thực thất bại
             </h2>
-            <p style={{
-              color: darkMode ? '#ccc' : '#666',
-              marginBottom: '24px',
-              lineHeight: '1.6',
-            }}>
+            <p className={`${shared.text} ${darkMode ? shared.darkMode : ''} ${styles.errorText}`}>
               {message}
             </p>
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              justifyContent: 'center',
-            }}>
+            <div className={styles.buttonGroup}>
               <button
                 onClick={() => window.location.href = '/'}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: '#7137ea',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                }}
+                className={`${buttons.button} ${buttons.buttonPrimary}`}
               >
                 Về trang chủ
               </button>
               <button
                 onClick={() => window.location.reload()}
-                style={{
-                  padding: '12px 24px',
-                  backgroundColor: 'transparent',
-                  color: textColor,
-                  border: `1px solid ${borderColor}`,
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                }}
+                className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
               >
                 Thử lại
               </button>

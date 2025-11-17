@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useToastContext } from '../context/ToastContext';
 import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import forms from '../styles/forms.module.css';
+import styles from '../styles/components/ConversationsList.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -153,13 +158,7 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
 
   if (loading) {
     return (
-      <div
-        style={{
-          padding: 20,
-          textAlign: 'center',
-          color: darkMode ? '#aaa' : '#666',
-        }}
-      >
+      <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''}`}>
         Đang tải...
       </div>
     );
@@ -167,13 +166,7 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
 
   if (error) {
     return (
-      <div
-        style={{
-          padding: 20,
-          textAlign: 'center',
-          color: '#ef4444',
-        }}
-      >
+      <div className={messages.error}>
         {error}
       </div>
     );
@@ -181,90 +174,36 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
 
   if (conversations.length === 0) {
     return (
-      <div
-        style={{
-          padding: 20,
-          textAlign: 'center',
-          color: darkMode ? '#aaa' : '#666',
-        }}
-      >
+      <div className={`${shared.emptyState} ${darkMode ? shared.darkMode : ''}`}>
         Chưa có cuộc trò chuyện nào
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        background: darkMode ? '#1e1e1e' : '#f9f9f9',
-        borderRight: `1px solid ${darkMode ? '#333' : '#ddd'}`,
-        height: '100%',
-        overflowY: 'auto',
-      }}
-    >
-      <div
-        style={{
-          padding: '16px',
-          borderBottom: `1px solid ${darkMode ? '#333' : '#ddd'}`,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <h3
-          style={{
-            margin: 0,
-            color: darkMode ? '#fff' : '#333',
-            fontSize: '1.1em',
-          }}
-        >
+    <div className={`${styles.container} ${darkMode ? styles.darkMode : ''}`}>
+      <div className={`${styles.header} ${darkMode ? styles.darkMode : ''}`}>
+        <h3 className={`${styles.headerTitle} ${darkMode ? styles.darkMode : ''}`}>
           💬 Cuộc trò chuyện
         </h3>
         <button
           onClick={fetchConversations}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            color: darkMode ? '#aaa' : '#666',
-            cursor: 'pointer',
-            fontSize: '1.2em',
-          }}
+          className={`${styles.refreshButton} ${darkMode ? styles.darkMode : ''}`}
           title="Làm mới"
         >
           🔄
         </button>
       </div>
 
-      <div style={{ padding: '8px' }}>
+      <div className={styles.conversationsList}>
         {conversations.map((conv) => (
           <div
             key={conv.conversation_id}
-            style={{
-              padding: '12px',
-              marginBottom: '8px',
-              borderRadius: 8,
-              background:
-                currentConversationId === conv.conversation_id
-                  ? darkMode
-                    ? '#333'
-                    : '#e8e8e8'
-                  : darkMode
-                  ? '#252525'
-                  : '#fff',
-              border: `1px solid ${
-                currentConversationId === conv.conversation_id
-                  ? '#7137ea'
-                  : darkMode
-                  ? '#333'
-                  : '#ddd'
-              }`,
-              cursor: 'pointer',
-              position: 'relative',
-            }}
+            className={`${styles.conversationItem} ${currentConversationId === conv.conversation_id ? styles.active : ''} ${darkMode ? styles.darkMode : ''}`}
             onClick={() => onSelectConversation && onSelectConversation(conv.conversation_id)}
           >
             {editingId === conv.conversation_id ? (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div className={styles.editContainer}>
                 <input
                   type="text"
                   value={editTitle}
@@ -279,30 +218,14 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
                     }
                   }}
                   autoFocus
-                  style={{
-                    flex: 1,
-                    padding: '4px 8px',
-                    border: `1px solid ${darkMode ? '#555' : '#ccc'}`,
-                    borderRadius: 4,
-                    background: darkMode ? '#1e1e1e' : '#fff',
-                    color: darkMode ? '#fff' : '#333',
-                    fontSize: '0.9em',
-                  }}
+                  className={`${forms.input} ${darkMode ? forms.darkMode : ''}`}
                 />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleRename(conv.conversation_id, conv.conversation_title);
                   }}
-                  style={{
-                    background: '#7137ea',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '4px 8px',
-                    cursor: 'pointer',
-                    fontSize: '0.85em',
-                  }}
+                  className={`${buttons.button} ${buttons.buttonSmall} ${buttons.buttonSuccess}`}
                 >
                   ✓
                 </button>
@@ -312,120 +235,53 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
                     setEditingId(null);
                     setEditTitle('');
                   }}
-                  style={{
-                    background: '#666',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: 4,
-                    padding: '4px 8px',
-                    cursor: 'pointer',
-                    fontSize: '0.85em',
-                  }}
+                  className={`${buttons.button} ${buttons.buttonSmall} ${buttons.buttonSecondary}`}
                 >
                   ✕
                 </button>
               </div>
             ) : (
               <>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    marginBottom: 4,
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        color: darkMode ? '#fff' : '#333',
-                        fontSize: '0.95em',
-                        marginBottom: 4,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
+                <div className={styles.conversationHeader}>
+                  <div className={styles.conversationTitle}>
+                    <div className={`${styles.titleText} ${darkMode ? styles.darkMode : ''}`}>
                       {conv.is_pinned && '📌 '}
                       {conv.conversation_title || 'Cuộc trò chuyện không có tiêu đề'}
                     </div>
-                    <div
-                      style={{
-                        fontSize: '0.8em',
-                        color: darkMode ? '#888' : '#666',
-                      }}
-                    >
+                    <div className={`${styles.meta} ${darkMode ? styles.darkMode : ''}`}>
                       {conv.message_count} tin nhắn • {formatDate(conv.last_message_at)}
                     </div>
                   </div>
                 </div>
 
                 <div
-                  style={{
-                    display: 'flex',
-                    gap: 4,
-                    marginTop: 8,
-                    justifyContent: 'flex-end',
-                  }}
+                  className={styles.actions}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
                     onClick={() => startEdit(conv.conversation_id, conv.conversation_title)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: darkMode ? '#aaa' : '#666',
-                      cursor: 'pointer',
-                      fontSize: '0.9em',
-                      padding: '2px 6px',
-                    }}
+                    className={`${styles.actionButton} ${darkMode ? styles.darkMode : ''}`}
                     title="Đổi tên"
                   >
                     ✏️
                   </button>
                   <button
                     onClick={() => handlePin(conv.conversation_id, conv.is_pinned)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: conv.is_pinned
-                        ? '#7137ea'
-                        : darkMode
-                        ? '#aaa'
-                        : '#666',
-                      cursor: 'pointer',
-                      fontSize: '0.9em',
-                      padding: '2px 6px',
-                    }}
+                    className={`${styles.actionButton} ${conv.is_pinned ? styles.pinned : ''} ${darkMode ? styles.darkMode : ''}`}
                     title={conv.is_pinned ? 'Bỏ ghim' : 'Ghim'}
                   >
                     📌
                   </button>
                   <button
                     onClick={() => handleArchive(conv.conversation_id, conv.is_archived)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: darkMode ? '#aaa' : '#666',
-                      cursor: 'pointer',
-                      fontSize: '0.9em',
-                      padding: '2px 6px',
-                    }}
+                    className={`${styles.actionButton} ${darkMode ? styles.darkMode : ''}`}
                     title={conv.is_archived ? 'Bỏ lưu trữ' : 'Lưu trữ'}
                   >
                     {conv.is_archived ? '📦' : '📁'}
                   </button>
                   <button
                     onClick={() => handleDelete(conv.conversation_id)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#ef4444',
-                      cursor: 'pointer',
-                      fontSize: '0.9em',
-                      padding: '2px 6px',
-                    }}
+                    className={`${styles.actionButton} ${styles.danger}`}
                     title="Xóa"
                   >
                     🗑️

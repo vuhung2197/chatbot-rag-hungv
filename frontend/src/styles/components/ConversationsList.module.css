@@ -1,0 +1,175 @@
+/* ConversationsList specific styles - chỉ giữ lại những styles unique cho component này */
+
+.container {
+  background: #f9f9f9;
+  border-right: 1px solid #ddd;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.container.darkMode {
+  background: #1e1e1e;
+  border-right-color: #333;
+}
+
+.header {
+  padding: 16px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header.darkMode {
+  border-bottom-color: #333;
+}
+
+.headerTitle {
+  margin: 0;
+  color: #333;
+  font-size: 1.1em;
+}
+
+.headerTitle.darkMode {
+  color: #fff;
+}
+
+.refreshButton {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 0;
+}
+
+.refreshButton.darkMode {
+  color: #aaa;
+}
+
+.refreshButton:hover {
+  color: #333;
+}
+
+.refreshButton.darkMode:hover {
+  color: #fff;
+}
+
+.conversationsList {
+  padding: 8px;
+}
+
+.conversationItem {
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.conversationItem.darkMode {
+  background: #252525;
+  border-color: #333;
+}
+
+.conversationItem.active {
+  background: #e8e8e8;
+  border-color: #7137ea;
+}
+
+.conversationItem.active.darkMode {
+  background: #333;
+}
+
+.conversationItem:hover {
+  background: #f5f5f5;
+}
+
+.conversationItem.darkMode:hover {
+  background: #2a2a2a;
+}
+
+.editContainer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.conversationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+
+.conversationTitle {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleText {
+  font-weight: bold;
+  color: #333;
+  font-size: 0.95em;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titleText.darkMode {
+  color: #fff;
+}
+
+.meta {
+  font-size: 0.8em;
+  color: #666;
+}
+
+.meta.darkMode {
+  color: #888;
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+
+.actionButton {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.9em;
+  padding: 2px 6px;
+  transition: color 0.2s ease;
+}
+
+.actionButton.darkMode {
+  color: #aaa;
+}
+
+.actionButton:hover {
+  color: #333;
+}
+
+.actionButton.darkMode:hover {
+  color: #fff;
+}
+
+.actionButton.pinned {
+  color: #7137ea;
+}
+
+.actionButton.danger {
+  color: #ef4444;
+}
+
+.actionButton.danger:hover {
+  color: #dc2626;
+}

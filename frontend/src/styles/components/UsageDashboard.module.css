@@ -1,0 +1,59 @@
+/* UsageDashboard specific styles - chỉ giữ lại những styles unique cho component này */
+
+.periodSelector {
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+
+.statsCard {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  margin-top: 16px;
+}
+
+.statsCard.darkMode {
+  background-color: #1a1a1a;
+  border-color: #555;
+}
+
+.statsTitle {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.statsTitle.darkMode {
+  color: #f0f0f0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.statItem {
+  /* Container for stat items */
+}
+
+.statLabel {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.statLabel.darkMode {
+  color: #999;
+}
+
+.statValue {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.statValue.darkMode {
+  color: #f0f0f0;
+}

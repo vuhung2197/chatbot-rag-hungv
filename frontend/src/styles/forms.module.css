@@ -1,0 +1,124 @@
+/* ============================================
+   FORMS MODULE - Styles cho forms và inputs
+   ============================================ */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formRow {
+  display: flex;
+  gap: 12px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.label.darkMode {
+  color: #f0f0f0;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #333;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.input.darkMode {
+  background-color: #1a1a1a;
+  border-color: #444;
+  color: #f0f0f0;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #7137ea;
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #333;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: inherit;
+  min-height: 100px;
+}
+
+.textarea.darkMode {
+  background-color: #1a1a1a;
+  border-color: #444;
+  color: #f0f0f0;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #7137ea;
+}
+
+.select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #fff;
+  color: #333;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.select.darkMode {
+  background-color: #1a1a1a;
+  border-color: #444;
+  color: #f0f0f0;
+}
+
+.select:focus {
+  outline: none;
+  border-color: #7137ea;
+}
+
+/* Form Validation */
+.errorText {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #dc3545;
+}
+
+.hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.hint.darkMode {
+  color: #999;
+}
+

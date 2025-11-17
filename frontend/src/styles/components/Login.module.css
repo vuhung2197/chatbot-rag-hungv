@@ -1,0 +1,83 @@
+/* Login specific styles - chỉ giữ lại những styles unique cho component này */
+
+.form {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #ccc;
+}
+
+.passwordActions {
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.forgotPassword {
+  background: none;
+  border: none;
+  color: #7137ea;
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.forgotPassword:hover {
+  color: #5a2bb8;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0;
+  color: #666;
+}
+
+.dividerLine {
+  flex: 1;
+  height: 1px;
+  background: #ddd;
+}
+
+.dividerText {
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.googleButton {
+  padding: 8px 16px;
+  background: #fff;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+}
+
+.googleButton:hover {
+  background: #f9f9f9;
+}
+
+.backLink {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.backLinkButton {
+  background: none;
+  border: none;
+  color: #7137ea;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.backLinkButton:hover {
+  color: #5a2bb8;
+}

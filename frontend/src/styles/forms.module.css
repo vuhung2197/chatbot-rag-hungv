@@ -21,35 +21,42 @@
   display: block;
   margin-bottom: 8px;
   font-size: 14px;
-  color: #333;
-  font-weight: 500;
+  color: #1a1a1a;
+  font-weight: 600;
 }
 
 .label.darkMode {
-  color: #f0f0f0;
+  color: #e8e8e8;
 }
 
 .input {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 12px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 14px;
-  background-color: #fff;
-  color: #333;
+  background-color: #ffffff;
+  color: #1a1a1a;
   box-sizing: border-box;
   font-family: inherit;
+  transition: all 0.2s ease;
 }
 
 .input.darkMode {
-  background-color: #1a1a1a;
-  border-color: #444;
-  color: #f0f0f0;
+  background-color: #252525;
+  border-color: #3a3a3a;
+  color: #e8e8e8;
 }
 
 .input:focus {
   outline: none;
   border-color: #7137ea;
+  box-shadow: 0 0 0 3px rgba(113, 55, 234, 0.1);
+}
+
+.input.darkMode:focus {
+  border-color: #9d6ff5;
+  box-shadow: 0 0 0 3px rgba(157, 111, 245, 0.2);
 }
 
 .input:disabled {
@@ -59,50 +66,65 @@
 
 .textarea {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 12px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 14px;
-  background-color: #fff;
-  color: #333;
+  background-color: #ffffff;
+  color: #1a1a1a;
   box-sizing: border-box;
   resize: vertical;
   font-family: inherit;
   min-height: 100px;
+  transition: all 0.2s ease;
 }
 
 .textarea.darkMode {
-  background-color: #1a1a1a;
-  border-color: #444;
-  color: #f0f0f0;
+  background-color: #252525;
+  border-color: #3a3a3a;
+  color: #e8e8e8;
 }
 
 .textarea:focus {
   outline: none;
   border-color: #7137ea;
+  box-shadow: 0 0 0 3px rgba(113, 55, 234, 0.1);
+}
+
+.textarea.darkMode:focus {
+  border-color: #9d6ff5;
+  box-shadow: 0 0 0 3px rgba(157, 111, 245, 0.2);
 }
 
 .select {
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 12px 14px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
   font-size: 14px;
-  background-color: #fff;
-  color: #333;
+  background-color: #ffffff;
+  color: #1a1a1a;
   box-sizing: border-box;
   font-family: inherit;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .select.darkMode {
-  background-color: #1a1a1a;
-  border-color: #444;
-  color: #f0f0f0;
+  background-color: #252525;
+  border-color: #3a3a3a;
+  color: #e8e8e8;
 }
 
 .select:focus {
   outline: none;
   border-color: #7137ea;
+  box-shadow: 0 0 0 3px rgba(113, 55, 234, 0.1);
+}
+
+.select.darkMode:focus {
+  border-color: #9d6ff5;
+  box-shadow: 0 0 0 3px rgba(157, 111, 245, 0.2);
 }
 
 /* Form Validation */

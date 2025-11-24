@@ -1,0 +1,99 @@
+/* UpgradePrompt specific styles */
+
+.prompt {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+}
+
+.promptWarning {
+  background-color: #fff3e0;
+  border-left-color: #ff9800;
+}
+
+.promptWarning.darkMode {
+  background-color: #4a3a1f;
+  border-left-color: #ffb74d;
+}
+
+.promptCritical {
+  background-color: #fee;
+  border-left-color: #dc3545;
+}
+
+.promptCritical.darkMode {
+  background-color: #4a1f1f;
+  border-left-color: #ff6b6b;
+}
+
+.icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.content {
+  flex: 1;
+}
+
+.title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.title.darkMode {
+  color: #f0f0f0;
+}
+
+.promptWarning .title {
+  color: #856404;
+}
+
+.promptWarning.darkMode .title {
+  color: #ffb74d;
+}
+
+.promptCritical .title {
+  color: #721c24;
+}
+
+.promptCritical.darkMode .title {
+  color: #ff6b6b;
+}
+
+.message {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.message.darkMode {
+  color: #ccc;
+}
+
+.promptWarning .message {
+  color: #856404;
+}
+
+.promptWarning.darkMode .message {
+  color: #ffb74d;
+}
+
+.promptCritical .message {
+  color: #721c24;
+}
+
+.promptCritical.darkMode .message {
+  color: #ff6b6b;
+}
+
+.upgradeButton {
+  margin-top: 8px;
+}
+

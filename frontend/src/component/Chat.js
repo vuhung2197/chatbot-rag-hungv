@@ -5,20 +5,16 @@ import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
 import ConversationsList from './ConversationsList';
 import axios from 'axios';
-import { useToastContext } from '../context/ToastContext';
 import { useConfirmContext } from '../context/ConfirmContext';
 import styles from '../styles/components/Chat.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function Chat({ darkMode = false }) {
-  const { error: showError, success: showSuccess } = useToastContext();
   const { confirm } = useConfirmContext();
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [questionHistory, setQuestionHistory] = useState([]);
-  const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
   const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
@@ -108,25 +104,6 @@ export default function Chat({ darkMode = false }) {
     const userId = localStorage.getItem('userId');
     localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
   }, [history]);
-
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        const res = await axios.get(`${API_URL}/chat/history`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const data = res.data;
-        setQuestionHistory(data);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Lỗi khi lấy lịch sử câu hỏi:', err);
-      }
-    }
-
-    fetchHistory();
-  }, []);
 
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
@@ -262,12 +239,6 @@ export default function Chat({ darkMode = false }) {
           >
             💬 Cuộc trò chuyện
           </button>
-          <button
-            onClick={() => setShowRecentModal(true)}
-            className={`${styles.headerButton} ${styles.headerButtonDefault}`}
-          >
-            📚 Lịch sử
-          </button>
           
           <button
             onClick={() => setUseAdvancedRAG(!useAdvancedRAG)}
@@ -292,15 +263,20 @@ export default function Chat({ darkMode = false }) {
               onClick={async () => {
                 const confirmed = await confirm({
                   title: 'Xác nhận xóa',
-                  message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?',
+                  message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử hiện tại không? (Không ảnh hưởng đến danh sách cuộc trò chuyện)',
                   confirmText: 'Xóa',
                   cancelText: 'Hủy',
                 });
                 if (confirmed) {
                   setHistory([]);
+                  setCurrentConversationId(null); // Reset conversation để tránh tự động load lại
+                  const userId = localStorage.getItem('userId');
+                  if (userId) {
+                    localStorage.removeItem(`chatbot_history_${userId}`);
+                  }
                   localStorage.removeItem('chatbot_history');
                   localStorage.removeItem('chatbot_cache');
-                  localStorage.removeItem('chatbot_selected_model');
+                  // Giữ lại chatbot_selected_model để không mất model đã chọn
                 }
               }}
               className={`${styles.headerButton} ${styles.headerButtonDanger}`}
@@ -479,100 +455,6 @@ export default function Chat({ darkMode = false }) {
           </div>
         </div>
         </div>
-
-        {/* Recent Questions Modal */}
-        {showRecentModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.recentModal}>
-            <h2 className={styles.recentModalTitle}>
-              📚 Lịch sử câu hỏi
-            </h2>
-
-            <button
-              onClick={() => setShowRecentModal(false)}
-              className={styles.recentModalClose}
-            >
-              ✕ Đóng
-            </button>
-
-            <div className={styles.recentModalList}>
-              {questionHistory.map((item, index) => (
-                <div
-                  key={index}
-                  className={styles.recentModalItem}
-                >
-                  <div className={styles.recentModalItemDate}>
-                    <span className={styles.recentModalItemDateText}>
-                      🗓 {new Date(item.created_at).toLocaleString('vi-VN')}
-                    </span>
-                  </div>
-
-                  <div className={styles.recentModalItemQuestion}>
-                    <b>Bạn:</b> {item.question}
-                  </div>
-
-                  <div className={styles.recentModalItemAnswer}>
-                    <b>Bot:</b>
-                    <div className={styles.recentModalItemAnswerContent}>
-                      <ReactMarkdown>{item.bot_reply}</ReactMarkdown>
-                    </div>
-                  </div>
-
-                  <div className={styles.recentModalItemButtons}>
-                    <button
-                      onClick={() => {
-                        setInput(item.question);
-                        setShowRecentModal(false);
-                      }}
-                      className={styles.recentModalItemButton}
-                    >
-                      🔁 Gửi lại câu hỏi này
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        const confirmed = await confirm({
-                          title: 'Xác nhận xóa',
-                          message: 'Bạn có chắc chắn muốn xóa câu hỏi này?',
-                          confirmText: 'Xóa',
-                          cancelText: 'Hủy',
-                        });
-                        if (!confirmed) return;
-                        
-                        try {
-                          const res = await axios.delete(
-                            `${API_URL}/chat/history/${item.id}`,
-                            {
-                              headers: {
-                                Authorization: `Bearer ${localStorage.getItem('token')}`,
-                              },
-                            }
-                          );
-                          if (res.status === 200) {
-                            setQuestionHistory(prev =>
-                              prev.filter(q => q.id !== item.id)
-                            );
-                            showSuccess('Đã xóa câu hỏi thành công!');
-                          } else {
-                            showError('Xóa thất bại!');
-                          }
-                        } catch (err) {
-                          // eslint-disable-next-line no-console
-                          console.error('Lỗi khi xóa câu hỏi:', err);
-                          showError('Đã xảy ra lỗi khi xóa!');
-                        }
-                      }}
-                      className={`${styles.recentModalItemButton} ${styles.recentModalItemButtonDanger}`}
-                    >
-                      🗑 Xóa
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        )}
 
         {/* Model Selection Modal */}
         {showModelPopup && (

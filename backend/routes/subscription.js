@@ -6,6 +6,7 @@ import {
   upgradeSubscription,
   cancelSubscription,
   renewSubscription,
+  getInvoices,
 } from '../controllers/subscriptionController.js';
 
 const router = express.Router();
@@ -15,6 +16,7 @@ router.get('/tiers', getTiers);
 
 // Protected: User subscription management
 router.get('/current', verifyToken, getCurrentSubscription);
+router.get('/invoices', verifyToken, getInvoices);
 router.post('/upgrade', verifyToken, upgradeSubscription);
 router.post('/cancel', verifyToken, cancelSubscription);
 router.post('/renew', verifyToken, renewSubscription);

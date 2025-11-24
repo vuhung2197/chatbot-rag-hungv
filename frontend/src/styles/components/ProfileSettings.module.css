@@ -4,16 +4,16 @@
   max-width: 800px;
   margin: 0 auto;
   padding: 24px;
-  background-color: #fff;
-  color: #333;
+  background-color: #ffffff;
+  color: #1a1a1a;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .container.darkMode {
-  background-color: #1a1a1a;
-  color: #f0f0f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  background-color: #1e1e1e;
+  color: #e8e8e8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
 .header {
@@ -22,22 +22,22 @@
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 2px solid #e8e8e8;
 }
 
 .header.darkMode {
-  border-bottom-color: #444;
+  border-bottom-color: #3a3a3a;
 }
 
 .title {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
 }
 
 .title.darkMode {
-  color: #f0f0f0;
+  color: #ffffff;
 }
 
 .closeButton {
@@ -45,26 +45,29 @@
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #333;
+  color: #666;
   padding: 0;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
+  border-radius: 6px;
+  transition: all 0.2s ease;
 }
 
 .closeButton.darkMode {
-  color: #f0f0f0;
+  color: #999;
 }
 
 .closeButton:hover {
-  color: #666;
+  background-color: #f0f0f0;
+  color: #333;
 }
 
 .closeButton.darkMode:hover {
-  color: #aaa;
+  background-color: #3a3a3a;
+  color: #ffffff;
 }
 
 .section {
@@ -74,22 +77,25 @@
 .sectionTitle {
   margin-bottom: 16px;
   font-size: 18px;
-  color: #333;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .sectionTitle.darkMode {
-  color: #f0f0f0;
+  color: #ffffff;
 }
 
 .accountInfo {
   padding: 16px;
-  background-color: #f9f9f9;
-  border-radius: 6px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
   font-size: 14px;
+  border: 1px solid #e8e8e8;
 }
 
 .accountInfo.darkMode {
-  background-color: #2d2d2d;
+  background-color: #2a2a2a;
+  border-color: #3a3a3a;
 }
 
 .infoRow {
@@ -114,4 +120,8 @@
 .error {
   padding: 40px;
   text-align: center;
+}
+
+.actionSection {
+  margin: 20px 0;
 }

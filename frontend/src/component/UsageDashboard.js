@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import UsageLimits from './UsageLimits';
+import UsageChart from './UsageChart';
 import shared from '../styles/shared.module.css';
 import forms from '../styles/forms.module.css';
 import messages from '../styles/messages.module.css';
@@ -109,6 +110,15 @@ export default function UsageDashboard({ darkMode = false, refreshTrigger }) {
           <option value="month">{t('usage.last12Months')}</option>
         </select>
       </div>
+
+      {/* Usage Charts */}
+      {stats.length > 0 && (
+        <UsageChart 
+          stats={stats} 
+          period={period} 
+          darkMode={darkMode} 
+        />
+      )}
 
       {/* Statistics Summary */}
       {stats.length > 0 && (

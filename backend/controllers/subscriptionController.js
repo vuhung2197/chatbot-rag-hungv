@@ -292,3 +292,61 @@ export async function renewSubscription(req, res) {
   }
 }
 
+/**
+ * Get billing history (invoices) for current user
+ * Note: For now, we'll return subscription history as "invoices"
+ * In production, this should integrate with Stripe/PayPal
+ */
+export async function getInvoices(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const [subscriptions] = await pool.execute(
+      `SELECT 
+        us.*,
+        st.name as tier_name,
+        st.display_name as tier_display_name,
+        st.price_monthly,
+        st.price_yearly,
+        st.features
+       FROM user_subscriptions us
+       JOIN subscription_tiers st ON us.tier_id = st.id
+       WHERE us.user_id = ?
+       ORDER BY us.created_at DESC
+       LIMIT 50`,
+      [userId]
+    );
+
+    // Format as invoices
+    const invoices = subscriptions.map((sub) => {
+      const price = sub.billing_cycle === 'yearly' 
+        ? (sub.price_yearly || sub.price_monthly * 12)
+        : sub.price_monthly;
+
+      return {
+        id: sub.id,
+        invoice_number: `INV-${sub.id.toString().padStart(6, '0')}`,
+        tier_name: sub.tier_name,
+        tier_display_name: sub.tier_display_name,
+        amount: Number(price) || 0,
+        billing_cycle: sub.billing_cycle,
+        status: sub.status,
+        period_start: sub.current_period_start,
+        period_end: sub.current_period_end,
+        created_at: sub.created_at,
+        paid_at: sub.status === 'active' ? sub.created_at : null,
+        stripe_subscription_id: sub.stripe_subscription_id,
+        stripe_customer_id: sub.stripe_customer_id
+      };
+    });
+
+    res.json({ invoices });
+  } catch (error) {
+    console.error('Error getting invoices:', error);
+    res.status(500).json({ message: 'Error getting billing history' });
+  }
+}
+

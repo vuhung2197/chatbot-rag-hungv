@@ -17,6 +17,7 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [upgrading, setUpgrading] = useState(null);
+  const [billingCycle, setBillingCycle] = useState('monthly'); // 'monthly' or 'yearly'
 
   useEffect(() => {
     loadTiers();
@@ -66,7 +67,7 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/subscription/upgrade`,
-        { tierName, billingCycle: 'monthly' },
+        { tierName, billingCycle },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -141,6 +142,31 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
     return targetOrder > currentOrder; // Only allow upgrade to higher tier
   };
 
+  const getPrice = (tier) => {
+    if (billingCycle === 'yearly' && tier.price_yearly) {
+      return Number(tier.price_yearly);
+    }
+    return Number(tier.price_monthly) || 0;
+  };
+
+  const getPriceLabel = (tier) => {
+    if (billingCycle === 'yearly' && tier.price_yearly) {
+      return t('subscription.year') || '/year';
+    }
+    return `/${t('subscription.month')}`;
+  };
+
+  const getYearlyDiscount = (tier) => {
+    if (!tier.price_yearly || !tier.price_monthly) return null;
+    const monthlyTotal = Number(tier.price_monthly) * 12;
+    const yearlyPrice = Number(tier.price_yearly);
+    if (yearlyPrice < monthlyTotal) {
+      const discount = ((monthlyTotal - yearlyPrice) / monthlyTotal) * 100;
+      return Math.round(discount);
+    }
+    return null;
+  };
+
   return (
     <div className={`${shared.container} ${darkMode ? shared.darkMode : ''}`}>
       <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>
@@ -152,6 +178,27 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
           {error}
         </div>
       )}
+
+      {/* Billing Cycle Selector */}
+      <div className={styles.billingCycleSelector}>
+        <button
+          onClick={() => setBillingCycle('monthly')}
+          className={`${styles.cycleButton} ${billingCycle === 'monthly' ? styles.active : ''} ${darkMode ? styles.darkMode : ''}`}
+        >
+          {t('subscription.monthly') || 'Monthly'}
+        </button>
+        <button
+          onClick={() => setBillingCycle('yearly')}
+          className={`${styles.cycleButton} ${billingCycle === 'yearly' ? styles.active : ''} ${darkMode ? styles.darkMode : ''}`}
+        >
+          {t('subscription.yearly') || 'Yearly'}
+          {tiers.some(t => getYearlyDiscount(t)) && (
+            <span className={styles.discountBadge}>
+              {t('subscription.save') || 'Save'} {Math.max(...tiers.map(t => getYearlyDiscount(t) || 0))}%
+            </span>
+          )}
+        </button>
+      </div>
 
       <div className={styles.plansGrid}>
         {tiers.map((tier) => {
@@ -178,14 +225,24 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
               </h4>
 
               <div className={styles.priceContainer}>
-                {tier.price_monthly > 0 ? (
+                {getPrice(tier) > 0 ? (
                   <>
                     <span className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
-                      ${tier.price_monthly}
+                      ${getPrice(tier).toFixed(2)}
                     </span>
                     <span className={`${styles.priceLabel} ${darkMode ? styles.darkMode : ''}`}>
-                      /{t('subscription.month')}
+                      {getPriceLabel(tier)}
                     </span>
+                    {billingCycle === 'yearly' && getYearlyDiscount(tier) && (
+                      <div className={styles.yearlyDiscount}>
+                        {t('subscription.save') || 'Save'} {getYearlyDiscount(tier)}%
+                      </div>
+                    )}
+                    {billingCycle === 'yearly' && tier.price_monthly > 0 && (
+                      <div className={`${styles.monthlyEquivalent} ${darkMode ? styles.darkMode : ''}`}>
+                        ${(getPrice(tier) / 12).toFixed(2)}/{t('subscription.month')}
+                      </div>
+                    )}
                   </>
                 ) : (
                   <span className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>

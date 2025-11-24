@@ -1,5 +1,68 @@
 /* SubscriptionPlans specific styles - chỉ giữ lại những styles unique cho component này */
 
+.billingCycleSelector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.billingCycleSelector.darkMode {
+  background-color: #2a2a2a;
+}
+
+.cycleButton {
+  padding: 8px 16px;
+  border: none;
+  background-color: transparent;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.cycleButton.darkMode {
+  color: #999;
+}
+
+.cycleButton:hover {
+  color: #333;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.cycleButton.darkMode:hover {
+  color: #f0f0f0;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.cycleButton.active {
+  background-color: #fff;
+  color: #333;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cycleButton.active.darkMode {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.discountBadge {
+  margin-left: 6px;
+  padding: 2px 6px;
+  background-color: #28a745;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
 .plansGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -110,6 +173,23 @@
 }
 
 .priceLabel.darkMode {
+  color: #999;
+}
+
+.yearlyDiscount {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #28a745;
+}
+
+.monthlyEquivalent {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+}
+
+.monthlyEquivalent.darkMode {
   color: #999;
 }
 

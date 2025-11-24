@@ -7,7 +7,8 @@ import SessionManagement from './SessionManagement';
 import OAuthProviders from './OAuthProviders';
 import SubscriptionStatus from './SubscriptionStatus';
 import SubscriptionPlans from './SubscriptionPlans';
-import UsageDashboard from './UsageDashboard';
+import BillingHistoryModal from './BillingHistoryModal';
+import UsageTrendsModal from './UsageTrendsModal';
 import { useLanguage } from './LanguageContext';
 import shared from '../styles/shared.module.css';
 import forms from '../styles/forms.module.css';
@@ -27,6 +28,8 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   const containerRef = useRef(null);
   const [subscriptionRefreshTrigger, setSubscriptionRefreshTrigger] = useState(0);
   const [usageRefreshTrigger, setUsageRefreshTrigger] = useState(0);
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showUsageTrendsModal, setShowUsageTrendsModal] = useState(false);
 
   // Form fields
   const [displayName, setDisplayName] = useState('');
@@ -333,8 +336,38 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
           refreshTrigger={subscriptionRefreshTrigger}
         />
 
-        {/* Usage Dashboard */}
-        <UsageDashboard darkMode={darkMode} refreshTrigger={usageRefreshTrigger} />
+        {/* Billing History Button */}
+        <div className={styles.actionSection}>
+          <button
+            onClick={() => setShowBillingModal(true)}
+            className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
+          >
+            💳 {t('subscription.billingHistory') || 'View Billing History'}
+          </button>
+        </div>
+
+        {/* Usage Trends Button */}
+        <div className={styles.actionSection}>
+          <button
+            onClick={() => setShowUsageTrendsModal(true)}
+            className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
+          >
+            📈 {t('usage.usageTrends') || 'View Usage Trends'}
+          </button>
+        </div>
+
+        {/* Modals */}
+        <BillingHistoryModal
+          darkMode={darkMode}
+          isOpen={showBillingModal}
+          onClose={() => setShowBillingModal(false)}
+        />
+        <UsageTrendsModal
+          darkMode={darkMode}
+          isOpen={showUsageTrendsModal}
+          onClose={() => setShowUsageTrendsModal(false)}
+          refreshTrigger={usageRefreshTrigger}
+        />
 
         {/* Subscription Plans */}
         <SubscriptionPlans 

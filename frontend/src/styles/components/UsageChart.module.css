@@ -1,0 +1,152 @@
+/* UsageChart specific styles */
+
+.chartContainer {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  margin-top: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.chartContainer.darkMode {
+  background-color: #1a1a1a;
+  border-color: #444;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.chartTitle {
+  margin: 0 0 24px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.chartTitle.darkMode {
+  color: #f0f0f0;
+}
+
+.chartSection {
+  margin-bottom: 32px;
+}
+
+.chartSection:last-child {
+  margin-bottom: 0;
+}
+
+.chartLabel {
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+}
+
+.chartLabel.darkMode {
+  color: #999;
+}
+
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 200px;
+  padding: 10px 0;
+  border-bottom: 2px solid #e0e0e0;
+  position: relative;
+}
+
+.barChart.darkMode {
+  border-bottom-color: #444;
+}
+
+.barItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  position: relative;
+}
+
+.barWrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  min-height: 0;
+}
+
+.bar {
+  width: 100%;
+  min-height: 4px;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.bar:hover {
+  opacity: 0.8;
+  transform: scaleY(1.05);
+}
+
+.barQueries {
+  background: linear-gradient(to top, #7137ea, #9d6ff5);
+}
+
+.barFiles {
+  background: linear-gradient(to top, #28a745, #5cb85c);
+}
+
+.barSize {
+  background: linear-gradient(to top, #17a2b8, #5bc0de);
+}
+
+.barTokens {
+  background: linear-gradient(to top, #ffc107, #ffd54f);
+}
+
+.barLabel {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.barLabel.darkMode {
+  color: #999;
+}
+
+.barValue {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.barValue.darkMode {
+  color: #f0f0f0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .barChart {
+    height: 150px;
+    gap: 4px;
+  }
+
+  .barLabel {
+    font-size: 10px;
+  }
+
+  .barValue {
+    font-size: 9px;
+  }
+}
+

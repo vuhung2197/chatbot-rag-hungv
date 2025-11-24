@@ -1,0 +1,52 @@
+/* ============================================
+   DARK MODE UTILITIES
+   ============================================ */
+
+/* Helper để apply dark mode cho bất kỳ element nào */
+.darkMode {
+  /* Các styles sẽ được override bởi các module cụ thể */
+}
+
+/* Background Colors */
+.bgLight {
+  background-color: #fff;
+}
+
+.bgLight.darkMode {
+  background-color: #1a1a1a;
+}
+
+.bgSecondary {
+  background-color: #f9f9f9;
+}
+
+.bgSecondary.darkMode {
+  background-color: #2d2d2d;
+}
+
+/* Text Colors */
+.textLight {
+  color: #333;
+}
+
+.textLight.darkMode {
+  color: #f0f0f0;
+}
+
+.textSecondary {
+  color: #666;
+}
+
+.textSecondary.darkMode {
+  color: #999;
+}
+
+/* Border Colors */
+.borderLight {
+  border-color: #ddd;
+}
+
+.borderLight.darkMode {
+  border-color: #555;
+}
+

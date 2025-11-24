@@ -1,0 +1,77 @@
+/* ============================================
+   MESSAGES MODULE - Error, Success, Info, Warning
+   ============================================ */
+
+.message {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Error Message */
+.error {
+  padding: 12px;
+  background-color: #fee;
+  color: #c33;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #fcc;
+}
+
+.error.darkMode {
+  background-color: #4a1f1f;
+  color: #ff6b6b;
+  border-color: #6b2b2b;
+}
+
+/* Success Message */
+.success {
+  padding: 12px;
+  background-color: #efe;
+  color: #3c3;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #cfc;
+}
+
+.success.darkMode {
+  background-color: #1f4a1f;
+  color: #6bff6b;
+  border-color: #2b6b2b;
+}
+
+/* Info Message */
+.info {
+  padding: 12px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.info.darkMode {
+  background-color: #2d3a4a;
+  color: #90caf9;
+}
+
+/* Warning Message */
+.warning {
+  padding: 12px;
+  background-color: #fff3cd;
+  color: #856404;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  border: 1px solid #ffeaa7;
+}
+
+.warning.darkMode {
+  background-color: #4a3a1f;
+  color: #ffc107;
+  border-color: #6b5a2b;
+}
+

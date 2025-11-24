@@ -1,0 +1,64 @@
+/* UsageLimits specific styles - chỉ giữ lại những styles unique cho component này */
+
+.section {
+  margin-bottom: 16px;
+}
+
+.sectionRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressBar.darkMode {
+  background-color: #333;
+}
+
+.progressFill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progressFill.green {
+  background-color: #28a745;
+}
+
+.progressFill.yellow {
+  background-color: #ffc107;
+}
+
+.progressFill.red {
+  background-color: #dc3545;
+}
+
+.warning {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.warning.yellow {
+  color: #ffc107;
+}
+
+.warning.red {
+  color: #dc3545;
+}
+
+.advancedRagSection {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #ddd;
+}
+
+.advancedRagSection.darkMode {
+  border-top-color: #555;
+}

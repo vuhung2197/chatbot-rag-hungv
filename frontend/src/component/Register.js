@@ -1,10 +1,17 @@
 // 📁 src/components/Register.jsx
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useToastContext } from '../context/ToastContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/Register.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 export default function Register({ onRegister }) {
+  const { success: showSuccess } = useToastContext();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,7 +29,7 @@ export default function Register({ onRegister }) {
       });
       const data = res.data;
       if (res.status === 200) {
-        alert('Đăng ký thành công. Hãy đăng nhập.');
+        showSuccess('Đăng ký thành công. Hãy đăng nhập.');
         onRegister();
       } else {
         setError(data.message || 'Đăng ký thất bại');
@@ -35,28 +42,23 @@ export default function Register({ onRegister }) {
   return (
     <form
       onSubmit={handleRegister}
-      style={{
-        background: '#fff',
-        padding: 24,
-        borderRadius: 12,
-        boxShadow: '0 2px 12px #ccc',
-      }}
+      className={styles.form}
     >
-      <h2 style={{ marginBottom: 16, color: '#333' }}>📝 Đăng ký</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <h2 className={shared.titleLarge}>📝 Đăng ký</h2>
+      {error && <p className={messages.error}>{error}</p>}
       <input
         value={name}
         onChange={e => setName(e.target.value)}
         placeholder='Tên'
         required
-        style={{ width: '100%', marginBottom: 12, padding: 8 }}
+        className={`${forms.input} ${shared.marginBottom}`}
       />
       <input
         value={email}
         onChange={e => setEmail(e.target.value)}
         placeholder='Email'
         required
-        style={{ width: '100%', marginBottom: 12, padding: 8 }}
+        className={`${forms.input} ${shared.marginBottom}`}
       />
       <input
         type='password'
@@ -64,26 +66,20 @@ export default function Register({ onRegister }) {
         onChange={e => setPassword(e.target.value)}
         placeholder='Mật khẩu'
         required
-        style={{ width: '100%', marginBottom: 16, padding: 8 }}
+        className={`${forms.input} ${shared.marginBottom}`}
       />
-      <label style={{ display: 'block', marginTop: 12 }}>Vai trò:</label>
+      <label className={forms.label}>Vai trò:</label>
       <select
         value={role}
         onChange={e => setRole(e.target.value)}
-        style={{ width: '100%', padding: 8, marginBottom: 16 }}
+        className={`${forms.select} ${shared.marginBottom}`}
       >
         <option value='user'>User</option>
         <option value='admin'>Admin</option>
       </select>
       <button
         type='submit'
-        style={{
-          padding: '8px 16px',
-          background: '#7137ea',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 6,
-        }}
+        className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth}`}
       >
         Đăng ký
       </button>

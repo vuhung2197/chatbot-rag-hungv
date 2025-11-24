@@ -1,0 +1,164 @@
+/* ModelManager specific styles - chỉ giữ lại những styles unique cho component này */
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  width: 90%;
+  max-width: 640px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  color: #333;
+  font-family: Segoe UI, Arial, sans-serif;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  color: #333;
+}
+
+.selectedModelInfo {
+  background-color: #f0fdf4;
+  border: 1px solid #16a34a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selectedModelIcon {
+  background-color: #16a34a;
+  color: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.selectedModelContent {
+  flex: 1;
+}
+
+.selectedModelLabel {
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.selectedModelName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.selectedModelUrl {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.modelsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.modelCard {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  transition: all 0.2s ease;
+}
+
+.modelCard.selected {
+  border: 2px solid #16a34a;
+  background-color: #f0fdf4;
+}
+
+.modelInfo {
+  flex: 1;
+}
+
+.modelHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modelName {
+  font-weight: 600;
+  color: #333;
+}
+
+.badge {
+  font-size: 11px;
+  background-color: #16a34a;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.modelUrl {
+  font-size: 13px;
+  color: #555;
+  margin-top: 4px;
+}
+
+.modelMeta {
+  font-size: 12px;
+  color: #777;
+  margin-top: 4px;
+}
+
+.modelActions {
+  display: flex;
+  gap: 8px;
+}

@@ -3,22 +3,60 @@ import ChatInputSuggest from './ChatInputSuggest';
 import CryptoJS from 'crypto-js';
 import ReactMarkdown from 'react-markdown';
 import ModelManager from './ModelManager';
+import ConversationsList from './ConversationsList';
 import axios from 'axios';
+import { useConfirmContext } from '../context/ConfirmContext';
+import styles from '../styles/components/Chat.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-export default function Chat() {
+export default function Chat({ darkMode = false }) {
+  const { confirm } = useConfirmContext();
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [questionHistory, setQuestionHistory] = useState([]);
-  const [showRecentModal, setShowRecentModal] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
   const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
   const [advancedResponse, setAdvancedResponse] = useState(null);
+  const [showConversations, setShowConversations] = useState(false);
+  const [currentConversationId, setCurrentConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const lastMessageRef = useRef(null);
+
+  // Load messages khi chọn conversation
+  useEffect(() => {
+    async function loadConversationMessages() {
+      if (!currentConversationId) {
+        setHistory([]);
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const res = await axios.get(
+          `${API_URL}/conversations/${currentConversationId}/messages`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Convert messages từ DB format sang history format
+        const messages = res.data.messages || [];
+        const formattedHistory = messages.map(msg => ({
+          user: msg.question,
+          bot: msg.bot_reply,
+          createdAt: msg.created_at
+        }));
+
+        setHistory(formattedHistory.reverse()); // Reverse để hiển thị từ cũ đến mới
+      } catch (err) {
+        console.error('Error loading conversation messages:', err);
+      }
+    }
+
+    loadConversationMessages();
+  }, [currentConversationId]);
 
   // Auto scroll to last message (beginning of bot response)
   const scrollToLastMessage = () => {
@@ -67,25 +105,6 @@ export default function Chat() {
     localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
   }, [history]);
 
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        const res = await axios.get(`${API_URL}/chat/history`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        });
-        const data = res.data;
-        setQuestionHistory(data);
-      } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Lỗi khi lấy lịch sử câu hỏi:', err);
-      }
-    }
-
-    fetchHistory();
-  }, []);
-
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
   };
@@ -116,7 +135,7 @@ export default function Chat() {
         // Sử dụng Advanced RAG
         res = await axios.post(
           `${API_URL}/advanced-chat/advanced-chat`,
-          { message: input, model },
+          { message: input, model, conversationId: currentConversationId },
           {
             headers: {
               'Content-Type': 'application/json',
@@ -129,7 +148,7 @@ export default function Chat() {
         // Sử dụng RAG thông thường
         res = await axios.post(
           `${API_URL}/chat`,
-          { message: input, model },
+          { message: input, model, conversationId: currentConversationId },
           {
             headers: {
               'Content-Type': 'application/json',
@@ -137,6 +156,11 @@ export default function Chat() {
             },
           }
         );
+      }
+      
+      // Cập nhật conversationId từ response nếu có
+      if (res.data.conversationId) {
+        setCurrentConversationId(res.data.conversationId);
       }
       
       const data = res.data;
@@ -176,74 +200,44 @@ export default function Chat() {
 
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      backgroundColor: '#f7f7f8',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    }}>
-      {/* Header */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderBottom: '1px solid #e5e7eb',
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#10a37f',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold',
-            fontSize: '16px'
-          }}>
+    <div className={styles.container}>
+      {/* Conversations Sidebar */}
+      {showConversations && (
+        <div className={styles.sidebar}>
+          <ConversationsList
+            darkMode={darkMode}
+            onSelectConversation={(id) => {
+              setCurrentConversationId(id);
+            }}
+            currentConversationId={currentConversationId}
+          />
+        </div>
+      )}
+
+      {/* Main Chat Area */}
+      <div className={styles.mainArea}>
+        {/* Header */}
+        <div className={styles.header}>
+          <div className={styles.headerLeft}>
+            <div className={styles.logo}>
             AI
-          </div>
-          <div>
-            <h1 style={{
-              margin: 0,
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1f2937'
-            }}>
+            </div>
+            <div>
+              <h1 className={styles.headerTitle}>
               English Chatbot
             </h1>
-            <p style={{
-              margin: 0,
-              fontSize: '14px',
-              color: '#6b7280'
-            }}>
+            <p className={styles.headerSubtitle}>
               {model ? `Model: ${model.name}` : 'Chọn model để bắt đầu'}
             </p>
           </div>
-        </div>
+          </div>
         
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setShowRecentModal(true)}
-            style={{
-              backgroundColor: '#f3f4f6',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: '#374151',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+          <div className={styles.headerButtons}>
+            <button
+              onClick={() => setShowConversations(!showConversations)}
+              className={`${styles.headerButton} ${showConversations ? styles.headerButtonActive : styles.headerButtonDefault}`}
           >
-            📚 Lịch sử
+            💬 Cuộc trò chuyện
           </button>
           
           <button
@@ -252,106 +246,58 @@ export default function Chat() {
               ? 'Advanced RAG: Multi-chunk reasoning cho câu hỏi phức tạp' 
               : 'RAG thông thường: Nhanh cho câu hỏi đơn giản'
             }
-            style={{
-              backgroundColor: useAdvancedRAG ? '#10a37f' : '#f3f4f6',
-              border: '1px solid #d1d5db',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: useAdvancedRAG ? 'white' : '#374151',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s ease'
-            }}
+            className={`${styles.headerButton} ${useAdvancedRAG ? styles.headerButtonPrimary : styles.headerButtonDefault}`}
           >
             {useAdvancedRAG ? '🧠 Advanced RAG' : '🧠 RAG'}
           </button>
           
           <button
             onClick={() => setShowModelPopup(true)}
-            style={{
-              backgroundColor: '#10a37f',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '8px 16px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              color: 'white',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+            className={`${styles.headerButton} ${styles.headerButtonPrimary}`}
           >
             ⚙️ Model
           </button>
           
           {history.length > 0 && (
             <button
-              onClick={() => {
-                if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử không?')) {
+              onClick={async () => {
+                const confirmed = await confirm({
+                  title: 'Xác nhận xóa',
+                  message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử hiện tại không? (Không ảnh hưởng đến danh sách cuộc trò chuyện)',
+                  confirmText: 'Xóa',
+                  cancelText: 'Hủy',
+                });
+                if (confirmed) {
                   setHistory([]);
+                  setCurrentConversationId(null); // Reset conversation để tránh tự động load lại
+                  const userId = localStorage.getItem('userId');
+                  if (userId) {
+                    localStorage.removeItem(`chatbot_history_${userId}`);
+                  }
                   localStorage.removeItem('chatbot_history');
                   localStorage.removeItem('chatbot_cache');
-                  localStorage.removeItem('chatbot_selected_model');
+                  // Giữ lại chatbot_selected_model để không mất model đã chọn
                 }
               }}
-              style={{
-                backgroundColor: '#ef4444',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                color: 'white',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
+              className={`${styles.headerButton} ${styles.headerButtonDanger}`}
             >
               🗑️ Xóa
             </button>
           )}
+          </div>
         </div>
-      </div>
 
-      {/* Chat Messages */}
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '24px'
-      }}>
+        {/* Chat Messages */}
+        <div className={styles.messagesContainer}>
         {history.length === 0 && !loading && (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            textAlign: 'center',
-            color: '#6b7280'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              backgroundColor: '#f3f4f6',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-              fontSize: '24px'
-            }}>
+          <div className={styles.emptyState}>
+            <div className={styles.emptyStateIcon}>
               🤖
             </div>
-            <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: '600', color: '#1f2937' }}>
+            <h2 className={styles.emptyStateTitle}>
               Chào mừng đến với English Chatbot
             </h2>
-            <p style={{ margin: 0, fontSize: '16px', maxWidth: '500px' }}>
+            <p className={styles.emptyStateText}>
               Tôi có thể giúp bạn học tiếng Anh, trả lời câu hỏi và cung cấp thông tin. 
               Hãy bắt đầu cuộc trò chuyện bằng cách gõ câu hỏi của bạn!
             </p>
@@ -364,69 +310,34 @@ export default function Chat() {
             <div 
               key={idx} 
               ref={isLastMessage ? lastMessageRef : null}
-              style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+              className={styles.messageContainer}
             >
               {/* User Message */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <div style={{
-                  backgroundColor: '#10a37f',
-                  color: 'white',
-                  padding: '12px 16px',
-                  borderRadius: '18px 18px 4px 18px',
-                  maxWidth: '70%',
-                  fontSize: '15px',
-                  lineHeight: '1.5',
-                  wordWrap: 'break-word'
-                }}>
+              <div className={`${styles.messageRow} ${styles.messageRowUser}`}>
+                <div className={styles.userMessage}>
                   {item.user}
                 </div>
               </div>
 
               {/* Bot Message */}
               {item.bot && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                  <div style={{
-                    backgroundColor: '#ffffff',
-                    color: '#1f2937',
-                    padding: '12px 16px',
-                    borderRadius: '18px 18px 18px 4px',
-                    maxWidth: '70%',
-                    fontSize: '15px',
-                    lineHeight: '1.5',
-                    wordWrap: 'break-word',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                  }}>
+                <div className={`${styles.messageRow} ${styles.messageRowBot}`}>
+                  <div className={styles.botMessage}>
                     <ReactMarkdown>{item.bot}</ReactMarkdown>
                     
                     {/* Regular Chat Chunks */}
                     {item.chunks_used && item.chunks_used.length > 0 && (
-                      <div style={{ 
-                        marginTop: '12px', 
-                        padding: '8px 0',
-                        borderTop: '1px solid #e5e7eb'
-                      }}>
-                        <div style={{ 
-                          fontSize: '12px', 
-                          color: '#6b7280', 
-                          marginBottom: '6px',
-                          fontWeight: '500'
-                        }}>
+                      <div className={styles.chunksSection}>
+                        <div className={styles.chunksTitle}>
                           📚 Chunks used ({item.chunks_used.length}):
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div className={styles.chunksList}>
                           {item.chunks_used.map((chunk, chunkIdx) => (
-                            <div key={chunkIdx} style={{
-                              background: '#f8fafc',
-                              padding: '6px 8px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
-                              border: '1px solid #e5e7eb'
-                            }}>
-                              <div style={{ fontWeight: '500', color: '#374151' }}>
+                            <div key={chunkIdx} className={styles.chunkItem}>
+                              <div className={styles.chunkTitle}>
                                 {chunk.title}
                               </div>
-                              <div style={{ color: '#6b7280', marginTop: '2px' }}>
+                              <div className={styles.chunkInfo}>
                                 Score: {chunk.score?.toFixed(3)} | ID: {chunk.id}
                               </div>
                             </div>
@@ -437,15 +348,7 @@ export default function Chat() {
                     
                     {/* Regular Chat Metadata */}
                     {item.metadata && (
-                      <div style={{ 
-                        marginTop: '8px', 
-                        padding: '6px 8px',
-                        background: '#f8fafc',
-                        borderRadius: '4px',
-                        fontSize: '10px',
-                        color: '#6b7280',
-                        border: '1px solid #e5e7eb'
-                      }}>
+                      <div className={styles.metadata}>
                         🤖 {item.metadata.model_used} | ⚡ {item.metadata.processing_time}ms | 
                         📄 {item.metadata.context_length} chars | 📚 {item.metadata.total_chunks} chunks
                       </div>
@@ -459,45 +362,12 @@ export default function Chat() {
 
         {/* Loading Message */}
         {loading && (
-          <div ref={lastMessageRef} style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{
-              backgroundColor: '#ffffff',
-              color: '#1f2937',
-              padding: '12px 16px',
-              borderRadius: '18px 18px 18px 4px',
-              fontSize: '15px',
-              lineHeight: '1.5',
-              border: '1px solid #e5e7eb',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
-              <div style={{
-                display: 'flex',
-                gap: '4px'
-              }}>
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  backgroundColor: '#10a37f',
-                  borderRadius: '50%',
-                  animation: 'pulse 1.4s ease-in-out infinite'
-                }}></div>
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  backgroundColor: '#10a37f',
-                  borderRadius: '50%',
-                  animation: 'pulse 1.4s ease-in-out infinite 0.2s'
-                }}></div>
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  backgroundColor: '#10a37f',
-                  borderRadius: '50%',
-                  animation: 'pulse 1.4s ease-in-out infinite 0.4s'
-                }}></div>
+          <div ref={lastMessageRef} className={`${styles.messageRow} ${styles.messageRowBot}`}>
+            <div className={`${styles.botMessage} ${styles.loadingMessage}`}>
+              <div className={styles.loadingDots}>
+                <div className={`${styles.loadingDot} ${styles.loadingDot2}`}></div>
+                <div className={`${styles.loadingDot} ${styles.loadingDot3}`}></div>
+                <div className={styles.loadingDot}></div>
               </div>
               <span>Đang suy nghĩ...</span>
             </div>
@@ -506,84 +376,41 @@ export default function Chat() {
 
         {/* Advanced RAG Info */}
         {advancedResponse && (
-          <div style={{
-            backgroundColor: '#f0f9ff',
-            border: '1px solid #0ea5e9',
-            borderRadius: '12px',
-            padding: '16px',
-            margin: '16px 24px',
-            fontSize: '14px',
-            color: '#333'
-          }}>
-            <div style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '8px', 
-              marginBottom: '12px',
-              fontWeight: '600',
-              color: '#0369a1'
-            }}>
+          <div className={styles.advancedRagInfo}>
+            <div className={styles.advancedRagHeader}>
               🧠 Advanced RAG Analysis
             </div>
             
-            <div style={{ marginBottom: '12px' }}>
+            <div className={styles.advancedRagSection}>
               <strong>📊 Processing Steps:</strong>
-              <ul style={{ margin: '8px 0 0 20px', padding: 0 }}>
+              <ul className={styles.advancedRagList}>
                 {advancedResponse.reasoning_steps?.map((step, index) => (
-                  <li key={index} style={{ marginBottom: '4px' }}>
+                  <li key={index} className={styles.advancedRagListItem}>
                     {step}
                   </li>
                 ))}
               </ul>
             </div>
             
-            <div style={{ marginBottom: '12px' }}>
+            <div className={styles.advancedRagSection}>
               <strong>📚 Chunks Used:</strong> {advancedResponse.chunks_used?.length || 0}
               {advancedResponse.chunks_used?.length > 0 && (
-                <div style={{ 
-                  marginTop: '8px', 
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  maxHeight: '200px',
-                  overflowY: 'auto'
-                }}>
+                <div className={styles.advancedRagChunksContainer}>
                   {advancedResponse.chunks_used.map((chunk, index) => (
-                    <div key={index} style={{
-                      background: '#f8fafc',
-                      border: '1px solid #e5e7eb',
-                      padding: '10px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                        <div style={{ fontWeight: '600', color: '#1e40af', fontSize: '13px' }}>
+                    <div key={index} className={styles.advancedRagChunk}>
+                      <div className={styles.advancedRagChunkHeader}>
+                        <div className={styles.advancedRagChunkTitle}>
                           {chunk.title}
                         </div>
-                        <div style={{ fontSize: '11px', color: '#666', display: 'flex', gap: '8px' }}>
+                        <div className={styles.advancedRagChunkMeta}>
                           <span>Score: {chunk.score?.toFixed(3)}</span>
                           <span>Stage: {chunk.stage}</span>
                         </div>
                       </div>
-                      <div style={{ 
-                        color: '#374151', 
-                        fontSize: '12px', 
-                        lineHeight: '1.4',
-                        background: '#ffffff',
-                        padding: '6px 8px',
-                        borderRadius: '4px',
-                        border: '1px solid #e5e7eb',
-                        marginBottom: '4px'
-                      }}>
+                      <div className={styles.advancedRagChunkContent}>
                         {chunk.content}
                       </div>
-                      <div style={{ 
-                        fontSize: '10px', 
-                        color: '#6b7280', 
-                        display: 'flex',
-                        gap: '12px'
-                      }}>
+                      <div className={styles.advancedRagChunkFooter}>
                         <span>ID: {chunk.id}</span>
                         <span>Source: {chunk.source}</span>
                         <span>Chunk: {chunk.chunk_index}</span>
@@ -595,14 +422,8 @@ export default function Chat() {
             </div>
             
             {advancedResponse.metadata && (
-              <div style={{ 
-                background: '#f8fafc', 
-                padding: '8px 12px', 
-                borderRadius: '6px',
-                fontSize: '12px',
-                fontFamily: 'monospace'
-              }}>
-                <div style={{ marginBottom: '4px' }}>
+              <div className={styles.advancedRagMetadata}>
+                <div className={styles.advancedRagMetadataRow}>
                   <strong>🤖 Model:</strong> {advancedResponse.metadata.model_used} | 
                   <strong> ⚡ Time:</strong> {advancedResponse.metadata.processing_time}ms | 
                   <strong> 📄 Context:</strong> {advancedResponse.metadata.context_length} chars
@@ -617,18 +438,13 @@ export default function Chat() {
           </div>
         )}
 
-        <div ref={messagesEndRef} />
-      </div>
+          <div ref={messagesEndRef} />
+        </div>
 
-      {/* Input Area */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderTop: '1px solid #e5e7eb',
-        padding: '16px 24px',
-        boxShadow: '0 -1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-          <div style={{ flex: 1 }}>
+        {/* Input Area */}
+        <div className={styles.inputArea}>
+        <div className={styles.inputContainer}>
+          <div className={styles.inputWrapper}>
             <ChatInputSuggest
               value={input}
               onChange={setInput}
@@ -638,183 +454,11 @@ export default function Chat() {
             />
           </div>
         </div>
-      </div>
-
-      {/* Recent Questions Modal */}
-      {showRecentModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '12px',
-            padding: '24px',
-            maxWidth: '600px',
-            maxHeight: '80%',
-            overflowY: 'auto',
-            position: 'relative',
-            boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-          }}>
-            <h2 style={{ marginTop: 0, color: '#1f2937', marginBottom: 16 }}>
-              📚 Lịch sử câu hỏi
-            </h2>
-
-            <button
-              onClick={() => setShowRecentModal(false)}
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 20,
-                background: '#ef4444',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
-            >
-              ✕ Đóng
-            </button>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {questionHistory.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    background: '#f9fafb',
-                    borderRadius: 10,
-                    padding: '16px 20px',
-                    border: '1px solid #e5e7eb',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-                  }}
-                >
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ color: '#6b7280', fontSize: '0.85em' }}>
-                      🗓 {new Date(item.created_at).toLocaleString('vi-VN')}
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      background: '#eef2ff',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      color: '#1e3a8a',
-                      fontSize: '1em',
-                      marginBottom: 10,
-                    }}
-                  >
-                    <b>Bạn:</b> {item.question}
-                  </div>
-
-                  <div
-                    style={{
-                      background: '#ecfdf5',
-                      padding: '10px 14px',
-                      borderRadius: 8,
-                      color: '#065f46',
-                      fontSize: '1em',
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
-                    <b>Bot:</b>
-                    <div style={{ marginTop: 6 }}>
-                      <ReactMarkdown>{item.bot_reply}</ReactMarkdown>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setInput(item.question);
-                      setShowRecentModal(false);
-                    }}
-                    style={{
-                      marginTop: 12,
-                      background: '#3b82f6',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: '0.95em',
-                    }}
-                  >
-                    🔁 Gửi lại câu hỏi này
-                  </button>
-
-                  <button
-                    onClick={async () => {
-                      if (
-                        !window.confirm(
-                          'Bạn có chắc chắn muốn xóa câu hỏi này?'
-                        )
-                      )
-                        return;
-                      try {
-                        const res = await axios.delete(
-                          `${API_URL}/chat/history/${item.id}`,
-                          {
-                            headers: {
-                              Authorization: `Bearer ${localStorage.getItem('token')}`,
-                            },
-                          }
-                        );
-                        if (res.status === 200) {
-                          setQuestionHistory(prev =>
-                            prev.filter(q => q.id !== item.id)
-                          );
-                        } else {
-                          alert('Xóa thất bại!');
-                        }
-                      } catch (err) {
-                        // eslint-disable-next-line no-console
-                        console.error('Lỗi khi xóa câu hỏi:', err);
-                        alert('Đã xảy ra lỗi khi xóa!');
-                      }
-                    }}
-                    style={{
-                      background: '#ef4444',
-                      color: '#fff',
-                      border: 'none',
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      cursor: 'pointer',
-                      fontSize: '0.95em',
-                    }}
-                  >
-                    🗑 Xóa
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
-      )}
 
-      {/* Model Selection Modal */}
-      {showModelPopup && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
+        {/* Model Selection Modal */}
+        {showModelPopup && (
+        <div className={styles.modalOverlay}>
           <ModelManager
             onSelectModel={m => {
               setModel(m);
@@ -824,19 +468,9 @@ export default function Chat() {
             onClose={() => setShowModelPopup(false)}
           />
         </div>
-      )}
-
-      {/* CSS for animations */}
-      <style>{`
-        @keyframes pulse {
-          0%, 80%, 100% {
-            opacity: 0.3;
-          }
-          40% {
-            opacity: 1;
-          }
-        }
-      `}</style>
+        )}
+      </div>
+      {/* End Main Chat Area */}
     </div>
   );
 }

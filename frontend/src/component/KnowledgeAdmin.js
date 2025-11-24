@@ -1,15 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import '../styles/KnowledgeAdmin.css';
+import { useConfirmContext } from '../context/ConfirmContext';
+import shared from '../styles/shared.module.css';
+import forms from '../styles/forms.module.css';
+import buttons from '../styles/buttons.module.css';
+import messages from '../styles/messages.module.css';
+import styles from '../styles/components/KnowledgeAdmin.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function KnowledgeAdmin() {
+  const { confirm } = useConfirmContext();
   const [list, setList] = useState([]);
   const [form, setForm] = useState({ title: '', content: '', id: null });
   const [chunkPreview, setChunkPreview] = useState({ id: null, chunks: [] });
   const [unanswered, setUnanswered] = useState([]);
   const [showChunkModal, setShowChunkModal] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadFileName, setUploadFileName] = useState('');
+  const [uploadStatus, setUploadStatus] = useState(null); // 'loading', 'success', 'error'
+  const [uploadMessage, setUploadMessage] = useState('');
+  const [showFullContentModal, setShowFullContentModal] = useState(false);
+  const [fullContent, setFullContent] = useState('');
   const formRef = useRef(null);
 
   useEffect(() => {
@@ -46,7 +59,13 @@ export default function KnowledgeAdmin() {
   };
 
   const handleDelete = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa kiến thức này?')) {
+    const confirmed = await confirm({
+      title: 'Xác nhận xóa',
+      message: 'Bạn có chắc chắn muốn xóa kiến thức này?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+    });
+    if (confirmed) {
       await axios.delete(`${API_URL}/knowledge/${id}`);
       setList(list.filter(item => item.id !== id));
       if (form.id === id) setForm({ title: '', content: '', id: null });
@@ -79,7 +98,13 @@ export default function KnowledgeAdmin() {
   };
 
   const handleDeleteUnanswered = async id => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
+    const confirmed = await confirm({
+      title: 'Xác nhận xóa',
+      message: 'Bạn có chắc chắn muốn xóa câu hỏi này?',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+    });
+    if (confirmed) {
       await axios.delete(`${API_URL}/unanswered/${id}`);
       setUnanswered(unanswered.filter(item => item.id !== id));
     }
@@ -89,21 +114,77 @@ export default function KnowledgeAdmin() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // Set uploading state
+    setUploading(true);
+    setUploadStatus('loading');
+    setUploadFileName(file.name);
+    setUploadMessage('');
+
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const res = await axios.post(`${API_URL}/upload`, formData);
-
-      if (res.status === 409) {
-        alert(res.data.error);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setUploadStatus('error');
+        setUploadMessage('Vui lòng đăng nhập để upload file');
+        setTimeout(() => {
+          setUploading(false);
+          setUploadStatus(null);
+          setUploadFileName('');
+        }, 3000);
         return;
       }
 
-      alert(res.data.message || 'Tải lên thành công');
+      const res = await axios.post(`${API_URL}/upload`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (res.status === 409) {
+        setUploadStatus('error');
+        setUploadMessage(res.data.error || 'File đã tồn tại');
+        setTimeout(() => {
+          setUploading(false);
+          setUploadStatus(null);
+          setUploadFileName('');
+        }, 3000);
+        return;
+      }
+
+      // Success
+      setUploadStatus('success');
+      setUploadMessage(res.data.message || '✅ File đã được huấn luyện thành công!');
       fetchList();
+      
+      // Trigger refresh for Usage Dashboard
+      window.dispatchEvent(new Event('fileUploaded'));
+
+      // Auto close after 2 seconds
+      setTimeout(() => {
+        setUploading(false);
+        setUploadStatus(null);
+        setUploadFileName('');
+        setUploadMessage('');
+      }, 2000);
     } catch (err) {
-      alert(`Lỗi khi tải lên file: ${err.message}`);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message;
+      setUploadStatus('error');
+      setUploadMessage(`Lỗi khi tải lên file: ${errorMessage}`);
+      console.error('Upload error:', err);
+      
+      // Auto close after 3 seconds
+      setTimeout(() => {
+        setUploading(false);
+        setUploadStatus(null);
+        setUploadFileName('');
+        setUploadMessage('');
+      }, 3000);
+    } finally {
+      // Reset file input
+      e.target.value = '';
     }
   };
 
@@ -242,10 +323,8 @@ export default function KnowledgeAdmin() {
                       <button 
                         className="btn btn-sm btn-outline"
                         onClick={() => {
-                          const fullText = item.content;
-                          if (window.confirm(`Nội dung đầy đủ:\n\n${fullText}`)) {
-                            // User can copy or do something with full text
-                          }
+                          setFullContent(item.content);
+                          setShowFullContentModal(true);
                         }}
                       >
                         Xem đầy đủ
@@ -300,6 +379,68 @@ export default function KnowledgeAdmin() {
         </div>
       </div>
 
+      {/* Upload Loading Modal */}
+      {uploading && (
+        <div className={`modal-overlay ${styles.modalOverlay}`}>
+          <div className={`modal-content ${styles.modalContent}`}>
+            <div className={`modal-body ${styles.modalBody}`}>
+              {uploadStatus === 'loading' && (
+                <>
+                  <div className={styles.loadingSpinner}></div>
+                  <h3 className={`${shared.title} ${styles.modalTitle}`}>
+                    Đang xử lý file...
+                  </h3>
+                  <p className={`${shared.text} ${styles.modalText}`}>
+                    {uploadFileName && `File: ${uploadFileName}`}
+                  </p>
+                  <p className={`${shared.textSmall} ${styles.modalTextSmall}`}>
+                    Vui lòng đợi trong khi file đang được upload và huấn luyện
+                  </p>
+                </>
+              )}
+              
+              {uploadStatus === 'success' && (
+                <>
+                  <div className={styles.statusIcon}>
+                    ✅
+                  </div>
+                  <h3 className={`${messages.success} ${styles.modalTitle}`}>
+                    Thành công!
+                  </h3>
+                  <p className={`${shared.text} ${styles.modalTextWithLineHeight}`}>
+                    {uploadMessage || 'File đã được huấn luyện thành công!'}
+                  </p>
+                  {uploadFileName && (
+                    <p className={`${shared.textSmall} ${styles.modalTextSmall}`}>
+                      File: {uploadFileName}
+                    </p>
+                  )}
+                </>
+              )}
+              
+              {uploadStatus === 'error' && (
+                <>
+                  <div className={`${styles.statusIcon} ${styles.statusIconError}`}>
+                    ❌
+                  </div>
+                  <h3 className={`${messages.error} ${styles.modalTitle}`}>
+                    Lỗi!
+                  </h3>
+                  <p className={`${shared.text} ${styles.modalTextWithLineHeight}`}>
+                    {uploadMessage || 'Đã xảy ra lỗi khi upload file'}
+                  </p>
+                  {uploadFileName && (
+                    <p className={`${shared.textSmall} ${styles.modalTextSmall}`}>
+                      File: {uploadFileName}
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chunk Modal */}
       {showChunkModal && (
         <div className="modal-overlay">
@@ -334,6 +475,26 @@ export default function KnowledgeAdmin() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Content Modal */}
+      {showFullContentModal && (
+        <div className="modal-overlay" onClick={() => setShowFullContentModal(false)}>
+          <div className={`modal-content ${styles.modalContentFull}`} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Nội dung đầy đủ</h3>
+              <button
+                onClick={() => setShowFullContentModal(false)}
+                className="modal-close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <pre className={styles.modalPre}>{fullContent}</pre>
             </div>
           </div>
         </div>

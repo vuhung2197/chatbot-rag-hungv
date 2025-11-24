@@ -1,0 +1,129 @@
+/* ============================================
+   BUTTONS MODULE - Styles cho buttons
+   ============================================ */
+
+.button {
+  padding: 10px 20px;
+  background-color: #7137ea;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  transition: background-color 0.2s ease;
+}
+
+.button:hover {
+  background-color: #5a2bb8;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button:disabled:hover {
+  background-color: #7137ea;
+}
+
+/* Button Variants */
+.buttonPrimary {
+  background-color: #7137ea;
+  color: #fff;
+}
+
+.buttonPrimary:hover {
+  background-color: #5a2bb8;
+}
+
+.buttonSecondary {
+  background-color: transparent;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.buttonSecondary.darkMode {
+  color: #f0f0f0;
+  border-color: #555;
+}
+
+.buttonSecondary:hover {
+  background-color: #f9f9f9;
+}
+
+.buttonSecondary.darkMode:hover {
+  background-color: #2d2d2d;
+}
+
+.buttonSuccess {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.buttonSuccess:hover {
+  background-color: #218838;
+}
+
+.buttonDanger {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.buttonDanger:hover {
+  background-color: #c82333;
+}
+
+.buttonWarning {
+  background-color: #ffc107;
+  color: #333;
+}
+
+.buttonWarning:hover {
+  background-color: #e0a800;
+}
+
+/* Button Sizes */
+.buttonSmall {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.buttonLarge {
+  padding: 12px 24px;
+  font-size: 16px;
+}
+
+/* Button Full Width */
+.buttonFullWidth {
+  width: 100%;
+}
+
+/* Icon Button */
+.buttonIcon {
+  background: transparent;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttonIcon.darkMode {
+  color: #aaa;
+}
+
+.buttonIcon:hover {
+  color: #333;
+  background-color: #f0f0f0;
+}
+
+.buttonIcon.darkMode:hover {
+  color: #fff;
+  background-color: #333;
+}
+

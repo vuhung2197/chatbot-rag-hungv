@@ -1,0 +1,16 @@
+.wrapper {
+  max-width: 600px;
+  margin: 30px auto;
+  font-family: sans-serif;
+  background: #fff;
+  color: #222;
+  min-height: 100vh;
+  position: relative;
+  transition: background 0.3s, color 0.3s;
+}
+
+.wrapper.darkMode {
+  background: #23272f;
+  color: #fafafa;
+}
+

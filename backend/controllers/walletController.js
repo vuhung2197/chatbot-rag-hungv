@@ -1,4 +1,5 @@
 import pool from '../db.js';
+import vnpayService from '../services/vnpayService.js';
 
 /**
  * Get user wallet information
@@ -173,9 +174,50 @@ export async function createDeposit(req, res) {
 
         const transactionId = result.insertId;
 
-        // TODO: Create payment URL with payment gateway
-        // For now, return mock payment URL
-        const paymentUrl = `/payment/process?transaction_id=${transactionId}&method=${payment_method}`;
+        // Generate payment URL based on payment method
+        let paymentUrl;
+
+        if (payment_method === 'vnpay') {
+            // VNPay integration
+            const orderId = `DEPOSIT_${transactionId}_${Date.now()}`;
+            const orderInfo = `Nap tien vao vi - Transaction ${transactionId}`;
+            const ipAddr = req.ip || req.connection.remoteAddress || '127.0.0.1';
+
+            try {
+                paymentUrl = await vnpayService.createPaymentUrl({
+                    orderId,
+                    amount,
+                    orderInfo,
+                    ipAddr,
+                    locale: 'vn'
+                });
+
+                // Update transaction with order ID
+                await pool.execute(
+                    `UPDATE wallet_transactions 
+                     SET metadata = JSON_SET(metadata, '$.order_id', ?)
+                     WHERE id = ?`,
+                    [orderId, transactionId]
+                );
+
+                console.log(`✅ VNPay payment URL created for transaction ${transactionId}`);
+            } catch (error) {
+                console.error('❌ Error creating VNPay payment URL:', error);
+                // Rollback transaction
+                await pool.execute(
+                    'UPDATE wallet_transactions SET status = ? WHERE id = ?',
+                    ['failed', transactionId]
+                );
+                return res.status(500).json({
+                    message: 'Error creating payment URL',
+                    error: error.message
+                });
+            }
+        } else {
+            // Mock payment URL for other methods (to be implemented)
+            paymentUrl = `/payment/process?transaction_id=${transactionId}&method=${payment_method}`;
+            console.log(`⚠️  Using mock payment URL for ${payment_method}`);
+        }
 
         res.json({
             message: 'Deposit initiated',

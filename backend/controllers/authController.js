@@ -44,7 +44,7 @@ export async function googleCallback(req, res) {
   console.log('🔐 Google OAuth callback received');
   console.log('Query params:', req.query);
   console.log('Cookies:', req.cookies);
-  
+
   const { code, state } = req.query;
   const oauthMode = req.cookies.oauth_mode; // 'link' or undefined (login)
   const linkUserId = req.cookies.oauth_link_user_id;
@@ -84,7 +84,7 @@ export async function googleCallback(req, res) {
 
     // Encrypt tokens (simple base64 for now, can improve with proper encryption)
     const accessTokenEncrypted = Buffer.from(tokens.access_token || '').toString('base64');
-    const refreshTokenEncrypted = tokens.refresh_token 
+    const refreshTokenEncrypted = tokens.refresh_token
       ? Buffer.from(tokens.refresh_token).toString('base64')
       : null;
 
@@ -96,7 +96,7 @@ export async function googleCallback(req, res) {
       res.clearCookie('oauth_mode');
 
       const userId = parseInt(linkUserId);
-      
+
       // Verify user exists
       const [users] = await pool.execute('SELECT * FROM users WHERE id = ?', [userId]);
       if (users.length === 0) {
@@ -187,6 +187,20 @@ export async function googleCallback(req, res) {
           throw insertError;
         }
       }
+
+      // 🆕 Create wallet for new OAuth user
+      if (user.id) {
+        try {
+          await pool.execute(
+            'INSERT INTO user_wallets (user_id, balance, currency, status) VALUES (?, 0.00, ?, ?)',
+            [user.id, 'USD', 'active']
+          );
+          console.log(`✅ Wallet created for new OAuth user ${user.id}`);
+        } catch (walletError) {
+          console.error('❌ Error creating wallet for OAuth user:', walletError);
+          // Don't fail OAuth if wallet creation fails
+        }
+      }
     } else {
       console.log('✅ Existing user found:', { id: user.id, email: user.email });
       // Update last_login_at
@@ -194,7 +208,7 @@ export async function googleCallback(req, res) {
         'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?',
         [user.id]
       );
-      
+
       // Update avatar if available and user doesn't have one
       if (picture && !user.avatar_url) {
         await pool.execute(
@@ -263,9 +277,9 @@ export async function googleCallback(req, res) {
     // 9️⃣ Redirect về frontend
     const redirectUrl = req.cookies.oauth_redirect || '/';
     res.clearCookie('oauth_redirect');
-    
+
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    
+
     // Nếu user mới (chưa có password), redirect đến trang set password
     if (isNewUser) {
       const separator = redirectUrl.includes('?') ? '&' : '?';
@@ -274,14 +288,14 @@ export async function googleCallback(req, res) {
       console.log('User:', { id: user.id, email: user.email, role: user.role });
       return res.redirect(redirectTo);
     }
-    
+
     // User đã có password, redirect bình thường
     const separator = redirectUrl.includes('?') ? '&' : '?';
     const redirectTo = `${frontendUrl}${separator}token=${jwtToken}&role=${user.role}&id=${user.id}`;
-    
+
     console.log('✅ OAuth successful! Redirecting to:', redirectTo);
     console.log('User:', { id: user.id, email: user.email, role: user.role });
-    
+
     res.redirect(redirectTo);
   } catch (error) {
     console.error('❌ Error in Google OAuth callback:', error);
@@ -307,10 +321,25 @@ export async function register(req, res) {
 
   try {
     const hash = await bcrypt.hash(password, 10);
-    await pool.execute(
+    const [result] = await pool.execute(
       'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
       [name, email, hash, role]
     );
+
+    const userId = result.insertId;
+
+    // 🆕 Create wallet for new user
+    try {
+      await pool.execute(
+        'INSERT INTO user_wallets (user_id, balance, currency, status) VALUES (?, 0.00, ?, ?)',
+        [userId, 'USD', 'active']
+      );
+      console.log(`✅ Wallet created for new user ${userId}`);
+    } catch (walletError) {
+      console.error('❌ Error creating wallet for new user:', walletError);
+      // Don't fail registration if wallet creation fails
+    }
+
     res.json({ message: 'Registered' });
   } catch (err) {
     console.error('❌ Lỗi khi đăng ký:', err);
@@ -337,7 +366,7 @@ export async function linkOAuthProvider(req, res) {
 
     const { provider } = req.params;
     const supportedProviders = ['google', 'github', 'microsoft'];
-    
+
     if (!supportedProviders.includes(provider)) {
       return res.status(400).json({ message: 'Provider không được hỗ trợ' });
     }
@@ -377,9 +406,9 @@ export async function linkOAuthProvider(req, res) {
         state,
       });
 
-      return res.json({ 
+      return res.json({
         message: 'Redirecting to OAuth provider...',
-        redirectUrl: url 
+        redirectUrl: url
       });
     }
 
@@ -408,7 +437,7 @@ export async function unlinkOAuthProvider(req, res) {
 
     const { provider } = req.params;
     const supportedProviders = ['google', 'github', 'microsoft'];
-    
+
     if (!supportedProviders.includes(provider)) {
       return res.status(400).json({ message: 'Provider không được hỗ trợ' });
     }
@@ -458,7 +487,7 @@ export async function unlinkOAuthProvider(req, res) {
     // Prevent unlinking if user has no password and this is the only provider
     if (!hasPassword && providerCount === 1) {
       console.warn(`⚠️ Cannot unlink ${provider}: User ${userId} has no password and this is the only auth method`);
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Không thể hủy liên kết. Bạn cần có mật khẩu hoặc ít nhất một phương thức đăng nhập khác.',
         suggestion: 'Vui lòng tạo mật khẩu trước khi hủy liên kết OAuth provider này.'
       });
@@ -530,7 +559,7 @@ export async function logout(req, res) {
   try {
     const userId = req.user?.id;
     const sessionId = req.sessionId; // From verifyToken middleware
-    
+
     if (!userId || !sessionId) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -563,7 +592,7 @@ export async function logout(req, res) {
 
     console.log(`✅ User ${userId} logged out. Session ${sessionId} deleted.`);
 
-    res.json({ 
+    res.json({
       message: 'Logged out successfully',
       sessionDeleted: true
     });
@@ -604,7 +633,7 @@ export async function getLinkedOAuthProviders(req, res) {
     // Calculate total authentication methods
     const totalAuthMethods = (hasPassword ? 1 : 0) + oauthProvidersCount;
 
-    res.json({ 
+    res.json({
       providers,
       authenticationMethods: {
         hasPassword,
@@ -612,7 +641,7 @@ export async function getLinkedOAuthProviders(req, res) {
         totalAuthMethods,
         // Warning if user has only one auth method
         canUnlinkAll: totalAuthMethods > 1,
-        warning: totalAuthMethods === 1 
+        warning: totalAuthMethods === 1
           ? 'Bạn chỉ có một phương thức đăng nhập. Vui lòng tạo mật khẩu trước khi hủy liên kết OAuth provider.'
           : null
       }
@@ -632,13 +661,13 @@ export async function login(req, res) {
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ message: 'Login failed' });
   }
-  
+
   // Update last_login_at
   await pool.execute(
     'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?',
     [user.id]
   );
-  
+
   const token = jwt.sign(
     { id: user.id, role: user.role },
     process.env.JWT_SECRET,

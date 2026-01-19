@@ -7,21 +7,41 @@ import {
     processPaymentCallback,
     getWalletStats
 } from '../controllers/walletController.js';
+import { vnpayReturn, vnpayIPN } from '../controllers/vnpayController.js';
 
 const router = express.Router();
 
-// All wallet routes require authentication
+/**
+ * VNPay Callback Routes (Public - No authentication required)
+ * These MUST be before verifyToken middleware
+ */
+
+/**
+ * @route   GET /wallet/vnpay/return
+ * @desc    VNPay return URL - User redirected here after payment
+ * @access  Public
+ */
+router.get('/vnpay/return', vnpayReturn);
+
+/**
+ * @route   GET /wallet/vnpay/ipn
+ * @desc    VNPay IPN (Instant Payment Notification)
+ * @access  Public (VNPay server calls this)
+ */
+router.get('/vnpay/ipn', vnpayIPN);
+
+// All other wallet routes require authentication
 router.use(verifyToken);
 
 /**
- * @route   GET /api/wallet
+ * @route   GET /wallet
  * @desc    Get user wallet information
  * @access  Private
  */
 router.get('/', getWallet);
 
 /**
- * @route   GET /api/wallet/transactions
+ * @route   GET /wallet/transactions
  * @desc    Get wallet transaction history
  * @access  Private
  * @query   page, limit, type
@@ -29,14 +49,14 @@ router.get('/', getWallet);
 router.get('/transactions', getTransactions);
 
 /**
- * @route   GET /api/wallet/stats
+ * @route   GET /wallet/stats
  * @desc    Get wallet statistics
  * @access  Private
  */
 router.get('/stats', getWalletStats);
 
 /**
- * @route   POST /api/wallet/deposit
+ * @route   POST /wallet/deposit
  * @desc    Create deposit transaction
  * @access  Private
  * @body    { amount, currency, payment_method }
@@ -44,7 +64,7 @@ router.get('/stats', getWalletStats);
 router.post('/deposit', createDeposit);
 
 /**
- * @route   POST /api/wallet/payment-callback
+ * @route   POST /wallet/payment-callback
  * @desc    Process payment callback from gateway
  * @access  Public (but should verify signature)
  * @body    { transaction_id, status, gateway_id, signature }

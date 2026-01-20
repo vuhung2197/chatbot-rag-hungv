@@ -60,7 +60,8 @@ class PaymentService {
 
     /**
      * Sort object keys alphabetically
-     * Common utility for signature generation
+     * Used for VNPay signature generation
+     * Note: VNPay requires simple alphabetical sort, no encoding in sortObject
      */
     sortObject(obj) {
         const sorted = {};

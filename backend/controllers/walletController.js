@@ -1,5 +1,6 @@
 import pool from '../db.js';
 import vnpayService from '../services/vnpayService.js';
+import momoService from '../services/momoService.js';
 
 /**
  * Get user wallet information
@@ -51,7 +52,7 @@ export async function getTransactions(req, res) {
         }
 
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 20)); // Between 1-100
         const offset = (page - 1) * limit;
         const type = req.query.type; // filter by type if provided
 
@@ -70,8 +71,10 @@ export async function getTransactions(req, res) {
             params.push(type);
         }
 
-        query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-        params.push(limit, offset);
+        // Use string interpolation for LIMIT/OFFSET (MySQL2 issue with integer params)
+        query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+        console.log('📊 Query params:', { userId, limit, offset, type, paramsLength: params.length });
 
         const [transactions] = await pool.execute(query, params);
 
@@ -181,7 +184,16 @@ export async function createDeposit(req, res) {
             // VNPay integration
             const orderId = `DEPOSIT_${transactionId}_${Date.now()}`;
             const orderInfo = `Nap tien vao vi - Transaction ${transactionId}`;
-            const ipAddr = req.ip || req.connection.remoteAddress || '127.0.0.1';
+            // Get IP address and convert IPv6 localhost to IPv4
+            let ipAddr = req.ip || req.connection.remoteAddress || '127.0.0.1';
+            // Convert ::1 (IPv6 localhost) to 127.0.0.1 (IPv4)
+            if (ipAddr === '::1' || ipAddr === '::ffff:127.0.0.1') {
+                ipAddr = '127.0.0.1';
+            }
+            // Remove IPv6 prefix if present
+            if (ipAddr.startsWith('::ffff:')) {
+                ipAddr = ipAddr.substring(7);
+            }
 
             try {
                 paymentUrl = await vnpayService.createPaymentUrl({
@@ -203,6 +215,39 @@ export async function createDeposit(req, res) {
                 console.log(`✅ VNPay payment URL created for transaction ${transactionId}`);
             } catch (error) {
                 console.error('❌ Error creating VNPay payment URL:', error);
+                // Rollback transaction
+                await pool.execute(
+                    'UPDATE wallet_transactions SET status = ? WHERE id = ?',
+                    ['failed', transactionId]
+                );
+                return res.status(500).json({
+                    message: 'Error creating payment URL',
+                    error: error.message
+                });
+            }
+        } else if (payment_method === 'momo') {
+            // MoMo integration
+            const orderId = `DEPOSIT_${transactionId}_${Date.now()}`;
+            const orderInfo = `Nap tien vao vi - Transaction ${transactionId}`;
+
+            try {
+                paymentUrl = await momoService.createPaymentUrl({
+                    orderId,
+                    amount,
+                    orderInfo
+                });
+
+                // Update transaction with order ID
+                await pool.execute(
+                    `UPDATE wallet_transactions 
+                     SET metadata = JSON_SET(metadata, '$.order_id', ?)
+                     WHERE id = ?`,
+                    [orderId, transactionId]
+                );
+
+                console.log(`✅ MoMo payment URL created for transaction ${transactionId}`);
+            } catch (error) {
+                console.error('❌ Error creating MoMo payment URL:', error);
                 // Rollback transaction
                 await pool.execute(
                     'UPDATE wallet_transactions SET status = ? WHERE id = ?',

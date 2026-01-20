@@ -9,6 +9,7 @@ import SubscriptionStatus from './SubscriptionStatus';
 import SubscriptionPlans from './SubscriptionPlans';
 import BillingHistoryModal from './BillingHistoryModal';
 import UsageTrendsModal from './UsageTrendsModal';
+import WalletDashboard from './WalletDashboard';
 import { useLanguage } from './LanguageContext';
 import shared from '../styles/shared.module.css';
 import forms from '../styles/forms.module.css';
@@ -49,7 +50,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         setLoading(false);
         return;
       }
-      
+
       const res = await axios.get(`${API_URL}/user/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -98,7 +99,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       );
 
       setSuccess(t('profile.updateSuccess'));
-      
+
       // Update local state with saved values (no need to reload from API)
       // This prevents potential 401 errors from triggering logout
       setProfile((prev) => ({
@@ -109,12 +110,12 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         timezone,
         language,
       }));
-      
+
       // Scroll to top of profile settings
       if (containerRef.current) {
         containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-      
+
       // Auto-hide success message after 3 seconds (but don't close the modal)
       setTimeout(() => {
         setSuccess('');
@@ -122,7 +123,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
     } catch (err) {
       // Handle errors - but don't redirect, stay in profile settings
       const errorMessage = err.response?.data?.message || t('profile.updateError');
-      
+
       // Check if it's a session/token error (axios interceptor will handle logout)
       const isSessionError = err.response?.status === 401 && (
         errorMessage.toLowerCase().includes('session') ||
@@ -130,7 +131,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         errorMessage.toLowerCase().includes('expired') ||
         errorMessage.toLowerCase().includes('revoked')
       );
-      
+
       if (isSessionError) {
         // Session error - axios interceptor will handle logout
         // Don't set error here, just log it
@@ -171,7 +172,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className={styles.container}
     >
@@ -203,18 +204,28 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         </div>
       )}
 
-      {/* Avatar Section */}
+      {/* Wallet Section - Moved to Top */}
       <div className={styles.section}>
-        <h3 className={styles.sectionTitle}>{t('profile.avatar')}</h3>
-        <AvatarUploader
-          currentAvatarUrl={profile.avatarUrl}
-          onAvatarUpdate={handleAvatarUpdate}
-          darkMode={darkMode}
-        />
+        <h3 className={styles.sectionTitle}>💰 {language === 'vi' ? 'Ví của tôi' : 'My Wallet'}</h3>
+        <WalletDashboard />
       </div>
 
-      {/* Profile Form */}
-      <div className={forms.form}>
+      {/* Personal Information Section */}
+      <div className={styles.section}>
+        <h3 className={styles.sectionTitle}>👤 {language === 'vi' ? 'Thông tin cá nhân' : 'Personal Information'}</h3>
+
+        {/* Avatar */}
+        <div className={styles.subsection}>
+          <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
+            {t('profile.avatar')}
+          </label>
+          <AvatarUploader
+            currentAvatarUrl={profile.avatarUrl}
+            onAvatarUpdate={handleAvatarUpdate}
+            darkMode={darkMode}
+          />
+        </div>
+
         {/* Display Name */}
         <div className={forms.formGroup}>
           <label className={`${forms.label} ${darkMode ? forms.darkMode : ''}`}>
@@ -329,10 +340,13 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
             </div>
           )}
         </div>
+      </div>
 
+      {/* Profile Form */}
+      <div className={forms.form}>
         {/* Subscription Status */}
-        <SubscriptionStatus 
-          darkMode={darkMode} 
+        <SubscriptionStatus
+          darkMode={darkMode}
           refreshTrigger={subscriptionRefreshTrigger}
         />
 
@@ -370,8 +384,8 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         />
 
         {/* Subscription Plans */}
-        <SubscriptionPlans 
-          darkMode={darkMode} 
+        <SubscriptionPlans
+          darkMode={darkMode}
           onUpgrade={() => {
             // Trigger refresh for all subscription-related components
             setSubscriptionRefreshTrigger(prev => prev + 1);

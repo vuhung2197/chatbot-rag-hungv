@@ -17,7 +17,7 @@ class VNPayService extends PaymentService {
         this.vnp_TmnCode = process.env.VNPAY_TMN_CODE;
         this.vnp_HashSecret = process.env.VNPAY_HASH_SECRET;
         this.vnp_Url = process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-        this.vnp_ReturnUrl = process.env.VNPAY_RETURN_URL || 'http://localhost:3001/wallet/vnpay/callback';
+        this.vnp_ReturnUrl = process.env.VNPAY_RETURN_URL || 'http://localhost:3001/wallet/vnpay/return';
         this.vnp_Version = '2.1.0';
         this.vnp_Command = 'pay';
         this.vnp_CurrCode = 'VND';
@@ -51,8 +51,9 @@ class VNPayService extends PaymentService {
                 throw new Error('Amount must be greater than 0');
             }
 
-            // Create date
+            // Create date and expiry date
             const createDate = moment().format('YYYYMMDDHHmmss');
+            const expireDate = moment().add(15, 'minutes').format('YYYYMMDDHHmmss'); // 15 minutes expiry
 
             // Build parameters
             let vnp_Params = {
@@ -67,7 +68,8 @@ class VNPayService extends PaymentService {
                 vnp_Amount: Math.round(amount * 100), // VNPay uses smallest unit (VND * 100)
                 vnp_ReturnUrl: this.vnp_ReturnUrl,
                 vnp_IpAddr: ipAddr,
-                vnp_CreateDate: createDate
+                vnp_CreateDate: createDate,
+                vnp_ExpireDate: expireDate // Payment expiry time (required by VNPay 2.1.0)
             };
 
             // Sort parameters
@@ -82,7 +84,22 @@ class VNPayService extends PaymentService {
             // Build payment URL
             const paymentUrl = this.vnp_Url + '?' + querystring.stringify(vnp_Params, { encode: false });
 
+            // Detailed logging for debugging
             this.log('info', 'VNPay payment URL created successfully', { orderId });
+            console.log('🔍 VNPay Parameters:', {
+                orderId,
+                amount: amount,
+                vnp_Amount: vnp_Params.vnp_Amount,
+                vnp_TmnCode: vnp_Params.vnp_TmnCode,
+                vnp_ReturnUrl: vnp_Params.vnp_ReturnUrl,
+                vnp_IpAddr: vnp_Params.vnp_IpAddr,
+                vnp_CreateDate: vnp_Params.vnp_CreateDate,
+                vnp_ExpireDate: vnp_Params.vnp_ExpireDate, // Log expiry date
+                vnp_Locale: vnp_Params.vnp_Locale,
+                signDataLength: signData.length,
+                hasSecureHash: !!vnp_Params.vnp_SecureHash
+            });
+            console.log('🔗 Payment URL:', paymentUrl.substring(0, 150) + '...');
 
             return paymentUrl;
         } catch (error) {

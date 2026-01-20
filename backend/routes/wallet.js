@@ -8,6 +8,7 @@ import {
     getWalletStats
 } from '../controllers/walletController.js';
 import { vnpayReturn, vnpayIPN } from '../controllers/vnpayController.js';
+import { momoReturn, momoIPN } from '../controllers/momoController.js';
 
 const router = express.Router();
 
@@ -29,6 +30,25 @@ router.get('/vnpay/return', vnpayReturn);
  * @access  Public (VNPay server calls this)
  */
 router.get('/vnpay/ipn', vnpayIPN);
+
+/**
+ * MoMo Callback Routes (Public - No authentication required)
+ * These MUST be before verifyToken middleware
+ */
+
+/**
+ * @route   GET /wallet/momo/return
+ * @desc    MoMo return URL - User redirected here after payment
+ * @access  Public
+ */
+router.get('/momo/return', momoReturn);
+
+/**
+ * @route   POST /wallet/momo/ipn
+ * @desc    MoMo IPN (Instant Payment Notification)
+ * @access  Public (MoMo server calls this)
+ */
+router.post('/momo/ipn', momoIPN);
 
 // All other wallet routes require authentication
 router.use(verifyToken);

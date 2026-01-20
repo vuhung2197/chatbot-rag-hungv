@@ -1,0 +1,408 @@
+/* Deposit Modal Styles */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.deposit-modal {
+    background: white;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+}
+
+.modal-header h2 i {
+    color: #4f46e5;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.btn-close:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 1.5rem;
+}
+
+.current-balance {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 1rem 1.5rem;
+    border-radius: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.current-balance span {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.current-balance strong {
+    color: #1f2937;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.amount-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.currency-symbol {
+    position: absolute;
+    left: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #6b7280;
+}
+
+.amount-input-wrapper input {
+    width: 100%;
+    padding: 0.875rem 1rem 0.875rem 2.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.amount-input-wrapper input:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.form-hint {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* Quick Amounts */
+.quick-amounts {
+    margin-bottom: 1.5rem;
+}
+
+.quick-amounts-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.quick-amounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+}
+
+.btn-quick-amount {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e5e7eb;
+    background: white;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-quick-amount:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: #f5f3ff;
+}
+
+.btn-quick-amount.active {
+    border-color: #4f46e5;
+    background: #4f46e5;
+    color: white;
+}
+
+.btn-quick-amount:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Payment Methods */
+.payment-methods-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.payment-method-card {
+    position: relative;
+    display: block;
+    cursor: pointer;
+}
+
+.payment-method-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.method-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: white;
+    transition: all 0.2s;
+}
+
+.payment-method-card:hover .method-content {
+    border-color: #4f46e5;
+    background: #f5f3ff;
+}
+
+.payment-method-card.selected .method-content {
+    border-color: #4f46e5;
+    background: #f5f3ff;
+}
+
+.method-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.method-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.method-name {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.method-description {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.check-icon {
+    color: #4f46e5;
+    font-size: 1.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.payment-method-card.selected .check-icon {
+    opacity: 1;
+}
+
+/* Error Message */
+.error-message {
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
+    color: #991b1b;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.error-message i {
+    font-size: 1.25rem;
+}
+
+/* Modal Actions */
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.btn-cancel,
+.btn-submit {
+    flex: 1;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s;
+}
+
+.btn-cancel {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-cancel:hover {
+    background: #e5e7eb;
+}
+
+.btn-submit {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+}
+
+.btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
+}
+
+.btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner-small {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+/* Security Notice */
+.security-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.security-notice i {
+    color: #10b981;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .deposit-modal {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .modal-header,
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .quick-amounts-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .method-content {
+        padding: 1rem;
+    }
+}

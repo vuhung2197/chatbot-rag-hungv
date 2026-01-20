@@ -19,6 +19,7 @@ import conversationRoutes from './routes/conversation.js';
 import userRoutes from './routes/user.js';
 import passwordRoutes from './routes/password.js';
 import sessionRoutes from './routes/session.js';
+import walletRoutes from './routes/wallet.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,7 @@ app.use('/conversations', conversationRoutes);
 app.use('/user', userRoutes);
 app.use('/auth/password', passwordRoutes);
 app.use('/auth/sessions', sessionRoutes);
+app.use('/wallet', walletRoutes);
 
 app.use(errorHandler);
 

@@ -8,7 +8,7 @@ export async function getTiers(req, res) {
     const [tiers] = await pool.execute(
       'SELECT * FROM subscription_tiers ORDER BY price_monthly ASC'
     );
-    
+
     res.json({ tiers });
   } catch (error) {
     console.error('Error getting tiers:', error);
@@ -50,7 +50,7 @@ export async function getCurrentSubscription(req, res) {
         'SELECT * FROM subscription_tiers WHERE name = ?',
         ['free']
       );
-      
+
       if (freeTier.length > 0) {
         return res.json({
           subscription: null,
@@ -58,7 +58,7 @@ export async function getCurrentSubscription(req, res) {
           isFree: true
         });
       }
-      
+
       return res.status(404).json({ message: 'No subscription found' });
     }
 
@@ -95,9 +95,11 @@ export async function getCurrentSubscription(req, res) {
 }
 
 /**
- * Upgrade subscription (for now, just update tier - no payment integration)
+ * Upgrade subscription with wallet payment
  */
 export async function upgradeSubscription(req, res) {
+  const connection = await pool.getConnection();
+
   try {
     const userId = req.user?.id;
     if (!userId) {
@@ -111,7 +113,7 @@ export async function upgradeSubscription(req, res) {
     }
 
     // Get tier
-    const [tiers] = await pool.execute(
+    const [tiers] = await connection.execute(
       'SELECT * FROM subscription_tiers WHERE name = ?',
       [tierName]
     );
@@ -122,8 +124,13 @@ export async function upgradeSubscription(req, res) {
 
     const tier = tiers[0];
 
+    // Calculate price based on billing cycle
+    const price = billingCycle === 'yearly'
+      ? (tier.price_yearly || tier.price_monthly * 12)
+      : tier.price_monthly;
+
     // Get current subscription to check tier order
-    const [currentSubs] = await pool.execute(
+    const [currentSubs] = await connection.execute(
       `SELECT st.name as tier_name, st.price_monthly
        FROM user_subscriptions us
        JOIN subscription_tiers st ON us.tier_id = st.id
@@ -147,8 +154,7 @@ export async function upgradeSubscription(req, res) {
       currentTierName = currentSubs[0].tier_name;
     } else {
       // User doesn't have subscription record, assume free tier
-      // Check if user exists and create free tier subscription if needed
-      const [users] = await pool.execute('SELECT id FROM users WHERE id = ?', [userId]);
+      const [users] = await connection.execute('SELECT id FROM users WHERE id = ?', [userId]);
       if (users.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
@@ -164,39 +170,108 @@ export async function upgradeSubscription(req, res) {
 
     // Only allow upgrade (higher tier), not downgrade
     if (newTierOrder <= currentTierOrder) {
-      return res.status(400).json({ 
-        message: 'Cannot downgrade. Please cancel your current subscription first.' 
+      return res.status(400).json({
+        message: 'Cannot downgrade. Please cancel your current subscription first.'
       });
     }
 
-    // Cancel existing subscription if any (only if user has active subscription)
-    if (currentSubs.length > 0) {
-      await pool.execute(
-        `UPDATE user_subscriptions 
-         SET status = 'cancelled', cancel_at_period_end = FALSE
-         WHERE user_id = ? AND status IN ('active', 'trial')`,
-        [userId]
-      );
+    // ===== WALLET PAYMENT INTEGRATION =====
+
+    // Get user wallet
+    const [wallets] = await connection.execute(
+      'SELECT * FROM user_wallets WHERE user_id = ?',
+      [userId]
+    );
+
+    if (wallets.length === 0) {
+      return res.status(404).json({ message: 'Wallet not found' });
     }
 
-    // Create new subscription
-    const periodStart = new Date();
-    const periodEnd = new Date();
-    if (billingCycle === 'yearly') {
-      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-    } else {
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
+    const wallet = wallets[0];
+
+    // Check if wallet has sufficient balance
+    if (parseFloat(wallet.balance) < parseFloat(price)) {
+      return res.status(400).json({
+        message: `Insufficient balance. Required: ${price.toLocaleString('vi-VN')} đ, Available: ${parseFloat(wallet.balance).toLocaleString('vi-VN')} đ`,
+        required: price,
+        available: parseFloat(wallet.balance)
+      });
     }
+
+    // Begin database transaction
+    await connection.beginTransaction();
 
     try {
-      await pool.execute(
+      // Lock wallet for update
+      const [lockedWallets] = await connection.execute(
+        'SELECT * FROM user_wallets WHERE id = ? FOR UPDATE',
+        [wallet.id]
+      );
+
+      const lockedWallet = lockedWallets[0];
+      const newBalance = parseFloat(lockedWallet.balance) - parseFloat(price);
+
+      // Update wallet balance
+      await connection.execute(
+        'UPDATE user_wallets SET balance = ?, updated_at = NOW() WHERE id = ?',
+        [newBalance, wallet.id]
+      );
+
+
+      // Create wallet transaction record
+      await connection.execute(
+        `INSERT INTO wallet_transactions 
+         (wallet_id, user_id, type, amount, balance_before, balance_after, status, payment_method, description, metadata)
+         VALUES (?, ?, 'subscription', ?, ?, ?, 'completed', 'wallet', ?, ?)`,
+        [
+          wallet.id,
+          userId,
+          price,
+          lockedWallet.balance,
+          newBalance,
+          `Subscription upgrade to ${tier.display_name} (${billingCycle})`,
+          JSON.stringify({
+            tier_name: tierName,
+            tier_display_name: tier.display_name,
+            billing_cycle: billingCycle,
+            price: price,
+            upgraded_at: new Date().toISOString()
+          })
+        ]
+      );
+
+      // Cancel existing subscription if any
+      if (currentSubs.length > 0) {
+        await connection.execute(
+          `UPDATE user_subscriptions 
+           SET status = 'cancelled', cancel_at_period_end = FALSE
+           WHERE user_id = ? AND status IN ('active', 'trial')`,
+          [userId]
+        );
+      }
+
+      // Create new subscription
+      const periodStart = new Date();
+      const periodEnd = new Date();
+      if (billingCycle === 'yearly') {
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+      } else {
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+      }
+
+      await connection.execute(
         `INSERT INTO user_subscriptions 
          (user_id, tier_id, status, billing_cycle, current_period_start, current_period_end)
          VALUES (?, ?, 'active', ?, ?, ?)`,
         [userId, tier.id, billingCycle, periodStart, periodEnd]
       );
 
+      // Commit transaction
+      await connection.commit();
+
       console.log(`✅ User ${userId} upgraded to tier: ${tierName}`);
+      console.log(`   Price: ${price} VND`);
+      console.log(`   New balance: ${newBalance} VND`);
 
       // Parse features safely
       let features = {};
@@ -219,24 +294,34 @@ export async function upgradeSubscription(req, res) {
           name: tier.name,
           display_name: tier.display_name,
           features: features
+        },
+        payment: {
+          amount: price,
+          new_balance: newBalance,
+          billing_cycle: billingCycle
         }
       });
+
     } catch (dbError) {
+      await connection.rollback();
       console.error('❌ Database error upgrading subscription:', dbError);
-      // Check for duplicate entry error
+
       if (dbError.code === 'ER_DUP_ENTRY' || dbError.errno === 1062) {
-        return res.status(409).json({ 
-          message: 'Subscription already exists. Please refresh the page.' 
+        return res.status(409).json({
+          message: 'Subscription already exists. Please refresh the page.'
         });
       }
-      throw dbError; // Re-throw to be caught by outer catch
+      throw dbError;
     }
+
   } catch (error) {
     console.error('❌ Error upgrading subscription:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.response?.data?.message || 'Error upgrading subscription',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
+  } finally {
+    connection.release();
   }
 }
 
@@ -322,7 +407,7 @@ export async function getInvoices(req, res) {
 
     // Format as invoices
     const invoices = subscriptions.map((sub) => {
-      const price = sub.billing_cycle === 'yearly' 
+      const price = sub.billing_cycle === 'yearly'
         ? (sub.price_yearly || sub.price_monthly * 12)
         : sub.price_monthly;
 

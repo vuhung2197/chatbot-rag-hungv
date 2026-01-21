@@ -8,6 +8,7 @@ import {
     getWalletStats
 } from '../controllers/walletController.js';
 import { vnpayReturn, vnpayIPN } from '../controllers/vnpayController.js';
+import { queryVNPayTransaction } from '../controllers/vnpayQueryController.js';
 import { momoReturn, momoIPN } from '../controllers/momoController.js';
 
 const router = express.Router();
@@ -74,6 +75,13 @@ router.get('/transactions', getTransactions);
  * @access  Private
  */
 router.get('/stats', getWalletStats);
+
+/**
+ * @route   GET /wallet/vnpay/query/:orderId
+ * @desc    Query VNPay transaction status
+ * @access  Private
+ */
+router.get('/vnpay/query/:orderId', queryVNPayTransaction);
 
 /**
  * @route   POST /wallet/deposit

@@ -110,9 +110,9 @@ export async function vnpayReturn(req, res) {
             console.log(`   Amount: ${transaction.amount}`);
             console.log(`   New balance: ${newBalance}`);
 
-            // Redirect to frontend with success
+            // Redirect to profile page with success message
             const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-            res.redirect(`${frontendUrl}/wallet?payment=success&amount=${transaction.amount}`);
+            res.redirect(`${frontendUrl}/profile?payment=success&amount=${transaction.amount}`);
 
         } catch (error) {
             await connection.rollback();

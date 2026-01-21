@@ -1,6 +1,6 @@
 import crypto from 'crypto';
-import querystring from 'querystring';
-import moment from 'moment';
+import qs from 'qs';
+import moment from 'moment-timezone';
 import PaymentService from './paymentService.js';
 
 /**
@@ -51,9 +51,9 @@ class VNPayService extends PaymentService {
                 throw new Error('Amount must be greater than 0');
             }
 
-            // Create date and expiry date
-            const createDate = moment().format('YYYYMMDDHHmmss');
-            const expireDate = moment().add(15, 'minutes').format('YYYYMMDDHHmmss'); // 15 minutes expiry
+            // Create date and expiry date (GMT+7 - Vietnam timezone as required by VNPay)
+            const createDate = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
+            const expireDate = moment().tz('Asia/Ho_Chi_Minh').add(15, 'minutes').format('YYYYMMDDHHmmss');
 
             // Build parameters
             let vnp_Params = {
@@ -75,14 +75,19 @@ class VNPayService extends PaymentService {
             // Sort parameters
             vnp_Params = this.sortObject(vnp_Params);
 
-            // Create signature
-            const signData = querystring.stringify(vnp_Params, { encode: false });
+            // Create signature - VNPay uses application/x-www-form-urlencoded
+            // Space becomes '+' not '%20'
+            // Use URLSearchParams which properly encodes space as '+'
+            const signData = new URLSearchParams(vnp_Params).toString();
+
+            console.log('🔐 Sign Data (before hash):', signData);
+
             const hmac = crypto.createHmac('sha512', this.vnp_HashSecret);
             const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
             vnp_Params['vnp_SecureHash'] = signed;
 
             // Build payment URL
-            const paymentUrl = this.vnp_Url + '?' + querystring.stringify(vnp_Params, { encode: false });
+            const paymentUrl = this.vnp_Url + '?' + new URLSearchParams(vnp_Params).toString();
 
             // Detailed logging for debugging
             this.log('info', 'VNPay payment URL created successfully', { orderId });
@@ -94,11 +99,13 @@ class VNPayService extends PaymentService {
                 vnp_ReturnUrl: vnp_Params.vnp_ReturnUrl,
                 vnp_IpAddr: vnp_Params.vnp_IpAddr,
                 vnp_CreateDate: vnp_Params.vnp_CreateDate,
-                vnp_ExpireDate: vnp_Params.vnp_ExpireDate, // Log expiry date
+                vnp_ExpireDate: vnp_Params.vnp_ExpireDate,
                 vnp_Locale: vnp_Params.vnp_Locale,
                 signDataLength: signData.length,
                 hasSecureHash: !!vnp_Params.vnp_SecureHash
             });
+            console.log('📤 Full Parameters:', JSON.stringify(vnp_Params, null, 2));
+            console.log('📝 Sign Data:', signData);
             console.log('🔗 Payment URL:', paymentUrl.substring(0, 150) + '...');
 
             return paymentUrl;
@@ -130,8 +137,9 @@ class VNPayService extends PaymentService {
             // Sort parameters
             const sortedParams = this.sortObject(paramsToVerify);
 
-            // Create signature
-            const signData = querystring.stringify(sortedParams, { encode: false });
+            // Create signature - Use URLSearchParams like generation
+            const signData = new URLSearchParams(sortedParams).toString();
+
             const hmac = crypto.createHmac('sha512', this.vnp_HashSecret);
             const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
@@ -235,13 +243,58 @@ class VNPayService extends PaymentService {
     }
 
     /**
-     * Query payment status (VNPay API)
-     * Note: Requires additional API configuration
+     * Query payment status from VNPay
+     * API: vnp_Command=querydr
+     * @param {string} orderId - Transaction reference (vnp_TxnRef)
+     * @param {string} transactionDate - Transaction date (yyyyMMddHHmmss)
+     * @returns {Promise<Object>} Query result
      */
-    async queryPaymentStatus(orderId) {
-        // TODO: Implement VNPay query API
-        this.log('warn', 'queryPaymentStatus not yet implemented for VNPay');
-        throw new Error('Not implemented');
+    async queryPaymentStatus(orderId, transactionDate) {
+        try {
+            this.log('info', 'Querying VNPay payment status', { orderId, transactionDate });
+
+            // Build query parameters
+            const vnp_RequestId = moment().format('YYYYMMDDHHmmss');
+            const vnp_CreateDate = moment().tz('Asia/Ho_Chi_Minh').format('YYYYMMDDHHmmss');
+
+            let vnp_Params = {
+                vnp_Version: this.vnp_Version,
+                vnp_Command: 'querydr',
+                vnp_TmnCode: this.vnp_TmnCode,
+                vnp_TxnRef: orderId,
+                vnp_OrderInfo: `Query transaction ${orderId}`,
+                vnp_TransactionDate: transactionDate,
+                vnp_CreateDate: vnp_CreateDate,
+                vnp_IpAddr: '127.0.0.1',
+                vnp_RequestId: vnp_RequestId
+            };
+
+            // Sort parameters
+            vnp_Params = this.sortObject(vnp_Params);
+
+            // Create signature
+            const signData = qs.stringify(vnp_Params, { encode: false });
+            const hmac = crypto.createHmac('sha512', this.vnp_HashSecret);
+            const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
+            vnp_Params['vnp_SecureHash'] = signed;
+
+            // Build query URL
+            const queryUrl = this.vnp_Url.replace('/vpcpay.html', '/querydr') + '?' + qs.stringify(vnp_Params, { encode: false });
+
+            this.log('info', 'VNPay query URL created', { orderId });
+
+            // Note: This requires making HTTP request to VNPay
+            // For now, return the URL for manual testing
+            return {
+                success: true,
+                queryUrl,
+                message: 'Query URL created. Make GET request to this URL to get transaction status.'
+            };
+
+        } catch (error) {
+            this.log('error', 'Error querying VNPay payment status', { error: error.message });
+            throw error;
+        }
     }
 
     /**

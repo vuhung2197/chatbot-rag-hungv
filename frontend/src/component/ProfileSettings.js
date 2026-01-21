@@ -38,8 +38,26 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   const [bio, setBio] = useState('');
   const [timezone, setTimezone] = useState('Asia/Ho_Chi_Minh');
 
+
   useEffect(() => {
     loadProfile();
+
+    // Check for payment success
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const amount = urlParams.get('amount');
+
+    if (paymentStatus === 'success' && amount) {
+      setSuccess(`Thanh toán thành công! ${parseFloat(amount).toLocaleString('vi-VN')} đ đã được thêm vào ví của bạn.`);
+
+      // Clear URL params after showing message
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+    }
   }, []);
 
   const loadProfile = async () => {

@@ -393,6 +393,10 @@ export async function getWalletStats(req, res) {
         COUNT(DISTINCT wt.id) as total_transactions,
         SUM(CASE WHEN wt.type = 'deposit' AND wt.status = 'completed' THEN wt.amount ELSE 0 END) as total_deposits,
         SUM(CASE WHEN wt.type IN ('purchase', 'subscription') AND wt.status = 'completed' THEN ABS(wt.amount) ELSE 0 END) as total_spent,
+        SUM(CASE WHEN wt.type = 'deposit' AND wt.status = 'failed' THEN wt.amount ELSE 0 END) as failed_deposit_amount,
+        SUM(CASE WHEN wt.type = 'deposit' AND wt.status = 'pending' THEN wt.amount ELSE 0 END) as pending_deposit_amount,
+        COUNT(CASE WHEN wt.type = 'deposit' AND wt.status = 'failed' THEN 1 END) as total_failed_deposits,
+        COUNT(CASE WHEN wt.type = 'deposit' AND wt.status = 'pending' THEN 1 END) as total_pending_deposits,
         MAX(wt.created_at) as last_transaction_at
        FROM user_wallets w
        LEFT JOIN wallet_transactions wt ON w.id = wt.wallet_id
@@ -408,11 +412,42 @@ export async function getWalletStats(req, res) {
                 total_transactions: 0,
                 total_deposits: 0,
                 total_spent: 0,
+                failed_deposit_amount: 0,
+                pending_deposit_amount: 0,
+                total_failed_deposits: 0,
+                total_pending_deposits: 0,
                 last_transaction_at: null
             });
         }
 
-        res.json(stats[0]);
+        const result = stats[0];
+
+        // Convert amounts to wallet currency if needed
+        // Transactions are stored in USD, so convert to VND if wallet is in VND
+        if (result.currency === 'VND') {
+            result.total_deposits = currencyService.convertCurrency(
+                parseFloat(result.total_deposits) || 0,
+                'USD',
+                'VND'
+            );
+            result.total_spent = currencyService.convertCurrency(
+                parseFloat(result.total_spent) || 0,
+                'USD',
+                'VND'
+            );
+            result.failed_deposit_amount = currencyService.convertCurrency(
+                parseFloat(result.failed_deposit_amount) || 0,
+                'USD',
+                'VND'
+            );
+            result.pending_deposit_amount = currencyService.convertCurrency(
+                parseFloat(result.pending_deposit_amount) || 0,
+                'USD',
+                'VND'
+            );
+        }
+
+        res.json(result);
     } catch (error) {
         console.error('❌ Error getting wallet stats:', error);
         res.status(500).json({ message: 'Error getting wallet statistics' });
@@ -550,6 +585,85 @@ export async function updateWalletCurrency(req, res) {
     } catch (error) {
         console.error('❌ Error updating wallet currency:', error);
         res.status(500).json({ message: 'Error updating wallet currency' });
+    }
+}
+
+/**
+ * Get failed and pending deposit transactions
+ * Helps users track unsuccessful deposit attempts
+ */
+export async function getFailedAndPendingDeposits(req, res) {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const status = req.query.status; // 'failed', 'pending', or undefined for both
+
+        let query = `
+            SELECT 
+                id, wallet_id, amount, balance_before, balance_after,
+                description, payment_method, payment_gateway_id, 
+                status, metadata, created_at
+            FROM wallet_transactions
+            WHERE user_id = ? AND type = 'deposit'
+        `;
+        const params = [userId];
+
+        if (status === 'failed' || status === 'pending') {
+            query += ' AND status = ?';
+            params.push(status);
+        } else {
+            // Get both failed and pending if status not specified
+            query += ' AND status IN (?, ?)';
+            params.push('failed', 'pending');
+        }
+
+        query += ' ORDER BY created_at DESC';
+
+        const [transactions] = await pool.execute(query, params);
+
+        // Get wallet currency for conversion
+        const [wallets] = await pool.execute(
+            'SELECT currency FROM user_wallets WHERE user_id = ?',
+            [userId]
+        );
+
+        const walletCurrency = wallets.length > 0 ? wallets[0].currency : 'USD';
+
+        // Convert amounts to wallet currency if needed
+        const convertedTransactions = transactions.map(tx => {
+            const transaction = { ...tx };
+            if (walletCurrency === 'VND') {
+                transaction.amount = currencyService.convertCurrency(
+                    parseFloat(transaction.amount) || 0,
+                    'USD',
+                    'VND'
+                );
+                transaction.balance_before = currencyService.convertCurrency(
+                    parseFloat(transaction.balance_before) || 0,
+                    'USD',
+                    'VND'
+                );
+                transaction.balance_after = currencyService.convertCurrency(
+                    parseFloat(transaction.balance_after) || 0,
+                    'USD',
+                    'VND'
+                );
+            }
+            transaction.currency = walletCurrency;
+            return transaction;
+        });
+
+        res.json({
+            transactions: convertedTransactions,
+            total: convertedTransactions.length,
+            currency: walletCurrency
+        });
+    } catch (error) {
+        console.error('❌ Error getting failed/pending deposits:', error);
+        res.status(500).json({ message: 'Error getting failed/pending deposits' });
     }
 }
 

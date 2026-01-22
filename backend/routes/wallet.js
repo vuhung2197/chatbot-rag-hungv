@@ -8,7 +8,8 @@ import {
     getWalletStats,
     getPaymentMethods,
     getCurrencies,
-    updateWalletCurrency
+    updateWalletCurrency,
+    getFailedAndPendingDeposits
 } from '../controllers/walletController.js';
 import { vnpayReturn, vnpayIPN } from '../controllers/vnpayController.js';
 import { queryVNPayTransaction } from '../controllers/vnpayQueryController.js';
@@ -124,4 +125,13 @@ router.get('/currencies', verifyToken, getCurrencies);
  */
 router.put('/currency', verifyToken, updateWalletCurrency);
 
+/**
+ * @route   GET /wallet/deposits/failed-pending
+ * @desc    Get failed and pending deposit transactions
+ * @access  Private
+ * @query   status (optional: 'failed' or 'pending')
+ */
+router.get('/deposits/failed-pending', getFailedAndPendingDeposits);
+
 export default router;
+

@@ -1,0 +1,284 @@
+.currency-selector {
+    margin-bottom: 1.5rem;
+}
+
+.currency-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 0.75rem;
+}
+
+.currency-label i {
+    color: #667eea;
+}
+
+.currency-options {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.currency-option {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.currency-option:hover:not(:disabled) {
+    border-color: #667eea;
+    background: #f7fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.1);
+}
+
+.currency-option.active {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.currency-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.currency-symbol {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.currency-code {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+/* Confirmation Modal */
+.currency-confirm-modal {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    max-width: 450px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.currency-confirm-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.currency-confirm-modal .modal-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.25rem;
+    color: #2d3748;
+}
+
+.currency-confirm-modal .modal-header h3 i {
+    color: #667eea;
+}
+
+.currency-confirm-modal .btn-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #a0aec0;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+}
+
+.currency-confirm-modal .btn-close:hover {
+    color: #2d3748;
+}
+
+.currency-change-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    border-radius: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.currency-from,
+.currency-to {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.currency-from .label,
+.currency-to .label {
+    font-size: 0.75rem;
+    color: #718096;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.currency-from .value,
+.currency-to .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.currency-change-info i {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.exchange-rate-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #ebf4ff;
+    border-left: 4px solid #4299e1;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.exchange-rate-info i {
+    color: #4299e1;
+    font-size: 1.25rem;
+}
+
+.exchange-rate-info p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #2c5282;
+    font-weight: 500;
+}
+
+.warning-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #fffaf0;
+    border-left: 4px solid #ed8936;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.warning-message i {
+    color: #ed8936;
+    font-size: 1.25rem;
+    margin-top: 0.125rem;
+}
+
+.warning-message p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #744210;
+    line-height: 1.5;
+}
+
+.currency-confirm-modal .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.currency-confirm-modal .btn-cancel,
+.currency-confirm-modal .btn-confirm {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.currency-confirm-modal .btn-cancel {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+.currency-confirm-modal .btn-cancel:hover:not(:disabled) {
+    background: #e2e8f0;
+}
+
+.currency-confirm-modal .btn-confirm {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.currency-confirm-modal .btn-confirm:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+}
+
+.currency-confirm-modal .btn-cancel:disabled,
+.currency-confirm-modal .btn-confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spinner-small {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .currency-options {
+        gap: 0.5rem;
+    }
+
+    .currency-option {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .currency-symbol {
+        font-size: 1.25rem;
+    }
+
+    .currency-code {
+        font-size: 0.75rem;
+    }
+
+    .currency-change-info {
+        padding: 1rem;
+    }
+
+    .currency-from .value,
+    .currency-to .value {
+        font-size: 1.25rem;
+    }
+}

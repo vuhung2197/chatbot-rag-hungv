@@ -50,7 +50,11 @@ export default function BillingHistory({ darkMode = false, inModal = false }) {
 
   const formatCurrency = (amount) => {
     if (!amount || amount === 0) return 'Free';
-    return `$${Number(amount).toFixed(2)}`;
+    // Default to VND for Vietnam market
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(amount);
   };
 
   const getStatusBadge = (status) => {
@@ -125,7 +129,7 @@ export default function BillingHistory({ darkMode = false, inModal = false }) {
                       {formatCurrency(invoice.amount)}
                     </td>
                     <td className={styles.billingCycle}>
-                      {invoice.billing_cycle === 'yearly' 
+                      {invoice.billing_cycle === 'yearly'
                         ? (t('subscription.yearly') || 'Yearly')
                         : (t('subscription.monthly') || 'Monthly')}
                     </td>

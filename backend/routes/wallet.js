@@ -5,7 +5,10 @@ import {
     getTransactions,
     createDeposit,
     processPaymentCallback,
-    getWalletStats
+    getWalletStats,
+    getPaymentMethods,
+    getCurrencies,
+    updateWalletCurrency
 } from '../controllers/walletController.js';
 import { vnpayReturn, vnpayIPN } from '../controllers/vnpayController.js';
 import { queryVNPayTransaction } from '../controllers/vnpayQueryController.js';
@@ -98,5 +101,27 @@ router.post('/deposit', createDeposit);
  * @body    { transaction_id, status, gateway_id, signature }
  */
 router.post('/payment-callback', processPaymentCallback);
+
+/**
+ * @route   GET /wallet/payment-methods
+ * @desc    Get available payment methods
+ * @access  Private
+ */
+router.get('/payment-methods', getPaymentMethods);
+
+/**
+ * @route   GET /wallet/currencies
+ * @desc    Get supported currencies and exchange rates
+ * @access  Private
+ */
+router.get('/currencies', verifyToken, getCurrencies);
+
+/**
+ * @route   PUT /wallet/currency
+ * @desc    Update wallet currency (converts balance)
+ * @access  Private
+ * @body    { currency }
+ */
+router.put('/currency', verifyToken, updateWalletCurrency);
 
 export default router;

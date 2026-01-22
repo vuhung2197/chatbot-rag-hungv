@@ -5,6 +5,7 @@ import { getWalletText } from '../utils/walletTranslations';
 import '../styles/WalletDashboard.css';
 import DepositModal from './DepositModal';
 import TransactionHistory from './TransactionHistory';
+import CurrencySelector from './CurrencySelector';
 
 const WalletDashboard = () => {
     const { language } = useLanguage();
@@ -38,6 +39,11 @@ const WalletDashboard = () => {
                     fetchWalletData();
                 }, 1000);
             }
+
+            // Auto-hide notification after 5 seconds
+            setTimeout(() => {
+                setPaymentStatus(null);
+            }, 5000);
         }
     };
 
@@ -72,7 +78,25 @@ const WalletDashboard = () => {
         fetchWalletData();
     };
 
-    const formatCurrency = (amount, currency = 'USD') => {
+    const handleCurrencyChange = (updatedWallet) => {
+        // Refresh wallet data after currency change
+        fetchWalletData();
+
+        // Show currency change success message (not payment success)
+        setPaymentStatus({
+            status: 'currency_changed',
+            currency: updatedWallet.currency,
+            balance: updatedWallet.balance
+        });
+
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => {
+            setPaymentStatus(null);
+        }, 5000);
+    };
+
+
+    const formatCurrency = (amount, currency = 'VND') => {
         if (currency === 'VND') {
             return new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
@@ -126,6 +150,12 @@ const WalletDashboard = () => {
                 </button>
             </div>
 
+            {/* Currency Selector */}
+            <CurrencySelector
+                currentCurrency={wallet?.currency || 'USD'}
+                onCurrencyChange={handleCurrencyChange}
+            />
+
             {/* Payment Status Alert */}
             {paymentStatus && (
                 <div className={`payment-alert ${paymentStatus.status}`}>
@@ -155,6 +185,18 @@ const WalletDashboard = () => {
                             <div>
                                 <strong>{t('paymentCancelled')}</strong>
                                 <p>{t('youCancelledPayment')}</p>
+                            </div>
+                        </>
+                    )}
+                    {paymentStatus.status === 'currency_changed' && (
+                        <>
+                            <i className="fas fa-exchange-alt"></i>
+                            <div>
+                                <strong>{t('currencyChanged') || 'Currency Changed'}</strong>
+                                <p>
+                                    {t('currencyChangedTo') || 'Currency changed to'} {paymentStatus.currency}.
+                                    {t('newBalance') || 'New balance'}: {formatCurrency(paymentStatus.balance, paymentStatus.currency)}
+                                </p>
                             </div>
                         </>
                     )}

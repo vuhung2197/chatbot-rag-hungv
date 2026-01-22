@@ -77,11 +77,11 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
         loadCurrentSubscription(),
         loadTiers()
       ]);
-      
+
       if (onUpgrade) {
         onUpgrade(); // Callback to refresh parent components
       }
-      
+
       // Show success message (optional)
       setError('');
       console.log('✅ Subscription upgraded successfully');
@@ -228,7 +228,10 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
                 {getPrice(tier) > 0 ? (
                   <>
                     <span className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
-                      ${getPrice(tier).toFixed(2)}
+                      {new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND'
+                      }).format(getPrice(tier))}
                     </span>
                     <span className={`${styles.priceLabel} ${darkMode ? styles.darkMode : ''}`}>
                       {getPriceLabel(tier)}
@@ -240,7 +243,10 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
                     )}
                     {billingCycle === 'yearly' && tier.price_monthly > 0 && (
                       <div className={`${styles.monthlyEquivalent} ${darkMode ? styles.darkMode : ''}`}>
-                        ${(getPrice(tier) / 12).toFixed(2)}/{t('subscription.month')}
+                        {new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND'
+                        }).format(getPrice(tier) / 12)}/{t('subscription.month')}
                       </div>
                     )}
                   </>
@@ -289,12 +295,12 @@ export default function SubscriptionPlans({ darkMode = false, onUpgrade, refresh
                 {isCurrent
                   ? t('subscription.currentPlan')
                   : isUpgrading
-                  ? t('subscription.upgrading')
-                  : isLowerTier
-                  ? t('subscription.downgradeNotAllowed')
-                  : tier.name === 'free'
-                  ? t('subscription.currentPlan')
-                  : t('subscription.upgrade')}
+                    ? t('subscription.upgrading')
+                    : isLowerTier
+                      ? t('subscription.downgradeNotAllowed')
+                      : tier.name === 'free'
+                        ? t('subscription.currentPlan')
+                        : t('subscription.upgrade')}
               </button>
             </div>
           );

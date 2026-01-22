@@ -1,6 +1,7 @@
 import pool from '../db.js';
 import vnpayService from '../services/vnpayService.js';
 import momoService from '../services/momoService.js';
+import currencyService from '../services/currencyService.js';
 
 /**
  * Get user wallet information
@@ -417,3 +418,138 @@ export async function getWalletStats(req, res) {
         res.status(500).json({ message: 'Error getting wallet statistics' });
     }
 }
+
+/**
+ * Get available payment methods
+ */
+export async function getPaymentMethods(req, res) {
+    try {
+        const [methods] = await pool.execute(
+            'SELECT name, display_name, provider, min_amount, max_amount, is_active FROM payment_methods WHERE is_active = TRUE'
+        );
+
+        res.json(methods);
+    } catch (error) {
+        console.error('❌ Error getting payment methods:', error);
+        res.status(500).json({ message: 'Error getting payment methods' });
+    }
+}
+
+/**
+ * Get supported currencies and exchange rates
+ */
+export async function getCurrencies(req, res) {
+    try {
+        const currencies = currencyService.getSupportedCurrencies();
+        const rates = currencyService.getAllExchangeRates();
+
+        res.json({
+            currencies,
+            exchangeRates: rates
+        });
+    } catch (error) {
+        console.error('❌ Error getting currencies:', error);
+        res.status(500).json({ message: 'Error getting currencies' });
+    }
+}
+
+/**
+ * Update wallet currency
+ * Converts existing balance to new currency
+ */
+export async function updateWalletCurrency(req, res) {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const { currency } = req.body;
+
+        // Validate currency
+        const supportedCurrencies = currencyService.getSupportedCurrencies();
+        const isSupported = supportedCurrencies.some(c => c.code === currency);
+
+        if (!isSupported) {
+            return res.status(400).json({
+                message: 'Unsupported currency',
+                supportedCurrencies: supportedCurrencies.map(c => c.code)
+            });
+        }
+
+        // Get wallet
+        const [wallets] = await pool.execute(
+            'SELECT id, balance, currency FROM user_wallets WHERE user_id = ?',
+            [userId]
+        );
+
+        if (wallets.length === 0) {
+            return res.status(404).json({ message: 'Wallet not found' });
+        }
+
+        const wallet = wallets[0];
+
+        // If currency is the same, no need to update
+        if (wallet.currency === currency) {
+            return res.json({
+                message: 'Currency already set',
+                wallet: {
+                    balance: wallet.balance,
+                    currency: wallet.currency
+                }
+            });
+        }
+
+        // Convert balance to new currency
+        const oldCurrency = wallet.currency;
+        const oldBalance = parseFloat(wallet.balance);
+        const newBalance = currencyService.convertCurrency(oldBalance, oldCurrency, currency);
+
+        // Update wallet
+        await pool.execute(
+            'UPDATE user_wallets SET currency = ?, balance = ?, updated_at = NOW() WHERE id = ?',
+            [currency, newBalance, wallet.id]
+        );
+
+        // Log the currency change in transactions
+        await pool.execute(
+            `INSERT INTO wallet_transactions 
+             (wallet_id, user_id, type, amount, balance_before, balance_after, 
+              description, status, metadata)
+             VALUES (?, ?, 'deposit', 0, ?, ?, ?, 'completed', ?)`,
+            [
+                wallet.id,
+                userId,
+                oldBalance,
+                newBalance,
+                `Currency changed from ${oldCurrency} to ${currency}`,
+                JSON.stringify({
+                    action: 'currency_change',
+                    old_currency: oldCurrency,
+                    new_currency: currency,
+                    old_balance: oldBalance,
+                    new_balance: newBalance,
+                    exchange_rate: currencyService.getExchangeRate(oldCurrency, currency),
+                    changed_at: new Date().toISOString()
+                })
+            ]
+        );
+
+        console.log(`✅ Wallet currency updated for user ${userId}: ${oldCurrency} → ${currency}`);
+        console.log(`   Balance converted: ${oldBalance} ${oldCurrency} → ${newBalance} ${currency}`);
+
+        res.json({
+            message: 'Currency updated successfully',
+            wallet: {
+                balance: newBalance,
+                currency: currency,
+                oldBalance: oldBalance,
+                oldCurrency: oldCurrency
+            }
+        });
+    } catch (error) {
+        console.error('❌ Error updating wallet currency:', error);
+        res.status(500).json({ message: 'Error updating wallet currency' });
+    }
+}
+

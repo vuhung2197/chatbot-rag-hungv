@@ -1,0 +1,71 @@
+# ============================================
+# Docker Ignore File
+# Exclude files from Docker build context
+# ============================================
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+!README.md
+LICENSE
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies (will be installed in container)
+node_modules
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Database files
+*.sql
+*.db
+*.sqlite
+
+# Backups
+backups
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+test
+tests
+__tests__
+*.test.js
+*.spec.js
+
+# Coverage
+coverage
+.nyc_output
+
+# Temporary files
+tmp
+temp
+.tmp
+.cache

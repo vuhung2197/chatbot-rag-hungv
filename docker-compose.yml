@@ -1,57 +1,129 @@
+version: '3.8'
+
 services:
-  db:
-    image: mysql:8
-    restart: always
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: chatbot-postgres
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}                      
-      MYSQL_USER: ${DB_USER}                            
-      MYSQL_PASSWORD: ${DB_PASSWORD}             
+      POSTGRES_DB: ${POSTGRES_DB:-chatbot}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      TZ: Asia/Ho_Chi_Minh
     ports:
-      - "3307:3306"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - db_data:/var/lib/mysql
+      # Persistent data
+      - postgres_data:/var/lib/postgresql/data
+      # Init scripts (auto-run on first start) - DISABLED for now, run manually
+      # - ./.migration/postgresql:/docker-entrypoint-initdb.d:ro
+      # Backups
+      - ./backups/postgresql:/backups
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-chatbot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # ============================================
+  # pgAdmin 4 - Web UI for PostgreSQL
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: chatbot-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      # Persistent pgAdmin data (servers, preferences)
+      - pgadmin_data:/var/lib/pgadmin
+      # Pre-configured servers
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      # Backups (accessible from pgAdmin)
+      - ./backups/postgresql:/backups
+    networks:
+      - chatbot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ============================================
+  # MySQL (Optional - for migration phase)
+  # Keep during migration, remove after
+  # ============================================
+  mysql:
+    image: mysql:8.0
+    container_name: chatbot-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chatbot}
+      MYSQL_USER: ${MYSQL_USER:-chatbot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chatbot123}
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./backups/mysql:/backups
+    networks:
+      - chatbot-network
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    profiles:
+      - migration  # Only start when: docker-compose --profile migration up
+
+  # ============================================
+  # phpMyAdmin (Optional - for migration phase)
+  # ============================================
   phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    restart: always
-    depends_on:
-      - db
-    ports:
-      - "8080:80"
+    image: phpmyadmin:latest
+    container_name: chatbot-phpmyadmin
+    restart: unless-stopped
     environment:
-      PMA_HOST: db
-      PMA_USER: ${DB_USER}
-      PMA_PASSWORD: ${DB_PASSWORD}
+      PMA_HOST: mysql
       PMA_PORT: 3306
-      
-  backend:
-    build: ./backend
-    restart: always
-    depends_on:
-      - db
-    environment:
-      DB_HOST: db
-      DB_USER: ${DB_USER}                              
-      DB_PASSWORD: ${DB_PASSWORD}               
-      DB_DATABASE: ${DB_NAME}
+      PMA_USER: root
+      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
+      UPLOAD_LIMIT: 100M
     ports:
-      - "3001:3001"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-
-  frontend:
-    build: ./frontend
-    restart: always
+      - "${PHPMYADMIN_PORT:-8080}:80"
+    networks:
+      - chatbot-network
     depends_on:
-      - backend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - mysql
+    profiles:
+      - migration  # Only start when: docker-compose --profile migration up
 
+# ============================================
+# Networks
+# ============================================
+networks:
+  chatbot-network:
+    driver: bridge
+    name: chatbot-network
+
+# ============================================
+# Volumes
+# ============================================
 volumes:
-  db_data:
+  postgres_data:
+    name: chatbot_postgres_data
+    driver: local
+  pgadmin_data:
+    name: chatbot_pgadmin_data
+    driver: local
+  mysql_data:
+    name: chatbot_mysql_data
+    driver: local

@@ -141,13 +141,6 @@ const WalletDashboard = () => {
                     <i className="fas fa-wallet"></i>
                     {t('myWallet')}
                 </h1>
-                <button
-                    className="btn-deposit"
-                    onClick={() => setShowDepositModal(true)}
-                >
-                    <i className="fas fa-plus"></i>
-                    {t('depositFunds')}
-                </button>
             </div>
 
             {/* Currency Selector */}

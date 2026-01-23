@@ -5,7 +5,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Luôn trỏ về thư mục gốc project
-const rootDir = path.resolve(__dirname, '..', '.env');
+// Point to project root .env file
+const rootDir = path.resolve(__dirname, '..', '..');
+const envPath = path.join(rootDir, '.env');
 
-dotenv.config({ path: rootDir });
+console.log('Loading .env from:', envPath);
+dotenv.config({ path: envPath });

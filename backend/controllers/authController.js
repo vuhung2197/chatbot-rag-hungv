@@ -312,18 +312,14 @@ export async function googleCallback(req, res) {
  * @param {object} res - Đối tượng response Express
  */
 export async function register(req, res) {
-  const { name, email, password, role = 'user' } = req.body;
-
-  // ✅ Chỉ cho phép 'user' hoặc 'admin'
-  if (!['user', 'admin'].includes(role)) {
-    return res.status(400).json({ message: 'Role không hợp lệ' });
-  }
+  const { name, email, password } = req.body;  // ← KHÔNG accept role từ client
+  const role = 'user';  // ← FORCE user role - Admin phải tạo từ database
 
   try {
     const hash = await bcrypt.hash(password, 10);
     const [result] = await pool.execute(
       'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-      [name, email, hash, role]
+      [name, email, hash, role]  // ← Luôn là 'user'
     );
 
     const userId = result.insertId;

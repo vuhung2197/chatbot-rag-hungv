@@ -97,7 +97,7 @@ const CurrencySelector = ({ currentCurrency, onCurrencyChange }) => {
                         onClick={() => handleCurrencySelect(currency.code)}
                         disabled={loading}
                     >
-                        <span className="currency-symbol">{currency.symbol}</span>
+                        {/* <span className="currency-symbol">{currency.symbol}</span> */}
                         <span className="currency-code">{currency.code}</span>
                     </button>
                 ))}

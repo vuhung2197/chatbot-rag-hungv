@@ -16,7 +16,7 @@ export default function Register({ onRegister }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [role, setRole] = useState('user');
+  // ← XÓA role state - Backend luôn force 'user'
 
   async function handleRegister(e) {
     e.preventDefault();
@@ -25,7 +25,7 @@ export default function Register({ onRegister }) {
         name,
         email,
         password,
-        role,
+        // ← KHÔNG gửi role - Backend tự force 'user'
       });
       const data = res.data;
       if (res.status === 200) {
@@ -68,15 +68,7 @@ export default function Register({ onRegister }) {
         required
         className={`${forms.input} ${shared.marginBottom}`}
       />
-      <label className={forms.label}>Vai trò:</label>
-      <select
-        value={role}
-        onChange={e => setRole(e.target.value)}
-        className={`${forms.select} ${shared.marginBottom}`}
-      >
-        <option value='user'>User</option>
-        <option value='admin'>Admin</option>
-      </select>
+      {/* ← XÓA toàn bộ role selector - Admin chỉ tạo từ database */}
       <button
         type='submit'
         className={`${buttons.button} ${buttons.buttonPrimary} ${buttons.buttonFullWidth}`}

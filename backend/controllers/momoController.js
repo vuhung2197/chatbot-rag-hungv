@@ -85,12 +85,11 @@ export async function momoReturn(req, res) {
                  SET status = 'completed', 
                      balance_after = ?, 
                      payment_gateway_id = ?,
-                     metadata = JSON_SET(
-                         metadata, 
-                         '$.completed_at', ?,
-                         '$.momo_trans_id', ?,
-                         '$.momo_pay_type', ?,
-                         '$.momo_response_time', ?
+                     metadata = metadata || jsonb_build_object(
+                         'completed_at', ?::text,
+                         'momo_trans_id', ?::text,
+                         'momo_pay_type', ?::text,
+                         'momo_response_time', ?::text
                      )
                  WHERE id = ?`,
                 [
@@ -214,13 +213,12 @@ export async function momoIPN(req, res) {
                  SET status = 'completed', 
                      balance_after = ?, 
                      payment_gateway_id = ?,
-                     metadata = JSON_SET(
-                         metadata, 
-                         '$.completed_at', ?,
-                         '$.momo_trans_id', ?,
-                         '$.momo_pay_type', ?,
-                         '$.momo_response_time', ?,
-                         '$.ipn_received_at', ?
+                     metadata = metadata || jsonb_build_object(
+                         'completed_at', ?::text,
+                         'momo_trans_id', ?::text,
+                         'momo_pay_type', ?::text,
+                         'momo_response_time', ?::text,
+                         'ipn_received_at', ?::text
                      )
                  WHERE id = ?`,
                 [

@@ -4,14 +4,7 @@ import pool from '../db.js';
 import axios from 'axios';
 import { updateChunksForKnowledge } from '../services/updateChunks.js';
 
-// Hàm lấy embedding từ Local
-async function getEmbedding(text) {
-  const response = await axios.post('http://localhost:1234/v1/embeddings', {
-    input: text,
-    model: 'text-embedding-nomic-embed-text-v1.5', // hoặc text-embedding-3-large nếu muốn mạnh hơn
-  });
-  return response.data.data[0].embedding; // trả về mảng số
-}
+import { getEmbedding } from '../services/embeddingVector.js';
 
 // Hàm extract keywords
 function extractKeywords(text) {
@@ -75,7 +68,7 @@ async function updateImportantKeywords(title, content) {
   const params = allKeywords;
 
   await pool.execute(
-    `INSERT IGNORE INTO important_keywords (keyword) VALUES ${values}`,
+    `INSERT INTO important_keywords (keyword) VALUES ${values} ON CONFLICT (keyword) DO NOTHING`,
     params
   );
 }
@@ -89,11 +82,11 @@ export async function addKnowledge(req, res) {
   // Gộp title + content cho embedding
   const embedding = await getEmbedding(`${title}\n${content}`);
 
-  const [result] = await pool.execute(
-    'INSERT INTO knowledge_base (title, content, embedding) VALUES (?, ?, ?)',
+  const [rows] = await pool.execute(
+    'INSERT INTO knowledge_base (title, content, embedding) VALUES (?, ?, ?) RETURNING id',
     [title, content, JSON.stringify(embedding)]
   );
-  const insertedId = result.insertId;
+  const insertedId = rows[0].id;
 
   // Cập nhật important keywords nếu cần
   await updateImportantKeywords(title, content);

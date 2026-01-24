@@ -46,7 +46,8 @@ export default function Chat({ darkMode = false }) {
         const formattedHistory = messages.map(msg => ({
           user: msg.question,
           bot: msg.bot_reply,
-          createdAt: msg.created_at
+          createdAt: msg.created_at,
+          metadata: msg.metadata
         }));
 
         setHistory(formattedHistory.reverse()); // Reverse để hiển thị từ cũ đến mới
@@ -61,7 +62,7 @@ export default function Chat({ darkMode = false }) {
   // Auto scroll to last message (beginning of bot response)
   const scrollToLastMessage = () => {
     if (lastMessageRef.current) {
-      lastMessageRef.current.scrollIntoView({ 
+      lastMessageRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'start' // Scroll to top of the message
       });
@@ -118,9 +119,14 @@ export default function Chat({ darkMode = false }) {
     const cached = JSON.parse(localStorage.getItem('chatbot_cache') || '{}');
 
     if (cached[hash] && !useAdvancedRAG) {
+      const cachedData = cached[hash];
+      // Support old cache (string) and new cache (object)
+      const reply = typeof cachedData === 'string' ? cachedData : cachedData.reply;
+      const metadata = typeof cachedData === 'string' ? null : cachedData.metadata;
+
       setHistory([
-        { user: input, bot: cached[hash], createdAt: timestamp },
         ...history,
+        { user: input, bot: reply, createdAt: timestamp, metadata },
       ]);
       setInput('');
       setLoading(false);
@@ -157,18 +163,18 @@ export default function Chat({ darkMode = false }) {
           }
         );
       }
-      
+
       // Cập nhật conversationId từ response nếu có
       if (res.data.conversationId) {
         setCurrentConversationId(res.data.conversationId);
       }
-      
+
       const data = res.data;
       setHistory([
         ...history,
-        { 
-          user: input, 
-          bot: data.reply, 
+        {
+          user: input,
+          bot: data.reply,
           createdAt: timestamp,
           chunks_used: data.chunks_used,
           metadata: data.metadata
@@ -183,7 +189,11 @@ export default function Chat({ darkMode = false }) {
       ].includes(data.reply);
 
       if (!isNoAnswer && !useAdvancedRAG) {
-        cached[hash] = data.reply;
+        cached[hash] = {
+          reply: data.reply,
+          metadata: data.metadata,
+          chunks_used: data.chunks_used
+        };
         localStorage.setItem('chatbot_cache', JSON.stringify(cached));
       }
 
@@ -220,254 +230,256 @@ export default function Chat({ darkMode = false }) {
         <div className={styles.header}>
           <div className={styles.headerLeft}>
             <div className={styles.logo}>
-            AI
+              AI
             </div>
             <div>
               <h1 className={styles.headerTitle}>
-              English Chatbot
-            </h1>
-            <p className={styles.headerSubtitle}>
-              {model ? `Model: ${model.name}` : 'Chọn model để bắt đầu'}
-            </p>
+                English Chatbot
+              </h1>
+              <p className={styles.headerSubtitle}>
+                {model ? `Model: ${model.name}` : 'Chọn model để bắt đầu'}
+              </p>
+            </div>
           </div>
-          </div>
-        
+
           <div className={styles.headerButtons}>
             <button
               onClick={() => setShowConversations(!showConversations)}
               className={`${styles.headerButton} ${showConversations ? styles.headerButtonActive : styles.headerButtonDefault}`}
-          >
-            💬 Cuộc trò chuyện
-          </button>
-          
-          <button
-            onClick={() => setUseAdvancedRAG(!useAdvancedRAG)}
-            title={useAdvancedRAG 
-              ? 'Advanced RAG: Multi-chunk reasoning cho câu hỏi phức tạp' 
-              : 'RAG thông thường: Nhanh cho câu hỏi đơn giản'
-            }
-            className={`${styles.headerButton} ${useAdvancedRAG ? styles.headerButtonPrimary : styles.headerButtonDefault}`}
-          >
-            {useAdvancedRAG ? '🧠 Advanced RAG' : '🧠 RAG'}
-          </button>
-          
-          <button
-            onClick={() => setShowModelPopup(true)}
-            className={`${styles.headerButton} ${styles.headerButtonPrimary}`}
-          >
-            ⚙️ Model
-          </button>
-          
-          {history.length > 0 && (
-            <button
-              onClick={async () => {
-                const confirmed = await confirm({
-                  title: 'Xác nhận xóa',
-                  message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử hiện tại không? (Không ảnh hưởng đến danh sách cuộc trò chuyện)',
-                  confirmText: 'Xóa',
-                  cancelText: 'Hủy',
-                });
-                if (confirmed) {
-                  setHistory([]);
-                  setCurrentConversationId(null); // Reset conversation để tránh tự động load lại
-                  const userId = localStorage.getItem('userId');
-                  if (userId) {
-                    localStorage.removeItem(`chatbot_history_${userId}`);
-                  }
-                  localStorage.removeItem('chatbot_history');
-                  localStorage.removeItem('chatbot_cache');
-                  // Giữ lại chatbot_selected_model để không mất model đã chọn
-                }
-              }}
-              className={`${styles.headerButton} ${styles.headerButtonDanger}`}
             >
-              🗑️ Xóa
+              💬 Cuộc trò chuyện
             </button>
-          )}
+
+            <button
+              onClick={() => setUseAdvancedRAG(!useAdvancedRAG)}
+              title={useAdvancedRAG
+                ? 'Advanced RAG: Multi-chunk reasoning cho câu hỏi phức tạp'
+                : 'RAG thông thường: Nhanh cho câu hỏi đơn giản'
+              }
+              className={`${styles.headerButton} ${useAdvancedRAG ? styles.headerButtonPrimary : styles.headerButtonDefault}`}
+            >
+              {useAdvancedRAG ? '🧠 Advanced RAG' : '🧠 RAG'}
+            </button>
+
+            <button
+              onClick={() => setShowModelPopup(true)}
+              className={`${styles.headerButton} ${styles.headerButtonPrimary}`}
+            >
+              ⚙️ Model
+            </button>
+
+            {history.length > 0 && (
+              <button
+                onClick={async () => {
+                  const confirmed = await confirm({
+                    title: 'Xác nhận xóa',
+                    message: 'Bạn có chắc chắn muốn xóa toàn bộ lịch sử hiện tại không? (Không ảnh hưởng đến danh sách cuộc trò chuyện)',
+                    confirmText: 'Xóa',
+                    cancelText: 'Hủy',
+                  });
+                  if (confirmed) {
+                    setHistory([]);
+                    setCurrentConversationId(null); // Reset conversation để tránh tự động load lại
+                    const userId = localStorage.getItem('userId');
+                    if (userId) {
+                      localStorage.removeItem(`chatbot_history_${userId}`);
+                    }
+                    localStorage.removeItem('chatbot_history');
+                    localStorage.removeItem('chatbot_cache');
+                    // Giữ lại chatbot_selected_model để không mất model đã chọn
+                  }
+                }}
+                className={`${styles.headerButton} ${styles.headerButtonDanger}`}
+              >
+                🗑️ Xóa
+              </button>
+            )}
           </div>
         </div>
 
         {/* Chat Messages */}
         <div className={styles.messagesContainer}>
-        {history.length === 0 && !loading && (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyStateIcon}>
-              🤖
+          {history.length === 0 && !loading && (
+            <div className={styles.emptyState}>
+              <div className={styles.emptyStateIcon}>
+                🤖
+              </div>
+              <h2 className={styles.emptyStateTitle}>
+                Chào mừng đến với English Chatbot
+              </h2>
+              <p className={styles.emptyStateText}>
+                Tôi có thể giúp bạn học tiếng Anh, trả lời câu hỏi và cung cấp thông tin.
+                Hãy bắt đầu cuộc trò chuyện bằng cách gõ câu hỏi của bạn!
+              </p>
             </div>
-            <h2 className={styles.emptyStateTitle}>
-              Chào mừng đến với English Chatbot
-            </h2>
-            <p className={styles.emptyStateText}>
-              Tôi có thể giúp bạn học tiếng Anh, trả lời câu hỏi và cung cấp thông tin. 
-              Hãy bắt đầu cuộc trò chuyện bằng cách gõ câu hỏi của bạn!
-            </p>
-          </div>
-        )}
+          )}
 
-        {history.map((item, idx) => {
-          const isLastMessage = idx === history.length - 1;
-          return (
-            <div 
-              key={idx} 
-              ref={isLastMessage ? lastMessageRef : null}
-              className={styles.messageContainer}
-            >
-              {/* User Message */}
-              <div className={`${styles.messageRow} ${styles.messageRowUser}`}>
-                <div className={styles.userMessage}>
-                  {item.user}
+          {history.map((item, idx) => {
+            const isLastMessage = idx === history.length - 1;
+            return (
+              <div
+                key={idx}
+                ref={isLastMessage ? lastMessageRef : null}
+                className={styles.messageContainer}
+              >
+                {/* User Message */}
+                <div className={`${styles.messageRow} ${styles.messageRowUser}`}>
+                  <div className={styles.userMessage}>
+                    {item.user}
+                  </div>
                 </div>
+
+                {/* Bot Message */}
+                {item.bot && (
+                  <div className={`${styles.messageRow} ${styles.messageRowBot}`}>
+                    <div className={styles.botMessage}>
+                      {/* Metadata Header */}
+                      {item.metadata && (
+                        <div className={styles.metadataHeader}>
+                          <span>🤖 {item.metadata.model_used}</span>
+                          <span>⚡ {item.metadata.processing_time}ms</span>
+                          {item.metadata.total_chunks > 0 && <span>📚 {item.metadata.total_chunks} chunks</span>}
+                        </div>
+                      )}
+                      <ReactMarkdown>{item.bot}</ReactMarkdown>
+
+                      {/* Regular Chat Chunks */}
+                      {item.chunks_used && item.chunks_used.length > 0 && (
+                        <div className={styles.chunksSection}>
+                          <div className={styles.chunksTitle}>
+                            📚 Chunks used ({item.chunks_used.length}):
+                          </div>
+                          <div className={styles.chunksList}>
+                            {item.chunks_used.map((chunk, chunkIdx) => (
+                              <div key={chunkIdx} className={styles.chunkItem}>
+                                <div className={styles.chunkTitle}>
+                                  {chunk.title}
+                                </div>
+                                <div className={styles.chunkInfo}>
+                                  Score: {chunk.score?.toFixed(3)} | ID: {chunk.id}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {/* Loading Message */}
+          {loading && (
+            <div ref={lastMessageRef} className={`${styles.messageRow} ${styles.messageRowBot}`}>
+              <div className={`${styles.botMessage} ${styles.loadingMessage}`}>
+                <div className={styles.loadingDots}>
+                  <div className={`${styles.loadingDot} ${styles.loadingDot2}`}></div>
+                  <div className={`${styles.loadingDot} ${styles.loadingDot3}`}></div>
+                  <div className={styles.loadingDot}></div>
+                </div>
+                <span>Đang suy nghĩ...</span>
+              </div>
+            </div>
+          )}
+
+          {/* Advanced RAG Info */}
+          {advancedResponse && (
+            <div className={styles.advancedRagInfo}>
+              <div className={styles.advancedRagHeader}>
+                🧠 Advanced RAG Analysis
               </div>
 
-              {/* Bot Message */}
-              {item.bot && (
-                <div className={`${styles.messageRow} ${styles.messageRowBot}`}>
-                  <div className={styles.botMessage}>
-                    <ReactMarkdown>{item.bot}</ReactMarkdown>
-                    
-                    {/* Regular Chat Chunks */}
-                    {item.chunks_used && item.chunks_used.length > 0 && (
-                      <div className={styles.chunksSection}>
-                        <div className={styles.chunksTitle}>
-                          📚 Chunks used ({item.chunks_used.length}):
+              <div className={styles.advancedRagSection}>
+                <strong>📊 Processing Steps:</strong>
+                <ul className={styles.advancedRagList}>
+                  {advancedResponse.reasoning_steps?.map((step, index) => (
+                    <li key={index} className={styles.advancedRagListItem}>
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className={styles.advancedRagSection}>
+                <strong>📚 Chunks Used:</strong> {advancedResponse.chunks_used?.length || 0}
+                {advancedResponse.chunks_used?.length > 0 && (
+                  <div className={styles.advancedRagChunksContainer}>
+                    {advancedResponse.chunks_used.map((chunk, index) => (
+                      <div key={index} className={styles.advancedRagChunk}>
+                        <div className={styles.advancedRagChunkHeader}>
+                          <div className={styles.advancedRagChunkTitle}>
+                            {chunk.title}
+                          </div>
+                          <div className={styles.advancedRagChunkMeta}>
+                            <span>Score: {chunk.score?.toFixed(3)}</span>
+                            <span>Stage: {chunk.stage}</span>
+                          </div>
                         </div>
-                        <div className={styles.chunksList}>
-                          {item.chunks_used.map((chunk, chunkIdx) => (
-                            <div key={chunkIdx} className={styles.chunkItem}>
-                              <div className={styles.chunkTitle}>
-                                {chunk.title}
-                              </div>
-                              <div className={styles.chunkInfo}>
-                                Score: {chunk.score?.toFixed(3)} | ID: {chunk.id}
-                              </div>
-                            </div>
-                          ))}
+                        <div className={styles.advancedRagChunkContent}>
+                          {chunk.content}
+                        </div>
+                        <div className={styles.advancedRagChunkFooter}>
+                          <span>ID: {chunk.id}</span>
+                          <span>Source: {chunk.source}</span>
+                          <span>Chunk: {chunk.chunk_index}</span>
                         </div>
                       </div>
-                    )}
-                    
-                    {/* Regular Chat Metadata */}
-                    {item.metadata && (
-                      <div className={styles.metadata}>
-                        🤖 {item.metadata.model_used} | ⚡ {item.metadata.processing_time}ms | 
-                        📄 {item.metadata.context_length} chars | 📚 {item.metadata.total_chunks} chunks
-                      </div>
-                    )}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {advancedResponse.metadata && (
+                <div className={styles.advancedRagMetadata}>
+                  <div className={styles.advancedRagMetadataRow}>
+                    <strong>🤖 Model:</strong> {advancedResponse.metadata.model_used} |
+                    <strong> ⚡ Time:</strong> {advancedResponse.metadata.processing_time}ms |
+                    <strong> 📄 Context:</strong> {advancedResponse.metadata.context_length} chars
+                  </div>
+                  <div>
+                    <strong>🔗 Clusters:</strong> {advancedResponse.metadata.clusters} |
+                    <strong> 🧠 Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains} |
+                    <strong> 📚 Total Chunks:</strong> {advancedResponse.metadata.total_chunks}
                   </div>
                 </div>
               )}
             </div>
-          );
-        })}
-
-        {/* Loading Message */}
-        {loading && (
-          <div ref={lastMessageRef} className={`${styles.messageRow} ${styles.messageRowBot}`}>
-            <div className={`${styles.botMessage} ${styles.loadingMessage}`}>
-              <div className={styles.loadingDots}>
-                <div className={`${styles.loadingDot} ${styles.loadingDot2}`}></div>
-                <div className={`${styles.loadingDot} ${styles.loadingDot3}`}></div>
-                <div className={styles.loadingDot}></div>
-              </div>
-              <span>Đang suy nghĩ...</span>
-            </div>
-          </div>
-        )}
-
-        {/* Advanced RAG Info */}
-        {advancedResponse && (
-          <div className={styles.advancedRagInfo}>
-            <div className={styles.advancedRagHeader}>
-              🧠 Advanced RAG Analysis
-            </div>
-            
-            <div className={styles.advancedRagSection}>
-              <strong>📊 Processing Steps:</strong>
-              <ul className={styles.advancedRagList}>
-                {advancedResponse.reasoning_steps?.map((step, index) => (
-                  <li key={index} className={styles.advancedRagListItem}>
-                    {step}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            <div className={styles.advancedRagSection}>
-              <strong>📚 Chunks Used:</strong> {advancedResponse.chunks_used?.length || 0}
-              {advancedResponse.chunks_used?.length > 0 && (
-                <div className={styles.advancedRagChunksContainer}>
-                  {advancedResponse.chunks_used.map((chunk, index) => (
-                    <div key={index} className={styles.advancedRagChunk}>
-                      <div className={styles.advancedRagChunkHeader}>
-                        <div className={styles.advancedRagChunkTitle}>
-                          {chunk.title}
-                        </div>
-                        <div className={styles.advancedRagChunkMeta}>
-                          <span>Score: {chunk.score?.toFixed(3)}</span>
-                          <span>Stage: {chunk.stage}</span>
-                        </div>
-                      </div>
-                      <div className={styles.advancedRagChunkContent}>
-                        {chunk.content}
-                      </div>
-                      <div className={styles.advancedRagChunkFooter}>
-                        <span>ID: {chunk.id}</span>
-                        <span>Source: {chunk.source}</span>
-                        <span>Chunk: {chunk.chunk_index}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            {advancedResponse.metadata && (
-              <div className={styles.advancedRagMetadata}>
-                <div className={styles.advancedRagMetadataRow}>
-                  <strong>🤖 Model:</strong> {advancedResponse.metadata.model_used} | 
-                  <strong> ⚡ Time:</strong> {advancedResponse.metadata.processing_time}ms | 
-                  <strong> 📄 Context:</strong> {advancedResponse.metadata.context_length} chars
-                </div>
-                <div>
-                  <strong>🔗 Clusters:</strong> {advancedResponse.metadata.clusters} | 
-                  <strong> 🧠 Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains} | 
-                  <strong> 📚 Total Chunks:</strong> {advancedResponse.metadata.total_chunks}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          )}
 
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
         <div className={styles.inputArea}>
-        <div className={styles.inputContainer}>
-          <div className={styles.inputWrapper}>
-            <ChatInputSuggest
-              value={input}
-              onChange={setInput}
-              onSend={sendChat}
-              disabled={loading}
-              placeholder="Nhập câu hỏi của bạn..."
-            />
+          <div className={styles.inputContainer}>
+            <div className={styles.inputWrapper}>
+              <ChatInputSuggest
+                value={input}
+                onChange={setInput}
+                onSend={sendChat}
+                disabled={loading}
+                placeholder="Nhập câu hỏi của bạn..."
+              />
+            </div>
           </div>
-        </div>
         </div>
 
         {/* Model Selection Modal */}
         {showModelPopup && (
-        <div className={styles.modalOverlay}>
-          <ModelManager
-            onSelectModel={m => {
-              setModel(m);
-              localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
-              setShowModelPopup(false);
-            }}
-            onClose={() => setShowModelPopup(false)}
-          />
-        </div>
+          <div className={styles.modalOverlay}>
+            <ModelManager
+              onSelectModel={m => {
+                setModel(m);
+                localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
+                setShowModelPopup(false);
+              }}
+              onClose={() => setShowModelPopup(false)}
+            />
+          </div>
         )}
       </div>
       {/* End Main Chat Area */}

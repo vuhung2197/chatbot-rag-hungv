@@ -73,12 +73,11 @@ class VNPayService extends PaymentService {
             };
 
             // Sort parameters
+            // Sort parameters
             vnp_Params = this.sortObject(vnp_Params);
 
-            // Create signature - VNPay uses application/x-www-form-urlencoded
-            // Space becomes '+' not '%20'
-            // Use URLSearchParams which properly encodes space as '+'
-            const signData = new URLSearchParams(vnp_Params).toString();
+            // Create signature - VNPay uses RFC1738 (space as +)
+            const signData = qs.stringify(vnp_Params, { encode: true, format: 'RFC1738' });
 
             console.log('🔐 Sign Data (before hash):', signData);
 
@@ -86,8 +85,8 @@ class VNPayService extends PaymentService {
             const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
             vnp_Params['vnp_SecureHash'] = signed;
 
-            // Build payment URL
-            const paymentUrl = this.vnp_Url + '?' + new URLSearchParams(vnp_Params).toString();
+            // Build payment URL - URL must be encoded
+            const paymentUrl = this.vnp_Url + '?' + qs.stringify(vnp_Params, { encode: true, format: 'RFC1738' });
 
             // Detailed logging for debugging
             this.log('info', 'VNPay payment URL created successfully', { orderId });
@@ -137,8 +136,8 @@ class VNPayService extends PaymentService {
             // Sort parameters
             const sortedParams = this.sortObject(paramsToVerify);
 
-            // Create signature - Use URLSearchParams like generation
-            const signData = new URLSearchParams(sortedParams).toString();
+            // Create signature - Use qs with encode: true to match creation logic
+            const signData = qs.stringify(sortedParams, { encode: true, format: 'RFC1738' });
 
             const hmac = crypto.createHmac('sha512', this.vnp_HashSecret);
             const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');

@@ -234,13 +234,31 @@
 
 /* Metadata */
 .metadata {
-  margin-top: 8px;
-  padding: 6px 8px;
+  margin-top: 12px;
+  padding: 8px 12px;
   background: #f8fafc;
-  border-radius: 4px;
-  font-size: 10px;
-  color: #6b7280;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #4b5563;
   border: 1px solid #e5e7eb;
+  font-family: monospace;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.metadataHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: #6c757d;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e9ecef;
+  font-family: monospace;
 }
 
 /* Loading Message */
@@ -272,9 +290,13 @@
 }
 
 @keyframes pulse {
-  0%, 80%, 100% {
+
+  0%,
+  80%,
+  100% {
     opacity: 0.3;
   }
+
   40% {
     opacity: 1;
   }
@@ -412,5 +434,3 @@
   justify-content: center;
   z-index: 1000;
 }
-
-

@@ -61,23 +61,24 @@ export async function uploadAndTrain(req, res) {
     }
 
     // ✅ Lưu vào DB nếu chưa tồn tại
-    const [result] = await pool.execute(
-      'INSERT INTO knowledge_base (title, content) VALUES (?, ?)',
+    const [insertRows] = await pool.execute(
+      'INSERT INTO knowledge_base (title, content) VALUES (?, ?) RETURNING id',
       [title, content]
     );
 
-    await updateChunksForKnowledge(result.insertId, title, content);
-    
+    const knowledgeId = insertRows[0].id;
+    await updateChunksForKnowledge(knowledgeId, title, content);
+
     // Track usage: file upload count and size
     const userId = req.user?.id;
     if (userId) {
       try {
         const fileSizeMB = file.size / (1024 * 1024);
         console.log(`📊 Tracking usage for user ${userId}: file upload (${fileSizeMB.toFixed(2)} MB)`);
-        
+
         await incrementUsage(userId, 'file_upload', 1);
         console.log(`✅ Tracked file_upload count for user ${userId}`);
-        
+
         await incrementUsage(userId, 'file_size', fileSizeMB);
         console.log(`✅ Tracked file_size (${fileSizeMB.toFixed(2)} MB) for user ${userId}`);
       } catch (usageError) {
@@ -87,12 +88,12 @@ export async function uploadAndTrain(req, res) {
     } else {
       console.warn('⚠️ No user ID found in request, skipping usage tracking');
     }
-    
+
     res.json({ message: '✅ File đã được huấn luyện thành công!' });
   } catch (err) {
     console.error('❌ Lỗi khi xử lý file:', err);
     res.status(500).json({ error: 'Lỗi trong quá trình xử lý file.' });
   } finally {
-    fs.unlink(file.path, () => {});
+    fs.unlink(file.path, () => { });
   }
 }

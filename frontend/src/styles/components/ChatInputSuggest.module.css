@@ -35,7 +35,7 @@
 .sendButton {
   position: absolute;
   right: 8px;
-  bottom: 8px;
+  bottom: 45px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -157,8 +157,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Dark mode support */
@@ -189,4 +194,3 @@
   border-color: #2d4a6f;
   color: #10a37f;
 }
-

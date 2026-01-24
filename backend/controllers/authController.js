@@ -73,7 +73,7 @@ export async function googleCallback(req, res) {
     const { data: profile } = await oauth2.userinfo.get();
     console.log('✅ Profile received:', { email: profile.email, name: profile.name });
 
-    const email = profile.email;
+    const email = profile.email.trim().toLowerCase();
     const name = profile.name || profile.email.split('@')[0];
     const googleId = profile.id;
     const picture = profile.picture;
@@ -150,13 +150,13 @@ export async function googleCallback(req, res) {
       // Tạo user mới nếu chưa có
       // Note: password_hash có thể NULL cho OAuth users
       try {
-        const [result] = await pool.execute(
+        const [rows] = await pool.execute(
           `INSERT INTO users (name, email, password_hash, role, email_verified, avatar_url, last_login_at) 
-           VALUES (?, ?, NULL, ?, ?, ?, CURRENT_TIMESTAMP)`,
+           VALUES (?, ?, NULL, ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
           [name, email, 'user', true, picture]
         );
         user = {
-          id: result.insertId,
+          id: rows[0].id,
           name,
           email,
           role: 'user',
@@ -169,13 +169,13 @@ export async function googleCallback(req, res) {
         // Nếu lỗi do password_hash NOT NULL, thử với empty string
         if (insertError.code === 'ER_BAD_NULL_ERROR' && insertError.sqlMessage?.includes('password_hash')) {
           console.log('🔄 Retrying with empty password_hash...');
-          const [result] = await pool.execute(
+          const [rows] = await pool.execute(
             `INSERT INTO users (name, email, password_hash, role, email_verified, avatar_url, last_login_at) 
-             VALUES (?, ?, '', ?, ?, ?, CURRENT_TIMESTAMP)`,
+             VALUES (?, ?, '', ?, ?, ?, CURRENT_TIMESTAMP) RETURNING id`,
             [name, email, 'user', true, picture]
           );
           user = {
-            id: result.insertId,
+            id: rows[0].id,
             name,
             email,
             role: 'user',
@@ -317,12 +317,12 @@ export async function register(req, res) {
 
   try {
     const hash = await bcrypt.hash(password, 10);
-    const [result] = await pool.execute(
-      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+    const [rows] = await pool.execute(
+      'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?) RETURNING id',
       [name, email, hash, role]  // ← Luôn là 'user'
     );
 
-    const userId = result.insertId;
+    const userId = rows[0].id;
 
     // 🆕 Create wallet for new user
     try {

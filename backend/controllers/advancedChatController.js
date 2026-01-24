@@ -45,7 +45,7 @@ function toAdvancedMarkdown(text) {
         .split(/(?:^|\n)[•\-+*]?\s*/)
         .map(p => p.trim())
         .filter(p => p.length > 0);
-      
+
       points.forEach(point => {
         markdown += `- ${point}\n`;
       });
@@ -74,7 +74,7 @@ export async function advancedChat(req, res) {
   const userId = req.user?.id;
 
   if (!message) {
-    return res.status(StatusCodes.BAD_REQUEST).json({ 
+    return res.status(StatusCodes.BAD_REQUEST).json({
       reply: 'No message!',
       reasoning_steps: [],
       chunks_used: []
@@ -84,7 +84,7 @@ export async function advancedChat(req, res) {
   // Validate model
   if (!model || !model.url || !model.name) {
     console.error('❌ Invalid model configuration:', model);
-    return res.status(StatusCodes.BAD_REQUEST).json({ 
+    return res.status(StatusCodes.BAD_REQUEST).json({
       reply: 'Invalid model configuration!',
       reasoning_steps: [],
       chunks_used: []
@@ -99,14 +99,14 @@ export async function advancedChat(req, res) {
       temperature: model.temperature,
       maxTokens: model.maxTokens
     });
-    
+
     // 1. Tạo embedding cho câu hỏi
     let questionEmbedding;
     try {
       questionEmbedding = await getEmbedding(message);
     } catch (error) {
       console.error('❌ Lỗi tạo embedding:', error);
-      return res.json({ 
+      return res.json({
         reply: 'Không thể xử lý câu hỏi này!',
         reasoning_steps: [],
         chunks_used: []
@@ -119,11 +119,11 @@ export async function advancedChat(req, res) {
 
     // 3. Multi-Stage Retrieval - Lấy chunks theo nhiều giai đoạn
     const allChunks = await multiStageRetrieval(
-      questionEmbedding, 
-      message, 
+      questionEmbedding,
+      message,
       retrievalParams.maxChunks
     );
-    
+
     if (allChunks.length === 0) {
       await logUnanswered(message);
       return res.json({
@@ -150,8 +150,8 @@ export async function advancedChat(req, res) {
     if (retrievalParams.useMultiHop) {
       try {
         reasoningChains = await multiHopReasoning(
-          allChunks.slice(0, 5), 
-          questionEmbedding, 
+          allChunks.slice(0, 5),
+          questionEmbedding,
           message
         );
         console.log(`🔗 Created ${reasoningChains.length} reasoning chains`);
@@ -176,7 +176,7 @@ export async function advancedChat(req, res) {
     try {
       fusedContext = fuseContext(rerankedChunks, reasoningChains, message);
       console.log('🔗 Fused context length:', fusedContext.length);
-      
+
       // Debug: Log context preview để kiểm tra
       console.log('📄 Context preview:', `${fusedContext.substring(0, 200)}...`);
     } catch (error) {
@@ -203,10 +203,10 @@ Hướng dẫn trả lời:
     let reply = '';
     try {
       // Set timeout for LLM call - increased for complex processing
-      const timeoutPromise = new Promise((_, reject) => 
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('LLM call timeout')), 180000)
       );
-      
+
       const llmPromise = askAdvancedChatGPT(message, fusedContext, systemPrompt, model);
       reply = await Promise.race([llmPromise, timeoutPromise]);
     } catch (error) {
@@ -216,7 +216,7 @@ Hướng dẫn trả lời:
         model: model?.name,
         model_url: model?.url
       });
-      
+
       // Provide detailed error message
       if (error.message && error.message.includes('LLM API Error')) {
         reply = `Lỗi kết nối với model: ${error.message}`;
@@ -226,7 +226,7 @@ Hướng dẫn trả lời:
         reply = 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi phức tạp này. Vui lòng thử lại với câu hỏi đơn giản hơn.';
       }
     }
-    
+
     const t1 = Date.now();
     console.log('⏱️ Advanced RAG processing time:', t1 - t0, 'ms');
 
@@ -242,27 +242,36 @@ Hướng dẫn trả lời:
     // 11. Ghi lịch sử với conversation_id
     if (userId) {
       const finalConversationId = await getOrCreateConversationId(userId, conversationId);
-      
+
       // Tự động tạo title từ tin nhắn đầu tiên nếu chưa có title
       const [existingMessages] = await pool.execute(
         'SELECT COUNT(*) as count FROM user_questions WHERE user_id = ? AND conversation_id = ?',
         [userId, finalConversationId]
       );
-      
+
       let conversationTitle = null;
       if (existingMessages[0].count === 0) {
         // Đây là tin nhắn đầu tiên, tạo title từ message (tối đa 50 ký tự)
         conversationTitle = message.trim().substring(0, 50);
         if (message.length > 50) conversationTitle += '...';
       }
-      
+
+      const metadata = {
+        total_chunks: allChunks.length,
+        clusters: clusters.length,
+        reasoning_chains: reasoningChains.length,
+        processing_time: t1 - t0,
+        model_used: model.name,
+        context_length: fusedContext.length
+      };
+
       await pool.execute(
-        'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, finalConversationId, conversationTitle, message, reply, true]
+        'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, finalConversationId, conversationTitle, message, reply, true, JSON.stringify(metadata)]
       );
       // Track usage for advanced RAG
       await trackUsage(userId, 'advanced_rag', { tokens: fusedContext.length || 0 });
-      
+
       res.json({
         reply: toAdvancedMarkdown(reply),
         conversationId: finalConversationId,
@@ -275,12 +284,13 @@ Hướng dẫn trả lời:
           stage: c.retrieval_stage,
           source: c.source || 'unknown',
           chunk_index: c.chunk_index || 0
-        }))
+        })),
+        metadata // Add metadata to response
       });
       return;
     }
 
-    res.json({ 
+    res.json({
       reply: toAdvancedMarkdown(reply),
       reasoning_steps: reasoningSteps,
       chunks_used: rerankedChunks.map(c => ({
@@ -304,7 +314,7 @@ Hướng dẫn trả lời:
 
   } catch (err) {
     console.error('❌ Advanced RAG error:', err);
-    res.json({ 
+    res.json({
       reply: 'Bot đang gặp sự cố với câu hỏi phức tạp này. Vui lòng thử lại!',
       reasoning_steps: ['Error in advanced processing'],
       chunks_used: []
@@ -319,10 +329,10 @@ async function askAdvancedChatGPT(question, context, systemPrompt, model) {
   // Giới hạn độ dài context để tránh lỗi và tăng tốc xử lý
   // Reduced from 8000 to 6000 for faster processing
   const maxContextLength = 6000;
-  const truncatedContext = context.length > maxContextLength 
-    ? `${context.substring(0, maxContextLength)}...` 
+  const truncatedContext = context.length > maxContextLength
+    ? `${context.substring(0, maxContextLength)}...`
     : context;
-  
+
   console.log(`📝 Context size: ${context.length} chars, truncated to: ${truncatedContext.length} chars`);
 
   const prompt = `# Câu hỏi: ${question}
@@ -336,12 +346,12 @@ Kết hợp thông tin từ nhiều nguồn một cách logic và có cấu trú
 
   // Validate và clean messages
   const messages = [
-    { 
-      role: 'system', 
+    {
+      role: 'system',
       content: (systemPrompt || '').substring(0, 4000) // Giới hạn system prompt
     },
-    { 
-      role: 'user', 
+    {
+      role: 'user',
       content: prompt.substring(0, 8000) // Reduced from 12000 to 8000 for faster processing
     }
   ];

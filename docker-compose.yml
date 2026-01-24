@@ -5,7 +5,7 @@ services:
   # PostgreSQL Database
   # ============================================
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     container_name: chatbot-postgres
     restart: unless-stopped
     environment:
@@ -59,6 +59,45 @@ services:
         condition: service_healthy
 
   # ============================================
+  # Backend API
+  # ============================================
+  backend:
+    build: ./backend
+    container_name: chatbot-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - DB_DATABASE=${POSTGRES_DB:-chatbot}
+      - PORT=3001
+      - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET}
+      - HMAC_KEY=${HMAC_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - VNPAY_URL=${VNPAY_URL}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+
+  # ============================================
   # MySQL (Optional - for migration phase)
   # Keep during migration, remove after
   # ============================================
@@ -73,7 +112,7 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chatbot123}
       TZ: Asia/Ho_Chi_Minh
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${MYSQL_PORT:-3308}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

@@ -114,7 +114,7 @@ export async function getConversationMessages(req, res) {
     }
 
     const [rows] = await pool.execute(
-      `SELECT id, question, bot_reply, is_answered, created_at
+      `SELECT id, question, bot_reply, is_answered, created_at, metadata
        FROM user_questions
        WHERE user_id = ? AND conversation_id = ?
        ORDER BY created_at ASC`,

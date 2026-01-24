@@ -4,6 +4,7 @@ import { useLanguage } from './LanguageContext';
 import { getWalletText } from '../utils/walletTranslations';
 import '../styles/WalletDashboard.css';
 import DepositModal from './DepositModal';
+import WithdrawModal from './WithdrawModal';
 import TransactionHistory from './TransactionHistory';
 import CurrencySelector from './CurrencySelector';
 
@@ -15,6 +16,7 @@ const WalletDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showDepositModal, setShowDepositModal] = useState(false);
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState(null);
 
     useEffect(() => {
@@ -76,6 +78,16 @@ const WalletDashboard = () => {
     const handleDepositSuccess = () => {
         setShowDepositModal(false);
         fetchWalletData();
+    };
+
+    const handleWithdrawSuccess = () => {
+        setShowWithdrawModal(false);
+        fetchWalletData();
+        setPaymentStatus({
+            status: 'success',
+            message: 'Withdrawal request submitted successfully'
+        });
+        setTimeout(() => setPaymentStatus(null), 5000);
     };
 
     const handleCurrencyChange = (updatedWallet) => {
@@ -222,10 +234,12 @@ const WalletDashboard = () => {
                         <i className="fas fa-arrow-down"></i>
                         {t('deposit')}
                     </button>
-                    <button className="btn-action secondary" disabled>
+                    <button
+                        className="btn-action secondary"
+                        onClick={() => setShowWithdrawModal(true)}
+                    >
                         <i className="fas fa-arrow-up"></i>
                         {t('withdraw')}
-                        <span className="coming-soon">{t('soon')}</span>
                     </button>
                 </div>
             </div>
@@ -279,6 +293,17 @@ const WalletDashboard = () => {
                     onSuccess={handleDepositSuccess}
                     currentBalance={wallet?.balance}
                     currency={wallet?.currency}
+                />
+            )}
+
+            {/* Withdraw Modal */}
+            {showWithdrawModal && (
+                <WithdrawModal
+                    isOpen={showWithdrawModal}
+                    onClose={() => setShowWithdrawModal(false)}
+                    balance={wallet?.balance}
+                    currency={wallet?.currency}
+                    onSuccess={handleWithdrawSuccess}
                 />
             )}
         </div>

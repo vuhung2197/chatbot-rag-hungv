@@ -85,12 +85,11 @@ export async function vnpayReturn(req, res) {
                  SET status = 'completed', 
                      balance_after = ?, 
                      payment_gateway_id = ?,
-                     metadata = JSON_SET(
-                         metadata, 
-                         '$.completed_at', ?,
-                         '$.vnpay_transaction_no', ?,
-                         '$.vnpay_bank_code', ?,
-                         '$.vnpay_pay_date', ?
+                     metadata = metadata || jsonb_build_object(
+                         'completed_at', ?::text,
+                         'vnpay_transaction_no', ?::text,
+                         'vnpay_bank_code', ?::text,
+                         'vnpay_pay_date', ?::text
                      )
                  WHERE id = ?`,
                 [
@@ -214,13 +213,12 @@ export async function vnpayIPN(req, res) {
                  SET status = 'completed', 
                      balance_after = ?, 
                      payment_gateway_id = ?,
-                     metadata = JSON_SET(
-                         metadata, 
-                         '$.completed_at', ?,
-                         '$.vnpay_transaction_no', ?,
-                         '$.vnpay_bank_code', ?,
-                         '$.vnpay_pay_date', ?,
-                         '$.ipn_received_at', ?
+                     metadata = metadata || jsonb_build_object(
+                         'completed_at', ?::text,
+                         'vnpay_transaction_no', ?::text,
+                         'vnpay_bank_code', ?::text,
+                         'vnpay_pay_date', ?::text,
+                         'ipn_received_at', ?::text
                      )
                  WHERE id = ?`,
                 [

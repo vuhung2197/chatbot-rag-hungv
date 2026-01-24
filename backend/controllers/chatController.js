@@ -126,29 +126,36 @@ export async function chat(req, res) {
     // ✅ Ghi lịch sử với conversation_id
     if (userId) {
       const finalConversationId = await getOrCreateConversationId(userId, conversationId);
-      
+
       // Tự động tạo title từ tin nhắn đầu tiên nếu chưa có title
       const [existingMessages] = await pool.execute(
         'SELECT COUNT(*) as count FROM user_questions WHERE user_id = ? AND conversation_id = ?',
         [userId, finalConversationId]
       );
-      
+
       let conversationTitle = null;
       if (existingMessages[0].count === 0) {
         // Đây là tin nhắn đầu tiên, tạo title từ message (tối đa 50 ký tự)
         conversationTitle = message.trim().substring(0, 50);
         if (message.length > 50) conversationTitle += '...';
       }
-      
+
+      const metadata = {
+        total_chunks: chunks.length,
+        processing_time: t1 - t0,
+        model_used: model?.name || 'gpt-4o',
+        context_length: context.length
+      };
+
       await pool.execute(
-        'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, finalConversationId, conversationTitle, message, reply, isAnswered]
+        'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, finalConversationId, conversationTitle, message, reply, isAnswered, JSON.stringify(metadata)]
       );
       // Track usage
       await trackUsage(userId, 'query', { tokens: context.length || 0 });
-      
+
       // Return conversationId để frontend có thể tiếp tục sử dụng
-      res.json({ 
+      res.json({
         reply: toMarkdown(reply),
         conversationId: finalConversationId,
         chunks_used: chunks.map(c => ({
@@ -161,7 +168,7 @@ export async function chat(req, res) {
         metadata: {
           total_chunks: chunks.length,
           processing_time: t1 - t0,
-          model_used: model.name || 'gpt-4o',
+          model_used: model?.name || 'gpt-4o',
           context_length: context.length
         }
       });
@@ -169,7 +176,7 @@ export async function chat(req, res) {
     }
 
     // Response khi không có userId (guest mode)
-    res.json({ 
+    res.json({
       reply: toMarkdown(reply),
       chunks_used: chunks.map(c => ({
         id: c.id,
@@ -181,7 +188,7 @@ export async function chat(req, res) {
       metadata: {
         total_chunks: chunks.length,
         processing_time: t1 - t0,
-        model_used: model.name || 'gpt-4o',
+        model_used: model?.name || 'gpt-4o',
         context_length: context.length
       }
     });
@@ -369,10 +376,10 @@ export async function callLLM(
 
   const baseUrl = model.url;
   const nameModel = model.name;
-  
+
   // Use temperature from model if available, otherwise use parameter
   const temperatureModel = model.temperature !== undefined ? model.temperature : _temperature;
-  
+
   // Use maxTokens from model if available, otherwise use parameter
   const maxTokensModel = model.maxTokens !== undefined ? model.maxTokens : _maxTokens;
 

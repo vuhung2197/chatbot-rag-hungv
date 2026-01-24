@@ -9,7 +9,13 @@ import {
     getPaymentMethods,
     getCurrencies,
     updateWalletCurrency,
-    getFailedAndPendingDeposits
+    getFailedAndPendingDeposits,
+    addBankAccount,
+    getBankAccounts,
+    deleteBankAccount,
+    calculateWithdrawalFee,
+    withdraw,
+    getWithdrawals
 } from '../controllers/walletController.js';
 import { vnpayReturn, vnpayIPN } from '../controllers/vnpayController.js';
 import { queryVNPayTransaction } from '../controllers/vnpayQueryController.js';
@@ -132,6 +138,60 @@ router.put('/currency', verifyToken, updateWalletCurrency);
  * @query   status (optional: 'failed' or 'pending')
  */
 router.get('/deposits/failed-pending', getFailedAndPendingDeposits);
+
+/**
+ * =======================
+ * Bank Account Routes
+ * =======================
+ */
+
+/**
+ * @route   GET /wallet/bank-accounts
+ * @desc    Get user bank accounts
+ * @access  Private
+ */
+router.get('/bank-accounts', getBankAccounts);
+
+/**
+ * @route   POST /wallet/bank-accounts
+ * @desc    Add new bank account
+ * @access  Private
+ */
+router.post('/bank-accounts', addBankAccount);
+
+/**
+ * @route   DELETE /wallet/bank-accounts/:id
+ * @desc    Delete bank account (soft delete)
+ * @access  Private
+ */
+router.delete('/bank-accounts/:id', deleteBankAccount);
+
+/**
+ * =======================
+ * Withdrawal Routes
+ * =======================
+ */
+
+/**
+ * @route   POST /wallet/withdrawal/calculate-fee
+ * @desc    Calculate withdrawal fee
+ * @access  Private
+ */
+router.post('/withdrawal/calculate-fee', calculateWithdrawalFee);
+
+/**
+ * @route   POST /wallet/withdraw
+ * @desc    Initiate withdrawal request
+ * @access  Private
+ */
+router.post('/withdraw', withdraw);
+
+/**
+ * @route   GET /wallet/withdrawals
+ * @desc    Get withdrawal history
+ * @access  Private
+ */
+router.get('/withdrawals', getWithdrawals);
 
 export default router;
 

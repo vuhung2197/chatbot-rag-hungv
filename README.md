@@ -10,7 +10,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
 
-> **Kiến trúc**: Frontend (React) + Backend (Node.js) + MySQL + Vector Database
+> **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + MySQL + Vector Database
 
 ---
 
@@ -50,9 +50,9 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 │   Frontend      │    │    Backend      │    │   Database      │
 │   (React)       │◄──►│   (Node.js)     │◄──►│   (MySQL)       │
 │                 │    │                 │    │                 │
-│ • Chat UI       │    │ • RAG Engine    │    │ • Knowledge     │
-│ • Admin Panel   │    │ • Vector Search │    │ • Vectors       │
-│ • Model Manager │    │ • API Routes    │    │ • Users         │
+│ • Chat Features │    │ • RAG Engine    │    │ • Knowledge     │
+│ • Admin Module  │    │ • Vector Search │    │ • Vectors       │
+│ • User Module   │    │ • Modules API   │    │ • Users         │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -63,31 +63,41 @@ User Question → Embedding → Vector Search → Context → GPT → Response
 
 ---
 
-## 📂 Cấu Trúc Dự Án
+## 📂 Cấu Trúc Dự Án (New Architecture)
 
 ```
 english-chatbot/
-├── 📁 backend/                 # Node.js API Server
-│   ├── 📁 controllers/        # API Controllers
-│   ├── 📁 services/          # Business Logic
-│   │   ├── 🔧 rag_retrieve.js      # Vector search
-│   │   ├── 🔧 vectorDatabase.js    # Vector DB service
-│   │   └── 🔧 embeddingVector.js   # Embedding service
-│   ├── 📁 routes/            # API Routes
-│   ├── 📁 middlewares/       # Auth & Error handling
-│   └── 📁 utils/             # Utilities
-├── 📁 frontend/              # React Application
-│   ├── 📁 src/component/     # React Components
-│   │   ├── 💬 Chat.js        # Main chat interface
-│   │   ├── 🔧 ModelManager.js # Model selection
-│   │   └── 📚 KnowledgeAdmin.js # Knowledge management
-│   └── 📁 src/hooks/         # Custom hooks
-├── 📁 db/                    # Database Scripts
-│   ├── 🔧 init.sql          # Database schema
-│   ├── 🔧 vector_optimization.sql # Vector optimization
-│   └── 🔧 remove_unused_tables.sql # Cleanup scripts
-├── 📁 test/                 # Testing files
-└── 📄 docker-compose.yml    # Docker configuration
+├── 📁 backend/                 # Node.js API Server (Modular Architecture)
+│   ├── 📁 src/modules/         # Feature Modules (Routes & Controllers)
+│   │   ├── 📁 auth/           # Authentication
+│   │   ├── 📁 chat/           # Chat Logic & History
+│   │   ├── 📁 knowledge/      # Knowledge Base Management
+│   │   ├── 📁 wallet/         # Wallet & Payment
+│   │   ├── 📁 user/           # User Management
+│   │   └── ...
+│   ├── 📁 services/            # Business Logic & Integrations
+│   │   ├── 🔧 advancedRAGFixed.js  # Advanced RAG Core Engine
+│   │   ├── 🔧 embeddingVector.js   # Embedding Service
+│   │   ├── 🔧 momoService.js       # MoMo Payment Integration
+│   │   ├── 🔧 vnpayService.js      # VNPay Payment Integration
+│   │   └── 🔧 emailService.js      # Email Service
+│   ├── 📁 middlewares/         # Shared Middlewares (Auth, Error)
+│   └── 📁 db/                  # Database Scripts
+├── 📁 frontend/                # React Application (Feature-based)
+│   ├── 📁 src/features/        # Feature Modules (UI & Logic)
+│   │   ├── 📁 auth/           # Login, Register, OAuth
+│   │   ├── 📁 chat/           # Chat Interface
+│   │   ├── 📁 knowledge/      # Admin Dashboard
+│   │   ├── 📁 wallet/         # Wallet & Transactions
+│   │   └── 📁 user/           # Profile & Settings
+│   ├── 📁 src/components/      # Shared Components
+│   │   ├── 📁 ui/             # Atomic UI (Buttons, Modals)
+│   │   └── 📁 shared/         # Common Widgets
+│   ├── 📁 src/context/         # Global State Providers
+│   ├── 📁 src/hooks/           # Custom Hooks
+│   └── 📁 src/pages/           # Page Wrappers
+├── 📁 db/                      # SQL Init Scripts
+└── 📄 docker-compose.yml       # Docker Configuration
 ```
 
 ---
@@ -273,9 +283,9 @@ docker-compose logs -f backend
 
 ### **Code Structure**
 - **Backend**: Express.js với modular architecture
-- **Frontend**: React với hooks và context
+- **Frontend**: React với Feature-based architecture
 - **Database**: MySQL với vector optimization
-- **AI**: OpenAI API với RAG pattern
+- **AI**: OpenAI API với Advanced RAG pattern
 
 ### **Key Features**
 - **Vector Database**: Tối ưu cho large-scale vector search
@@ -325,9 +335,9 @@ export OPENAI_API_KEY=your-api-key
 - [x] Database indexing
 
 ### **Phase 2: Advanced Features** 🔄
-- [ ] Hybrid search (vector + keyword)
-- [ ] Context compression
-- [ ] Re-ranking system
+- [x] Advanced RAG implementation
+- [x] Hybrid search (vector + keyword)
+- [x] Context re-ranking
 
 ### **Phase 3: Intelligence** 📋
 - [ ] ML-based algorithm selection

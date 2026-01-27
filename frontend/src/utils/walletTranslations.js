@@ -74,7 +74,11 @@ export const walletTranslations = {
         confirm: 'Xác nhận',
         currencyChanged: 'Đã đổi đơn vị tiền tệ',
         currencyChangedTo: 'Đã chuyển sang',
-        newBalance: 'Số dư mới'
+        newBalance: 'Số dư mới',
+        subscriptionUpgrade: 'Nâng cấp gói',
+        monthly: 'tháng',
+        yearly: 'năm',
+        currencyChangedFrom: 'Đổi tiền tệ từ'
     },
     en: {
         // WalletDashboard
@@ -150,7 +154,11 @@ export const walletTranslations = {
         confirm: 'Confirm',
         currencyChanged: 'Currency Changed',
         currencyChangedTo: 'Changed to',
-        newBalance: 'New balance'
+        newBalance: 'New balance',
+        subscriptionUpgrade: 'Subscription upgrade to',
+        monthly: 'monthly',
+        yearly: 'yearly',
+        currencyChangedFrom: 'Currency changed from'
     }
 };
 

@@ -5,21 +5,21 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import chatRoutes from './routes/chat.js';
-import advancedChatRoutes from './routes/advancedChat.js';
-import knowledgeRoutes from './routes/knowledge.js';
-import suggestRoutes from './routes/suggest.js';
-import unansweredRoutes from './routes/unanswered.js';
-import uploadRoutes from './routes/upload.js';
-import authRoutes from './routes/auth.js';
-import usageRoutes from './routes/usage.js';
-import subscriptionRoutes from './routes/subscription.js';
-import paymentRoutes from './routes/payment.js';
-import conversationRoutes from './routes/conversation.js';
-import userRoutes from './routes/user.js';
-import passwordRoutes from './routes/password.js';
-import sessionRoutes from './routes/session.js';
-import walletRoutes from './routes/wallet.js';
+import authRoutes from './src/modules/auth/auth.routes.js';
+import userRoutes from './src/modules/user/user.routes.js';
+import passwordRoutes from './src/modules/user/password.routes.js';
+import sessionRoutes from './src/modules/user/session.routes.js';
+import chatRoutes from './src/modules/chat/chat.routes.js';
+import advancedChatRoutes from './src/modules/chat/advancedChat.routes.js';
+import conversationRoutes from './src/modules/chat/conversation.routes.js';
+import suggestRoutes from './src/modules/chat/suggestion.routes.js';
+import unansweredRoutes from './src/modules/chat/unanswered.routes.js';
+import knowledgeRoutes from './src/modules/knowledge/knowledge.routes.js';
+import uploadRoutes from './src/modules/upload/upload.routes.js';
+import walletRoutes from './src/modules/wallet/routes/wallet.routes.js';
+import paymentRoutes from './src/modules/wallet/routes/payment.routes.js';
+import subscriptionRoutes from './src/modules/subscription/subscription.routes.js';
+import usageRoutes from './src/modules/usage/usage.routes.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +56,7 @@ app.use('/user', userRoutes);
 app.use('/auth/password', passwordRoutes);
 app.use('/auth/sessions', sessionRoutes);
 app.use('/wallet', walletRoutes);
+app.context = app; // For rare cases passing app context
 
 app.use(errorHandler);
 

@@ -1,17 +1,17 @@
 // 📁 src/App.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Chat from './component/Chat';
-import KnowledgeAdmin from './component/KnowledgeAdmin';
-import Login from './component/Login';
-import Register from './component/Register';
-import UsageCounter from './component/UsageCounter';
-import ProfileSettings from './component/ProfileSettings';
-import VerifyEmailPage from './component/VerifyEmailPage';
-import ResetPasswordPage from './component/ResetPasswordPage';
-import SetPasswordPage from './component/SetPasswordPage';
-import { useDarkMode } from './component/DarkModeContext';
-import { useLanguage } from './component/LanguageContext';
+import Chat from './features/chat/Chat';
+import KnowledgeAdmin from './features/knowledge/KnowledgeAdmin';
+import Login from './features/auth/Login';
+import Register from './features/auth/Register';
+import UsageCounter from './features/user/UsageCounter';
+import ProfileSettings from './features/user/ProfileSettings';
+import VerifyEmailPage from './features/auth/VerifyEmailPage';
+import ResetPasswordPage from './features/auth/ResetPasswordPage';
+import SetPasswordPage from './features/auth/SetPasswordPage';
+import { useDarkMode } from './context/DarkModeContext';
+import { useLanguage } from './context/LanguageContext';
 import { setupAxiosInterceptor } from './utils/axiosConfig';
 
 export default function App() {
@@ -23,7 +23,7 @@ export default function App() {
 
   const [role, setRole] = useState(localStorage.getItem('role'));
   const [page, setPage] = useState('login');
-  
+
   // Check if this is a verification link
   const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -33,7 +33,7 @@ export default function App() {
     setToast(msg);
     setTimeout(() => setToast(''), 2000);
   }
-  
+
   // Handle Google OAuth callback token and other token-based flows
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -42,7 +42,7 @@ export default function App() {
     const idFromUrl = urlParams.get('id');
     const error = urlParams.get('error');
     const pathname = window.location.pathname;
-    
+
     // Handle OAuth link success
     const oauthLinked = urlParams.get('oauth_linked');
     const oauthSuccess = urlParams.get('success');
@@ -66,7 +66,7 @@ export default function App() {
       window.history.replaceState({}, document.title, '/');
       return;
     }
-    
+
     // Priority 1: Check if this is set password page (new OAuth user)
     if (pathname === '/set-password' && token && roleFromUrl && idFromUrl) {
       const newUser = urlParams.get('newUser') === 'true';
@@ -78,7 +78,7 @@ export default function App() {
         return;
       }
     }
-    
+
     // Priority 2: Handle Google OAuth success (token from callback)
     // Google OAuth will have token, role, and id in URL
     // Check this BEFORE checking for oauth_linked to handle login flow
@@ -98,14 +98,14 @@ export default function App() {
       }, 100);
       return;
     }
-    
+
     // Priority 3: Check if this is a reset password link
     // Reset password will have token but no role/id, and pathname might be /reset-password
     if (token && !roleFromUrl && (pathname === '/reset-password' || pathname === '/')) {
       setIsResettingPassword(true);
       return;
     }
-    
+
     // Priority 4: Check if URL contains verification token (for email verification)
     // Email verification will have token but no role/id
     if (token && !roleFromUrl && !isResettingPassword && !isSettingPassword) {
@@ -127,7 +127,7 @@ export default function App() {
       setPage('login');
       showToast('Phiên đăng nhập đã hết hạn hoặc bị hủy. Vui lòng đăng nhập lại.');
     };
-    
+
     setupAxiosInterceptor(handleAutoLogout);
   }, []);
 

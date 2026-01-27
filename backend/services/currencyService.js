@@ -5,8 +5,8 @@
 
 // Exchange rates (can be updated from external API in production)
 const EXCHANGE_RATES = {
-    USD_TO_VND: 24000, // 1 USD = 24,000 VND (approximate)
-    VND_TO_USD: 1 / 24000
+    USD_TO_VND: 25000, // 1 USD = 25,000 VND (approximate)
+    VND_TO_USD: 1 / 25000
 };
 
 /**

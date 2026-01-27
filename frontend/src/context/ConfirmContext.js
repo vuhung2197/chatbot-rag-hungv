@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import ConfirmDialog from '../component/ConfirmDialog';
-import { useDarkMode } from '../component/DarkModeContext';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { useDarkMode } from './DarkModeContext';
 
 const ConfirmContext = createContext();
 

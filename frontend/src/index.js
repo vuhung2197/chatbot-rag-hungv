@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { DarkModeProvider } from './component/DarkModeContext';
-import { LanguageProvider } from './component/LanguageContext';
+import { DarkModeProvider } from './context/DarkModeContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 

@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Chatbot PostgreSQL (Local)",
+      "Group": "Development",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "chatbot",
+      "Username": "postgres",
+      "SSLMode": "prefer",
+      "PassFile": "/tmp/pgpassfile",
+      "Comment": "Main chatbot database - Auto-configured"
+    }
+  }
+}

@@ -62,7 +62,23 @@ export const walletTranslations = {
         previous: 'Trước',
         next: 'Tiếp',
         pageOf: 'Trang',
-        of: 'của'
+        of: 'của',
+
+        // Currency
+        currency: 'Đơn vị tiền tệ',
+        changeCurrency: 'Đổi đơn vị tiền tệ',
+        from: 'Từ',
+        to: 'Sang',
+        exchangeRate: 'Tỷ giá',
+        currencyChangeWarning: 'Số dư của bạn sẽ được chuyển đổi sang đơn vị tiền tệ mới. Hành động này không thể hoàn tác.',
+        confirm: 'Xác nhận',
+        currencyChanged: 'Đã đổi đơn vị tiền tệ',
+        currencyChangedTo: 'Đã chuyển sang',
+        newBalance: 'Số dư mới',
+        subscriptionUpgrade: 'Nâng cấp gói',
+        monthly: 'tháng',
+        yearly: 'năm',
+        currencyChangedFrom: 'Đổi tiền tệ từ'
     },
     en: {
         // WalletDashboard
@@ -126,7 +142,23 @@ export const walletTranslations = {
         previous: 'Previous',
         next: 'Next',
         pageOf: 'Page',
-        of: 'of'
+        of: 'of',
+
+        // Currency
+        currency: 'Currency',
+        changeCurrency: 'Change Currency',
+        from: 'From',
+        to: 'To',
+        exchangeRate: 'Exchange Rate',
+        currencyChangeWarning: 'Your balance will be converted to the new currency. This action cannot be undone.',
+        confirm: 'Confirm',
+        currencyChanged: 'Currency Changed',
+        currencyChangedTo: 'Changed to',
+        newBalance: 'New balance',
+        subscriptionUpgrade: 'Subscription upgrade to',
+        monthly: 'monthly',
+        yearly: 'yearly',
+        currencyChangedFrom: 'Currency changed from'
     }
 };
 

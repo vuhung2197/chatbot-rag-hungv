@@ -20,7 +20,7 @@ export async function createVectorIndex() {
     ADD INDEX idx_embedding_vector USING ivfflat (embedding) 
     WITH (lists = 100)
   `);
-  
+
   // console.log('✅ Vector index created successfully');
 }
 
@@ -29,45 +29,30 @@ export async function createVectorIndex() {
  * Thay vì load toàn bộ vectors, sử dụng index để tìm kiếm nhanh
  */
 export async function searchSimilarVectors(questionEmbedding, topK = 3, threshold = 0.5) {
-  // Fallback to basic similarity search nếu vector index chưa có
-  const limit = topK * 3; // Lấy nhiều hơn để filter sau
-  
-  // Sử dụng query đơn giản hơn để tránh lỗi parameter
-  const [rows] = await pool.execute(`
-    SELECT 
-      id, 
-      title, 
-      content, 
-      embedding
-    FROM knowledge_chunks 
-    WHERE embedding IS NOT NULL
-    LIMIT ${limit}
-  `);
+  try {
+    // Native pgvector search using cosine distance operator (<=>)
+    // Distance = 1 - Similarity => Similarity = 1 - Distance
+    // Order by distance ascending (closest first)
+    // Cast input parameter to vector type
+    const vectorStr = JSON.stringify(questionEmbedding);
 
-  // Tính similarity manually
-  const scored = rows
-    .map(row => {
-      let emb;
-      try {
-        emb = Array.isArray(row.embedding) 
-          ? row.embedding 
-          : JSON.parse(row.embedding);
-      } catch {
-        return null;
-      }
+    const [rows] = await pool.execute(`
+      SELECT 
+        id, 
+        title, 
+        content, 
+        1 - (embedding <=> $1) as score
+      FROM knowledge_chunks 
+      WHERE 1 - (embedding <=> $1) > $2
+      ORDER BY embedding <=> $1 ASC
+      LIMIT $3
+    `, [vectorStr, threshold, topK]);
 
-      const similarity = cosineSimilarity(questionEmbedding, emb);
-      return {
-        ...row,
-        score: similarity,
-        embedding: emb
-      };
-    })
-    .filter(item => item && item.score > threshold)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, topK);
-
-  return scored;
+    return rows;
+  } catch (error) {
+    console.error('❌ Error in native vector search:', error);
+    return [];
+  }
 }
 
 /**
@@ -99,7 +84,7 @@ function cosineSimilarity(a, b, eps = 1e-12) {
  */
 export async function batchVectorSearch(queries, topK = 3) {
   const results = [];
-  
+
   for (const query of queries) {
     try {
       const result = await searchSimilarVectors(query.embedding, topK);
@@ -116,7 +101,7 @@ export async function batchVectorSearch(queries, topK = 3) {
       });
     }
   }
-  
+
   return results;
 }
 
@@ -128,20 +113,20 @@ const vectorCache = new Map();
 
 export async function cachedVectorSearch(questionEmbedding, topK = 3, threshold = 0.5) {
   const cacheKey = `${JSON.stringify(questionEmbedding)}_${topK}_${threshold}`;
-  
+
   if (vectorCache.has(cacheKey)) {
     // console.log('🎯 Cache hit for vector search');
     return vectorCache.get(cacheKey);
   }
-  
+
   const results = await searchSimilarVectors(questionEmbedding, topK, threshold);
   vectorCache.set(cacheKey, results);
-  
+
   // Clean cache sau 1 giờ
   setTimeout(() => {
     vectorCache.delete(cacheKey);
   }, 3600000);
-  
+
   return results;
 }
 
@@ -152,7 +137,7 @@ export async function cachedVectorSearch(questionEmbedding, topK = 3, threshold 
 export async function hybridVectorSearch(questionEmbedding, keywords = [], topK = 3) {
   // Vector similarity search
   const vectorResults = await searchSimilarVectors(questionEmbedding, topK * 2);
-  
+
   // Keyword search nếu có keywords
   let keywordResults = [];
   if (keywords.length > 0) {
@@ -163,20 +148,20 @@ export async function hybridVectorSearch(questionEmbedding, keywords = [], topK 
       WHERE MATCH(title, content) AGAINST(? IN NATURAL LANGUAGE MODE)
       LIMIT ?
     `, [keywordQuery, topK]);
-    
+
     keywordResults = keywordRows.map(row => ({
       ...row,
       embedding: JSON.parse(row.embedding),
       score: 0.8 // Fixed score for keyword matches
     }));
   }
-  
+
   // Combine và re-rank results
   const combinedResults = [...vectorResults, ...keywordResults];
-  const uniqueResults = combinedResults.filter((item, index, self) => 
+  const uniqueResults = combinedResults.filter((item, index, self) =>
     index === self.findIndex(t => t.id === item.id)
   );
-  
+
   return uniqueResults
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
@@ -194,7 +179,7 @@ export async function getVectorSearchStats() {
         MAX(created_at) as last_updated
       FROM knowledge_chunks
     `);
-    
+
     return stats[0];
   } catch {
     // console.error('❌ Error getting vector stats');

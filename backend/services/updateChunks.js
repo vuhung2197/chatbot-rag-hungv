@@ -21,10 +21,10 @@ export async function updateChunksForKnowledge(id, title, content) {
   for (const chunk of chunks) {
     const hash = createHash(chunk);
 
-    // Kiểm tra nếu đã tồn tại chunk này thì bỏ qua
+    // Kiểm tra nếu đã tồn tại chunk này trong document này thì bỏ qua
     const [exists] = await pool.execute(
-      'SELECT id FROM knowledge_chunks WHERE hash = ? LIMIT 1',
-      [hash]
+      'SELECT id FROM knowledge_chunks WHERE hash = ? AND parent_id = ? LIMIT 1',
+      [hash, id]
     );
     if (exists.length > 0) continue;
 

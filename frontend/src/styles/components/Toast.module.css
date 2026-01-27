@@ -1,0 +1,127 @@
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+    font-size: 14px;
+}
+
+.toastContent {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toastIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.toastMessage {
+    flex: 1;
+    line-height: 1.5;
+}
+
+.toastClose {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+
+.toastClose:hover {
+    opacity: 1;
+}
+
+.toastInfo {
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-left: 4px solid #1976d2;
+}
+
+.toastSuccess {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+}
+
+.toastError {
+    background-color: #ffebee;
+    color: #c62828;
+    border-left: 4px solid #c62828;
+}
+
+.toastWarning {
+    background-color: #fff3e0;
+    color: #e65100;
+    border-left: 4px solid #e65100;
+}
+
+/* Dark mode support */
+:global(.dark-mode) .toastInfo {
+    background-color: #1e3a5f;
+    color: #90caf9;
+    border-left-color: #90caf9;
+}
+
+:global(.dark-mode) .toastSuccess {
+    background-color: #1b5e20;
+    color: #81c784;
+    border-left-color: #81c784;
+}
+
+:global(.dark-mode) .toastError {
+    background-color: #4a1f1f;
+    color: #ef5350;
+    border-left-color: #ef5350;
+}
+
+:global(.dark-mode) .toastWarning {
+    background-color: #3d2f1f;
+    color: #ffb74d;
+    border-left-color: #ffb74d;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.slideOut {
+    animation: slideOut 0.3s ease-in forwards;
+}

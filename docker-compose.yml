@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # ============================================
@@ -26,7 +26,11 @@ services:
     networks:
       - chatbot-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-chatbot}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-chatbot}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,8 +45,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
       - "${PGADMIN_PORT:-5050}:80"
     volumes:
@@ -97,6 +101,25 @@ services:
     networks:
       - chatbot-network
 
+  frontend:
+    build: ./frontend
+    container_name: chatbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    networks:
+      - chatbot-network
+    depends_on:
+      - backend
+
   # ============================================
   # MySQL (Optional - for migration phase)
   # Keep during migration, remove after
@@ -121,7 +144,7 @@ services:
       - chatbot-network
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     profiles:
-      - migration  # Only start when: docker-compose --profile migration up
+      - migration # Only start when: docker-compose --profile migration up
 
   # ============================================
   # phpMyAdmin (Optional - for migration phase)
@@ -143,7 +166,7 @@ services:
     depends_on:
       - mysql
     profiles:
-      - migration  # Only start when: docker-compose --profile migration up
+      - migration # Only start when: docker-compose --profile migration up
 
 # ============================================
 # Networks

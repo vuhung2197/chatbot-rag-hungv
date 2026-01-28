@@ -19,7 +19,7 @@ CREATE TABLE users (
     language VARCHAR(10) NOT NULL DEFAULT 'vi',
     email_verified BOOLEAN NOT NULL DEFAULT false,
     email_verification_token VARCHAR(64) NULL,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT NULL,
     role user_role DEFAULT 'user',  -- Using ENUM type
     last_login_at TIMESTAMP NULL,
     account_status account_status_type NOT NULL DEFAULT 'active',  -- Using ENUM type

@@ -24,17 +24,7 @@ docker-compose ps
 | **pgAdmin** | http://localhost:5050 | Email: `admin@chatbot.local`<br/>Password: `admin123` |
 | **PostgreSQL** | localhost:5432 | User: `postgres`<br/>Password: `postgres123`<br/>Database: `chatbot` |
 
-### 3. Migration Phase (Optional)
 
-```bash
-# Start with MySQL + phpMyAdmin for migration
-docker-compose --profile migration up -d
-
-# Access phpMyAdmin
-# URL: http://localhost:8080
-# User: root
-# Password: 123456
-```
 
 ---
 
@@ -48,8 +38,7 @@ docker/
   └── pgadmin/
       └── servers.json     ← Pre-configured PostgreSQL connection
 backups/
-  ├── postgresql/          ← PostgreSQL backups
-  └── mysql/               ← MySQL backups (migration)
+  └── postgresql/          ← PostgreSQL backups
 ```
 
 ---
@@ -69,16 +58,7 @@ backups/
 - **Auto-configured:** Connects to PostgreSQL automatically
 - **Data:** Persisted in `pgadmin_data` volume
 
-### MySQL (Migration Phase Only)
-- **Image:** mysql:8.0
-- **Port:** 3306
-- **Profile:** `migration` (optional)
-- **Data:** Persisted in `mysql_data` volume
 
-### phpMyAdmin (Migration Phase Only)
-- **Image:** phpmyadmin:latest
-- **Port:** 8080
-- **Profile:** `migration` (optional)
 
 ---
 
@@ -203,47 +183,7 @@ PGADMIN_PORT=5050
 
 ---
 
-## 🔄 Migration Workflow
 
-### Phase 1: Parallel Running (Week 1-2)
-
-```bash
-# Start both MySQL and PostgreSQL
-docker-compose --profile migration up -d
-
-# Access both admin panels
-# MySQL: http://localhost:8080 (phpMyAdmin)
-# PostgreSQL: http://localhost:5050 (pgAdmin)
-
-# Compare data between databases
-```
-
-### Phase 2: Migration (Week 2)
-
-```bash
-# Export from MySQL
-docker exec chatbot-mysql mysqldump -u root -p123456 chatbot > mysql_dump.sql
-
-# Transform data (if needed)
-# ... run transformation scripts ...
-
-# Import to PostgreSQL
-docker exec -i chatbot-postgres psql -U postgres -d chatbot < transformed_data.sql
-```
-
-### Phase 3: PostgreSQL Only (Week 3+)
-
-```bash
-# Stop MySQL services
-docker-compose stop mysql phpmyadmin
-
-# Continue with PostgreSQL only
-docker-compose up -d postgres pgadmin
-
-# Remove MySQL (when confident)
-docker-compose down mysql phpmyadmin
-docker volume rm chatbot_mysql_data
-```
 
 ---
 

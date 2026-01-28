@@ -368,3 +368,33 @@ JOIN subscription_tiers st ON us.tier_id = st.id
 WHERE us.status IN ('active', 'trial');
 
 
+
+-- ============================================
+-- GAME SYSTEM: TAI XIU (SIC BO)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS game_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    game_type VARCHAR(50) DEFAULT 'TAI_XIU',
+    dice1 TINYINT NOT NULL, -- 1-6
+    dice2 TINYINT NOT NULL, -- 1-6
+    dice3 TINYINT NOT NULL, -- 1-6
+    total_score TINYINT NOT NULL, -- 3-18
+    result_type ENUM('TAI', 'XIU', 'TRIPLE') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+CREATE TABLE IF NOT EXISTS game_bets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    session_id INT NOT NULL,
+    bet_type ENUM('TAI', 'XIU') NOT NULL,
+    bet_amount DECIMAL(15, 2) NOT NULL,
+    win_amount DECIMAL(15, 2) DEFAULT 0.00,
+    status ENUM('PENDING', 'WON', 'LOST', 'REFUNDED') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_session_id (session_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (session_id) REFERENCES game_sessions(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

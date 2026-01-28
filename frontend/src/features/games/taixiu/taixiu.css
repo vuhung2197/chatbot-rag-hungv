@@ -1,0 +1,388 @@
+.taixiu-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Roboto', sans-serif;
+    border-radius: 12px;
+}
+
+.taixiu-container.dark {
+    background: #1e1e2e;
+    color: #ffd700;
+}
+
+.taixiu-container.light {
+    background: #f0f2f5;
+    color: #333;
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #ffd700;
+    padding-bottom: 15px;
+}
+
+.game-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.balance-display {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.balance-display span {
+    color: #4caf50;
+    margin-left: 10px;
+}
+
+.dice-area {
+    height: 150px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.shaking-bowl {
+    font-size: 4rem;
+    animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+    0% {
+        transform: translate(1px, 1px) rotate(0deg);
+    }
+
+    10% {
+        transform: translate(-1px, -2px) rotate(-1deg);
+    }
+
+    20% {
+        transform: translate(-3px, 0px) rotate(1deg);
+    }
+
+    30% {
+        transform: translate(3px, 2px) rotate(0deg);
+    }
+
+    40% {
+        transform: translate(1px, -1px) rotate(1deg);
+    }
+
+    50% {
+        transform: translate(-1px, 2px) rotate(-1deg);
+    }
+
+    60% {
+        transform: translate(-3px, 1px) rotate(0deg);
+    }
+
+    70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+    }
+
+    80% {
+        transform: translate(-1px, -1px) rotate(1deg);
+    }
+
+    90% {
+        transform: translate(1px, 2px) rotate(0deg);
+    }
+
+    100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+    }
+}
+
+.dice-result {
+    text-align: center;
+}
+
+.dice-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.dice {
+    width: 40px;
+    height: 40px;
+    background-size: cover;
+    border-radius: 6px;
+    background-color: white;
+    /* Normally use images, using pseudo-elements/gradient for pure CSS dots is complex, 
+       using simple unicode or text for now if no images available. 
+       Actually, let's use a simple background generator logic or text content. */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: black;
+    font-weight: bold;
+    font-size: 1.5rem;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Simple CSS Dice Dots using after content */
+.dice-1::after {
+    content: '⚀';
+    font-size: 30px;
+    color: red;
+}
+
+.dice-2::after {
+    content: '⚁';
+    font-size: 30px;
+}
+
+.dice-3::after {
+    content: '⚂';
+    font-size: 30px;
+}
+
+.dice-4::after {
+    content: '⚃';
+    font-size: 30px;
+    color: red;
+}
+
+.dice-5::after {
+    content: '⚄';
+    font-size: 30px;
+}
+
+.dice-6::after {
+    content: '⚅';
+    font-size: 30px;
+}
+
+.result-text {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.text-tai {
+    color: #ffeb3b;
+}
+
+.text-xiu {
+    color: #f44336;
+}
+
+/* Or white to contrast */
+
+.betting-zones {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.bet-zone {
+    flex: 1;
+    padding: 30px;
+    border: 2px solid #555;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.bet-zone:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.bet-zone.active {
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.bet-zone h3 {
+    font-size: 2rem;
+    margin: 0;
+}
+
+.bet-zone.xiu h3 {
+    color: #fff;
+}
+
+.bet-zone.tai h3 {
+    color: #ffd700;
+}
+
+.bet-zone p {
+    margin: 5px 0;
+    color: #aaa;
+}
+
+.bet-zone .odds {
+    margin-top: 10px;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.current-bet {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffd700;
+    color: #000;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.controls {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.btn-action {
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: transform 0.2s;
+}
+
+.btn-action:hover {
+    transform: scale(1.05);
+}
+
+.btn-action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.place-bet {
+    background: linear-gradient(45deg, #ffd700, #ffa500);
+    color: #000;
+}
+
+.play-again {
+    background: #4caf50;
+    color: white;
+}
+
+.chips-rack {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.chip {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 4px dashed #fff;
+    background: #e91e63;
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s;
+}
+
+.chip:hover {
+    transform: translateY(-5px);
+}
+
+.chip:nth-child(2n) {
+    background: #2196f3;
+}
+
+.chip:nth-child(3n) {
+    background: #9c27b0;
+}
+
+.chip:nth-child(4n) {
+    background: #ff9800;
+}
+
+.clear-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #333;
+    color: #fff;
+    border: 1px solid #777;
+    cursor: pointer;
+}
+
+.error-message {
+    color: #ff5252;
+    text-align: center;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.game-history {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+}
+
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.badge-tai {
+    background: #ffd700;
+    color: black;
+}
+
+.badge-xiu {
+    background: #f44336;
+    color: white;
+}
+
+.amount.win {
+    color: #4caf50;
+}
+
+.amount.loss {
+    color: #ff5252;
+}

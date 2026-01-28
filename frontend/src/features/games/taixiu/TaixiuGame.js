@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { BarChart2, TrendingUp, X } from 'lucide-react';
+import { BarChart2, TrendingUp, X, HelpCircle, BookOpen } from 'lucide-react';
 import TrendChart from './components/TrendChart';
 import RoadMap from './components/RoadMap';
+import BridgeGuideModal from './components/BridgeGuideModal';
 import './taixiu.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
@@ -20,6 +21,7 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
 
     // New State for Trends
     const [showTrends, setShowTrends] = useState(false);
+    const [showGuide, setShowGuide] = useState(false);
 
     // Chips denomination
     const chips = [1000, 5000, 10000, 50000, 100000, 500000];
@@ -143,9 +145,18 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
 
     return (
         <div className={`taixiu-container ${darkMode ? 'dark' : 'light'}`}>
+            <BridgeGuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
+            
             <div className="game-header">
                 <h2>🎲 TÀI XỈU (SIC BO)</h2>
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => setShowGuide(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-indigo-600 text-white hover:bg-indigo-500"
+                    >
+                        <BookOpen size={16} />
+                        Các Loại Cầu
+                    </button>
                     <button
                         onClick={() => setShowTrends(!showTrends)}
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${showTrends ? 'bg-yellow-500 text-black' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
@@ -226,13 +237,28 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
 
                     {/* Chips */}
                     {gameState !== 'ROLLING' && gameState !== 'RESULT' && (
-                        <div className="chips-rack">
-                            {chips.map(val => (
-                                <button key={val} className="chip" onClick={() => handleChipClick(val)}>
-                                    {val >= 1000 ? (val / 1000) + 'k' : val}
-                                </button>
-                            ))}
-                            <button className="clear-btn" onClick={clearBet}>Clear</button>
+                        <div className="bet-controls">
+                             <div className="manual-bet-input mb-4 flex justify-center">
+                                <span className="p-2 bg-slate-700 rounded-l text-gray-300">$</span>
+                                <input 
+                                    type="number" 
+                                    value={betAmount || ''} 
+                                    onChange={(e) => setBetAmount(Number(e.target.value))}
+                                    placeholder="Enter amount"
+                                    className="bg-slate-800 text-white p-2 w-40 outline-none border-t border-b border-slate-700"
+                                    min="0"
+                                />
+                                <button className="p-2 bg-slate-700 rounded-r hover:bg-slate-600 border-l border-slate-600" onClick={clearBet}>X</button>
+                            </div>
+
+                            <div className="chips-rack">
+                                {chips.map(val => (
+                                    <button key={val} className="chip" onClick={() => handleChipClick(val)}>
+                                        {val >= 1000 ? (val / 1000) + 'k' : val}
+                                    </button>
+                                ))}
+                                <button className="clear-btn" onClick={clearBet}>Clear</button>
+                            </div>
                         </div>
                     )}
 

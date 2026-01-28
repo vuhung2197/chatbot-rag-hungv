@@ -19,12 +19,40 @@ export async function placeBet(req, res) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
 
+        // 0. ADMIN RESTRICTION
+        if (req.user?.role === 'admin') {
+            return res.status(403).json({ message: 'Admin accounts are not allowed to place bets.' });
+        }
+
         if (!['TAI', 'XIU'].includes(betType)) {
             return res.status(400).json({ message: 'Invalid bet type. Must be TAI or XIU.' });
         }
 
+        // 1. AMOUNT VALIDATION
         if (!amount || isNaN(amount) || amount <= 0) {
-            return res.status(400).json({ message: 'Invalid bet amount.' });
+           return res.status(400).json({ message: 'Invalid bet amount.' });
+        }
+
+        // Decimal Precision Check (Max 2 decimal places)
+        // Convert to string to check decimals
+        const amountStr = amount.toString();
+        if (amountStr.includes('.')) {
+            const decimalPart = amountStr.split('.')[1];
+            if (decimalPart.length > 2) {
+                return res.status(400).json({ message: 'Invalid bet amount. Maximum 2 decimal places allowed.' });
+            }
+        }
+
+        // Minimum Bet Check
+        const MIN_BET_VND = 1000;
+        const MIN_BET_USD = 0.1;
+
+        // Since we don't know the currency yet without fetching wallet, we can default to a safe check
+        // or check it after fetching wallet. Let's check basics first.
+        if (amount < 0.1) {
+             // Basic safe guard for USD (0.1) which is tiny for VND. 
+             // We will check stricter logic after fetching wallet currency.
+             return res.status(400).json({ message: 'Bet amount too small (Min 0.1 USD / 1000 VND).' });
         }
 
         await connection.beginTransaction();
@@ -77,9 +105,29 @@ export async function placeBet(req, res) {
         const userBalance = parseFloat(userWallet.balance);
         const adminBalance = parseFloat(adminWallet.balance);
 
+        // Stricter Minimum Bet Check based on Currency
+        if (userWallet.currency === 'VND' && amount < 1000) {
+             await connection.rollback();
+             return res.status(400).json({ message: 'Minimum bet is 1,000 VND.' });
+        }
+        if (userWallet.currency === 'USD' && amount < 0.1) {
+             await connection.rollback();
+             return res.status(400).json({ message: 'Minimum bet is 0.1 USD.' });
+        }
+
         if (userBalance < amount) {
             await connection.rollback();
             return res.status(400).json({ message: 'Insufficient balance' });
+        }
+
+        // HOUSE SOLVENCY CHECK
+        // Payout is 1:1, so House needs at least 'amount' to pay if user wins.
+        if (adminBalance < amount) {
+            await connection.rollback();
+            return res.status(503).json({ 
+                message: 'Nhà cái đang bảo trì ngân sách (Tạm hết tiền). Vui lòng quay lại sau!',
+                code: 'HOUSE_INSOLVENT' 
+            });
         }
 
         const betAmountUserCurrency = amount;

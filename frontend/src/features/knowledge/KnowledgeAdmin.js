@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import '../../styles/KnowledgeAdmin.css';
+import '../../styles/KnowledgeAdminExtra.css';
 import { useConfirmContext } from '../../context/ConfirmContext';
 import shared from '../../styles/shared.module.css';
 import forms from '../../styles/forms.module.css';
@@ -293,6 +294,13 @@ export default function KnowledgeAdmin() {
                 <div key={item.id} className="knowledge-card">
                   <div className="card-header">
                     <h4 className="card-title">{item.title}</h4>
+
+                    <div className="knowledge-meta">
+                      <span className="badge badge-info" title="Số lượng chunks">
+                        🧩 {item.chunk_count || 0} chunks
+                      </span>
+                    </div>
+
                     <div className="card-actions">
                       <button
                         onClick={() => handleEdit(item)}

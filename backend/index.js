@@ -17,6 +17,7 @@ import unansweredRoutes from './src/modules/chat/unanswered.routes.js';
 import knowledgeRoutes from './src/modules/knowledge/knowledge.routes.js';
 import uploadRoutes from './src/modules/upload/upload.routes.js';
 import walletRoutes from './src/modules/wallet/routes/wallet.routes.js';
+import taixiuRoutes from './src/modules/games/taixiu/taixiu.routes.js';
 import paymentRoutes from './src/modules/wallet/routes/payment.routes.js';
 import subscriptionRoutes from './src/modules/subscription/subscription.routes.js';
 import usageRoutes from './src/modules/usage/usage.routes.js';
@@ -56,6 +57,7 @@ app.use('/user', userRoutes);
 app.use('/auth/password', passwordRoutes);
 app.use('/auth/sessions', sessionRoutes);
 app.use('/wallet', walletRoutes);
+app.use('/games/taixiu', taixiuRoutes);
 app.context = app; // For rare cases passing app context
 
 app.use(errorHandler);

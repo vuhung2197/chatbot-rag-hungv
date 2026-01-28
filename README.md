@@ -9,8 +9,9 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
+- **🎲 Giải trí**: Tích hợp Mini-game Tài Xỉu (Sic Bo) với hệ thống tiền tệ ảo
 
-> **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + MySQL + Vector Database
+> **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + PostgreSQL + Vector Database
 
 ---
 
@@ -27,6 +28,12 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Auto Chunking**: Chia nhỏ nội dung thành semantic chunks
 - **Vector Embedding**: Tự động tạo embedding cho mỗi chunk
 - **Admin Interface**: Quản lý kiến thức trực quan
+
+### 🎲 **Mini-Game: Tài Xỉu (Sic Bo)**
+- **Real-time Gameplay**: Đặt cược và nhận kết quả ngay lập tức
+- **Soi Cầu (Trend Analysis)**: Biểu đồ thống kê lịch sử và dự đoán xu hướng
+- **Wallet System**: Quản lý số dư, nạp/rút tiền ảo
+- **Fair Play**: Thuật toán ngẫu nhiên minh bạch
 
 ### ⚡ **Tối Ưu Hiệu Suất**
 - **Vector Indexing**: Tìm kiếm nhanh với large-scale vectors
@@ -48,11 +55,12 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │   Database      │
-│   (React)       │◄──►│   (Node.js)     │◄──►│   (MySQL)       │
+│   (React)       │◄──►│   (Node.js)     │◄──►│ (PostgreSQL)    │
 │                 │    │                 │    │                 │
 │ • Chat Features │    │ • RAG Engine    │    │ • Knowledge     │
 │ • Admin Module  │    │ • Vector Search │    │ • Vectors       │
 │ • User Module   │    │ • Modules API   │    │ • Users         │
+│ • Game Module   │    │ • Game Engine   │    │ • Game Sessions │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -72,6 +80,7 @@ english-chatbot/
 │   │   ├── 📁 auth/           # Authentication
 │   │   ├── 📁 chat/           # Chat Logic & History
 │   │   ├── 📁 knowledge/      # Knowledge Base Management
+│   │   ├── 📁 games/          # Game Logic (Tai Xiu, etc.)
 │   │   ├── 📁 wallet/         # Wallet & Payment
 │   │   ├── 📁 user/           # User Management
 │   │   └── ...
@@ -87,7 +96,8 @@ english-chatbot/
 │   ├── 📁 src/features/        # Feature Modules (UI & Logic)
 │   │   ├── 📁 auth/           # Login, Register, OAuth
 │   │   ├── 📁 chat/           # Chat Interface
-│   │   ├── 📁 knowledge/      # Admin Dashboard
+│   │   ├── 📁 knowledge/      # Admin Dashboard & Search
+│   │   ├── 📁 games/          # Game Interfaces (Tai Xiu)
 │   │   ├── 📁 wallet/         # Wallet & Transactions
 │   │   └── 📁 user/           # Profile & Settings
 │   ├── 📁 src/components/      # Shared Components
@@ -107,7 +117,7 @@ english-chatbot/
 ### **1. Yêu Cầu Hệ Thống**
 - **Docker** + **Docker Compose**
 - **Node.js** 18+ (cho development)
-- **MySQL** 8.0+ (hoặc sử dụng Docker)
+- **PostgreSQL** 13+ (với pgvector extension)
 
 ### **2. Clone Repository**
 ```bash
@@ -126,12 +136,17 @@ nano .env
 
 **Cấu hình `.env`:**
 ```env
-# Database
+# Database (PostgreSQL)
 DB_HOST=localhost
-DB_USER=chatbot_user
-DB_PASSWORD=chatbot_pass
-DB_NAME=chatbot
-DB_ROOT_PASSWORD=rootpass
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres123
+DB_DATABASE=chatbot
+
+# PostgreSQL Docker (Optional)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres123
+POSTGRES_DB=chatbot
 
 # OpenAI API
 OPENAI_API_KEY=sk-your-openai-api-key
@@ -172,7 +187,30 @@ npm start
 ### **6. Truy Cập Ứng Dụng**
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:3001
-- **Database**: localhost:3306
+- **Database**: localhost:5432
+
+---
+
+## 👑 Quản Lý Admin & User
+
+Để truy cập các tính năng quản trị (Knowledge Admin, System Settings), bạn cần có tài khoản với quyền **Admin**.
+
+### **Cách tạo tài khoản Admin**
+Vì lý do bảo mật, không có trang đăng ký công khai cho Admin. Bạn cần nâng cấp một user bình thường thông qua Database.
+
+1.  **Đăng ký** một tài khoản user mới tại trang chủ (ví dụ: `admin@example.com`).
+2.  **Truy cập vào Database** (bằng pgAdmin, DBeaver hoặc dòng lệnh).
+3.  **Chạy lệnh SQL** sau để cấp quyền Admin:
+
+```sql
+UPDATE users 
+SET role = 'admin' 
+WHERE email = 'admin@example.com';
+```
+
+4.  **Đăng xuất và đăng nhập lại** để áp dụng quyền mới.
+
+> **Lưu ý**: Tài khoản Admin đầu tiên được tạo cũng sẽ đóng vai trò "Nhà cái" (House) trong game Tài Xỉu để nhận/trả tiền cược.
 
 ---
 
@@ -181,19 +219,19 @@ npm start
 ### **1. Khởi Tạo Database**
 ```bash
 # Chạy script khởi tạo
-mysql -u root -p < db/init.sql
+psql -U postgres -f db/init.sql
 ```
 
 ### **2. Tối Ưu Vector Database**
 ```bash
 # Chạy script tối ưu hóa vector
-mysql -u root -p chatbot < db/vector_optimization.sql
+psql -U postgres -d chatbot -f db/vector_optimization.sql
 ```
 
 ### **3. Dọn Dẹp Database (Nếu Cần)**
 ```bash
 # Loại bỏ các bảng không cần thiết
-mysql -u root -p chatbot < db/remove_unused_tables.sql
+psql -U postgres -d chatbot -f db/remove_unused_tables.sql
 ```
 
 ---
@@ -214,10 +252,10 @@ mysql -u root -p chatbot < db/remove_unused_tables.sql
 - Xem và chỉnh sửa chunks
 - Quản lý câu hỏi chưa trả lời
 
-### **4. Chọn Model LLM**
-- Quản lý và chuyển đổi giữa các model (OpenAI, Ollama)
-- Cấu hình temperature và max tokens
-- Monitor performance của từng model
+### **4. Chơi Game Tài Xỉu**
+- Truy cập mục **Games** từ menu
+- Đặt cược vào cửa Tài hoặc Xỉu
+- Sử dụng tính năng **Soi Cầu** để xem lịch sử và dự đoán kết quả
 
 ---
 
@@ -243,6 +281,12 @@ GET    /knowledge      # Lấy danh sách kiến thức
 POST   /knowledge      # Thêm kiến thức
 PUT    /knowledge/:id  # Cập nhật kiến thức
 DELETE /knowledge/:id  # Xóa kiến thức
+```
+
+### **Games (Tai Xiu)**
+```http
+POST   /games/taixiu/bet      # Đặt cược
+GET    /games/taixiu/history  # Lịch sử ván chơi
 ```
 
 ### **File Upload**
@@ -271,7 +315,7 @@ GET  /upload/:id      # Lấy file
 node test/vector_performance_test.js
 
 # Xem database stats
-mysql -u root -p -e "SELECT COUNT(*) FROM knowledge_chunks;"
+psql -U postgres -d chatbot -c "SELECT COUNT(*) FROM knowledge_chunks;"
 
 # Monitor logs
 docker-compose logs -f backend
@@ -284,7 +328,7 @@ docker-compose logs -f backend
 ### **Code Structure**
 - **Backend**: Express.js với modular architecture
 - **Frontend**: React với Feature-based architecture
-- **Database**: MySQL với vector optimization
+- **Database**: PostgreSQL với pgvector optimization
 - **AI**: OpenAI API với Advanced RAG pattern
 
 ### **Key Features**
@@ -338,6 +382,7 @@ export OPENAI_API_KEY=your-api-key
 - [x] Advanced RAG implementation
 - [x] Hybrid search (vector + keyword)
 - [x] Context re-ranking
+- [x] Integrate Mini-games (Sic Bo)
 
 ### **Phase 3: Intelligence** 📋
 - [ ] ML-based algorithm selection
@@ -377,7 +422,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - OpenAI API for GPT integration
 - React community for excellent documentation
-- MySQL team for vector search capabilities
+- PostgreSQL team and pgvector for vector search capabilities
 - All contributors and testers
 
 ---

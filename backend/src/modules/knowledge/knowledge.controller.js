@@ -63,10 +63,29 @@ export async function addKnowledge(req, res) {
 
 // Lấy toàn bộ kiến thức
 export async function getAllKnowledge(req, res) {
-    const [rows] = await pool.execute(
-        'SELECT * FROM knowledge_base ORDER BY id DESC'
-    );
-    res.json(rows);
+    const [rows] = await pool.execute(`
+        SELECT 
+            kb.*, 
+            COUNT(kc.id) as chunk_count,
+            COALESCE(
+                json_agg(
+                    json_build_object('id', kc.id, 'token_count', kc.token_count)
+                ) FILTER (WHERE kc.id IS NOT NULL), 
+                '[]'::json
+            ) as chunks_info
+        FROM knowledge_base kb
+        LEFT JOIN knowledge_chunks kc ON kb.id = kc.parent_id
+        GROUP BY kb.id
+        ORDER BY kb.id DESC
+    `);
+
+    // In PostgreSQL with pg node driver, json_agg returns object directly
+    const processedRows = rows.map(row => ({
+        ...row,
+        chunks_info: typeof row.chunks_info === 'string' ? JSON.parse(row.chunks_info) : row.chunks_info
+    }));
+
+    res.json(processedRows);
 }
 
 // Sửa kiến thức

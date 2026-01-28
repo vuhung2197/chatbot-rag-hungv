@@ -12,6 +12,7 @@ import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import SetPasswordPage from './features/auth/SetPasswordPage';
 import { useDarkMode } from './context/DarkModeContext';
 import { useLanguage } from './context/LanguageContext';
+import TaixiuGame from './features/games/taixiu/TaixiuGame';
 import { setupAxiosInterceptor } from './utils/axiosConfig';
 
 export default function App() {
@@ -219,69 +220,103 @@ export default function App() {
 
   return (
     <>
-      <button
-        onClick={toggleDarkMode}
-        style={{
-          position: 'absolute',
-          right: -15,
-          top: 10,
-          background: darkMode ? '#333' : '#fff',
-          color: darkMode ? '#fff' : '#7137ea',
-          border: '1px solid #7137ea',
-          borderRadius: 20,
-          padding: '6px 18px',
-          cursor: 'pointer',
-          zIndex: 1000,
-        }}
-      >
-        {darkMode ? '🌙 Dark Mode' : '☀️ Light Mode'}
-      </button>
       <div style={{
-        position: 'absolute',
-        left: 0,
-        top: 10,
         display: 'flex',
-        gap: '8px',
-        zIndex: 1000,
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '20px 0',
+        gap: '15px'
       }}>
-        <button
-          onClick={() => setShowProfile(true)}
+        <h3
           style={{
-            background: darkMode ? '#2d2d2d' : '#f0f0f0',
-            border: `1px solid ${darkMode ? '#555' : '#ccc'}`,
-            padding: '6px 18px',
-            borderRadius: 20,
-            cursor: 'pointer',
-            color: darkMode ? '#fff' : '#333',
-            fontSize: '14px',
+            color: '#7137ea',
+            fontSize: '2em',
+            fontWeight: 'bold',
+            margin: 0,
+            textAlign: 'center',
           }}
         >
-          👤 Profile
-        </button>
-        <button
-          onClick={handleLogout}
-          style={{
-            background: '#eee',
-            border: '1px solid #666',
-            padding: '6px 18px',
-            borderRadius: 20,
-            cursor: 'pointer',
-          }}
-        >
-          {t('auth.logout')}
-        </button>
+          📚 Knowledge Chatbot
+        </h3>
+
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <button
+            onClick={toggleDarkMode}
+            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            style={{
+              background: darkMode ? '#333' : '#fff',
+              color: darkMode ? '#fff' : '#7137ea',
+              border: '1px solid #7137ea',
+              borderRadius: '20px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontWeight: 500,
+              fontSize: '0.9rem',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+          >
+            {darkMode ? '🌙' : '☀️'} <span style={{ display: 'none', '@media (min-width: 768px)': { display: 'inline' } }}>{darkMode ? 'Dark' : 'Light'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowProfile(true)}
+            style={{
+              background: darkMode ? '#2d2d2d' : '#f0f0f0',
+              border: `1px solid ${darkMode ? '#555' : '#e5e7eb'}`,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              color: darkMode ? '#fff' : '#333',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+          >
+            <i className="fas fa-user-circle"></i> Profile
+          </button>
+
+          <button
+            onClick={handleLogout}
+            title={t('auth.logout')}
+            style={{
+              background: darkMode ? '#3f1a1a' : '#ffebee',
+              border: `1px solid ${darkMode ? '#7f1d1d' : '#fecaca'}`,
+              width: '38px',
+              height: '38px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#ef4444',
+              fontSize: '1.1rem',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+              transition: 'all 0.2s',
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = darkMode ? '#450a0a' : '#fee2e2';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = darkMode ? '#3f1a1a' : '#ffebee';
+            }}
+          >
+            <i className="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
       </div>
-      <h3
-        style={{
-          color: '#7137ea',
-          fontSize: '2em',
-          fontWeight: 'bold',
-          marginBottom: '1em',
-          textAlign: 'center',
-        }}
-      >
-        📚 Knowledge Chatbot
-      </h3>
 
       <nav
         style={{
@@ -301,19 +336,33 @@ export default function App() {
             padding: '8px 16px',
           }}
         >
-          {t('chat.title')}
+          Knowledge Search
         </button>
+        {role === 'admin' && (
+          <button
+            onClick={() => setView('knowledgeadmin')}
+            style={{
+              background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
+              color: view === 'knowledgeadmin' ? '#fff' : '#333',
+              border: '1px solid #7137ea',
+              borderRadius: 8,
+              padding: '8px 16px',
+            }}
+          >
+            Knowledge Admin
+          </button>
+        )}
         <button
-          onClick={() => setView('knowledgeadmin')}
+          onClick={() => setView('games')}
           style={{
-            background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
-            color: view === 'knowledgeadmin' ? '#fff' : '#333',
+            background: view === 'games' ? '#7137ea' : '#f6f9fc',
+            color: view === 'games' ? '#fff' : '#333',
             border: '1px solid #7137ea',
             borderRadius: 8,
             padding: '8px 16px',
           }}
         >
-          Knowledge Admin
+          Games
         </button>
       </nav>
 
@@ -351,7 +400,8 @@ export default function App() {
       ) : (
         <>
           {view === 'chat' && <Chat darkMode={darkMode} />}
-          {view === 'knowledgeadmin' && <KnowledgeAdmin darkMode={darkMode} />}
+          {view === 'knowledgeadmin' && role === 'admin' && <KnowledgeAdmin darkMode={darkMode} />}
+          {view === 'games' && <TaixiuGame darkMode={darkMode} />}
         </>
       )}
     </>

@@ -51,12 +51,24 @@ Code xử lý: `win = bet.amount + (bet.amount * count)`.
 *   **Giải pháp**: Sử dụng script migration để `ALTER TYPE ... ADD VALUE` thêm giá trị mới vào ENUM, giữ an toàn cho dữ liệu cũ và các View liên quan.
 
 ### 4.2. Vấn đề Hiển Thị Số Tiền (Currency Issue)
-*   **Vấn đề**: Lịch sử giao dịch hiển thị số tiền sai lệch (nhân 25,000 lần) do hệ thống frontend giả định mọi giao dịch từ DB là USD.
-*   **Giải pháp**: Cập nhật Controller để quy đổi tiền cược (VND) sang USD *trước* khi lưu vào Database. Điều này tuân thủ chuẩn "Store in USD, Display in Local Currency" của hệ thống.
+*   **Vấn đề**: Lịch sử giao dịch hiển thị số tiền sai lệch (nhân 25,000 lần) do hệ thống frontend giả định mọi giao dịch từ DB là USD. Ngoài ra, các bản ghi cũ lưu VND trong khi bản ghi mới lưu USD gây xung đột hiển thị.
+*   **Giải pháp**: 
+    1. Cập nhật Controller để quy đổi tiền cược (VND) sang USD *trước* khi lưu vào Database (Store in USD).
+    2. Áp dụng kỹ thuật **Heuristic Detection** trong `getHistory`: Tự động nhận diện bản ghi cũ dựa trên Metadata (`currency` tag) hoặc giá trị tiền cược (Nếu `amount > 5000` -> Coi là VND legacy). Điều này đảm bảo hiển thị đúng cho cả dữ liệu quá khứ và hiện tại.
 
-### 4.3. Vấn đề Dấu Âm/Dương Trong Giao Dịch
-*   **Vấn đề**: Giao dịch đặt cược hiển thị dấu `+` (Cộng tiền) gây hiểu nhầm.
-*   **Giải pháp**: Lưu giá trị Âm (`-amount`) vào bảng `wallet_transactions` cho các hành động cược (Bet), giúp frontend tự động hiển thị màu đỏ và dấu trừ chính xác.
+### 4.3. Vấn đề Dấu Âm/Dương & Lợi Nhuận Ròng (Net Profit)
+*   **Vấn đề**: Giao dịch đặt cược hiển thị dấu `+` gây hiểu nhầm. Lịch sử hiển thị Tổng tiền nhận về (Gross Payout) thay vì Lãi thực (Net Profit).
+*   **Giải pháp**: 
+    1. Lưu giá trị Âm (`-amount`) vào bảng `wallet_transactions` cho việc đặt cược.
+    2. Frontend tính toán và hiển thị **Net Profit** (`Win - Bet`).
+        *   Thắng: Hiển thị `+Lãi` (Màu xanh).
+        *   Thua: Hiển thị `-Lỗ` (Màu đỏ).
+        *   Hòa: Hiển thị `0 đ` (Màu xám).
+
+### 4.4. Cải Thiện UI/UX Toàn Diện
+*   **Layout Stability**: Khắc phục lỗi giao diện bị co nhỏ (shrink) khi hiển thị kết quả bằng cách cố định `minWidth` và loại bỏ hiệu ứng `scale` không cần thiết.
+*   **Controls Redesign**: Thiết kế lại cụm nút điều khiển, tách biệt nút "Xóc Ngay" (theo phong cách Xóc Đĩa truyền thống) và dàn trải chip cược để dễ thao tác hơn.
+*   **Scrollbar**: Tùy biến thanh cuộn (Custom Scrollbar) cho danh sách lịch sử, đảm bảo luôn hiển thị và dễ nhìn trên nền tối.
 
 ## 5. Kết Luận
 Hệ thống Bầu Cua Tôm Cá hiện tại đã hoàn thiện, ổn định và sẵn sàng cho việc mở rộng (Scaling). Kiến trúc cơ sở dữ liệu đã được nới lỏng để dễ dàng tích hợp thêm các game mới như Xóc Đĩa, Roulette mà không cần sửa đổi cấu trúc bảng quá nhiều.

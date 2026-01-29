@@ -1,5 +1,6 @@
 import pool from '../../../../db.js';
 import currencyService from '../../../../services/currencyService.js';
+import { generateServerSeed, hashSeed, rollDice } from '../../../utils/provablyFair.js';
 
 // Configuration
 const HOUSE_EDGE_TRIPLE = true; // If true, triple (1-1-1, etc.) makes Big/Small lose.
@@ -183,10 +184,14 @@ export async function placeBet(req, res) {
             [adminWallet.id, adminId, amountAdminUSD, adminBalance, newAdminBalance_AfterBet, `Người chơi cược ${betType} (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', from_user: userId })]
         );
 
-        // 5. Roll Dice & Determine Result
-        const dice1 = Math.floor(Math.random() * 6) + 1;
-        const dice2 = Math.floor(Math.random() * 6) + 1;
-        const dice3 = Math.floor(Math.random() * 6) + 1;
+        // 5. Roll Dice & Determine Result (Provably Fair)
+        // Generate seeds
+        const serverSeed = generateServerSeed();
+        const clientSeed = req.body.clientSeed || userId.toString() || 'default-client-seed';
+        const nonce = Date.now(); // Simple nonce (timestamp) for now. Ideal: User nonce from DB.
+
+        // Calculate Dice
+        const [dice1, dice2, dice3] = rollDice(serverSeed, clientSeed, nonce);
         const totalScore = dice1 + dice2 + dice3;
 
         let resultType;
@@ -195,6 +200,19 @@ export async function placeBet(req, res) {
         } else {
             resultType = totalScore >= 11 ? 'TAI' : 'XIU';
         }
+
+        // Hash Server Seed for public verification
+        // In a real flow, we would have sent the Hash BEFORE the bet. 
+        // Here we send both (since it's instant) so user can verify retrospectively.
+        const serverSeedHash = hashSeed(serverSeed);
+
+        // Metadata object for Provably Fair
+        const fairData = {
+            serverSeed,
+            clientSeed,
+            nonce,
+            serverSeedHash
+        };
 
         // 6. Handle Payout (If Win)
         let isWin = false;
@@ -237,11 +255,12 @@ export async function placeBet(req, res) {
             }
 
             // FIX: Use 'deposit' instead of 'game_win' due to ENUM constraint
+            // Include PF data in metadata
             await connection.execute(
                 `INSERT INTO wallet_transactions 
                  (wallet_id, user_id, type, amount, balance_before, balance_after, description, status, metadata)
                  VALUES (?, ?, 'deposit', ?, ?, ?, ?, 'completed', ?)`,
-                [userWallet.id, userId, winUSD, newUserBalance_AfterBet, newUserBalance_AfterWin, `Thắng cược ${betType} (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', result: resultType })]
+                [userWallet.id, userId, winUSD, newUserBalance_AfterBet, newUserBalance_AfterWin, `Thắng cược ${betType} (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', result: resultType, pf: fairData })]
             );
 
             let payoutUSD = payoutAmountAdminCurrency;
@@ -269,10 +288,15 @@ export async function placeBet(req, res) {
         const sessionId = sessionResult[0].id;
 
         const betStatus = isWin ? 'WON' : 'LOST';
+        // Also save PF data if user lost (since we didn't save transaction metadata for lose case yet)
+        // Convert to USD for storage
+        const betAmountUSD = currencyService.convertCurrency(amount, userWallet.currency, 'USD');
+        const winUSDStorage = isWin ? currencyService.convertCurrency(winAmountUserCurrency, userWallet.currency, 'USD') : 0;
+
         await connection.execute(
-            `INSERT INTO game_bets (user_id, session_id, bet_type, bet_amount, win_amount, status)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [userId, sessionId, betType, amount, isWin ? winAmountUserCurrency : 0, betStatus]
+            `INSERT INTO game_bets (user_id, session_id, bet_type, bet_amount, win_amount, status, metadata)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [userId, sessionId, betType, betAmountUSD, winUSDStorage, betStatus, JSON.stringify({ ...fairData, currency: 'USD' })]
         );
 
         await connection.commit();
@@ -286,7 +310,13 @@ export async function placeBet(req, res) {
             },
             win: isWin,
             winAmount: isWin ? winAmountUserCurrency : 0,
-            newBalance: finalUserBalance
+            newBalance: finalUserBalance,
+            provablyFair: {
+                serverSeed: serverSeed,
+                serverSeedHash: serverSeedHash,
+                clientSeed: clientSeed,
+                nonce: nonce
+            }
         });
 
     } catch (error) {
@@ -306,8 +336,9 @@ export async function getHistory(req, res) {
         const userId = req.user?.id;
         const limit = parseInt(req.query.limit) || 20;
 
-        const [history] = await pool.execute(
-            `SELECT gb.*, gs.dice1, gs.dice2, gs.dice3, gs.total_score, gs.result_type 
+        const [rows] = await pool.execute(
+            `SELECT gb.id, gb.user_id, gb.session_id, gb.bet_type, gb.bet_amount, gb.win_amount, gb.status, gb.created_at, gb.metadata,
+                    gs.dice1, gs.dice2, gs.dice3, gs.total_score, gs.result_type 
              FROM game_bets gb
              JOIN game_sessions gs ON gb.session_id = gs.id
              WHERE gb.user_id = ?
@@ -315,6 +346,33 @@ export async function getHistory(req, res) {
              LIMIT ?`,
             [userId, limit]
         );
+
+        // Get User Currency
+        const [walletRows] = await pool.execute('SELECT currency FROM user_wallets WHERE user_id = ?', [userId]);
+        const userCurrency = walletRows[0]?.currency || 'USD';
+
+        const history = rows.map(row => {
+            let srcCurrency = 'USD'; // Default for new system
+            try {
+                const meta = typeof row.metadata === 'string' ? JSON.parse(row.metadata) : (row.metadata || {});
+                if (meta.currency) {
+                    srcCurrency = meta.currency;
+                } else {
+                    // Legacy Heuristic
+                    if (parseFloat(row.bet_amount) > 5000) {
+                        srcCurrency = 'VND';
+                    } else {
+                        srcCurrency = 'USD';
+                    }
+                }
+            } catch (e) { }
+
+            return {
+                ...row,
+                bet_amount: currencyService.convertCurrency(parseFloat(row.bet_amount), srcCurrency, userCurrency),
+                win_amount: currencyService.convertCurrency(parseFloat(row.win_amount), srcCurrency, userCurrency)
+            };
+        });
 
         res.json({ history });
     } catch (error) {

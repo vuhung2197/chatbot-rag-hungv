@@ -12,7 +12,7 @@ import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import SetPasswordPage from './features/auth/SetPasswordPage';
 import { useDarkMode } from './context/DarkModeContext';
 import { useLanguage } from './context/LanguageContext';
-import TaixiuGame from './features/games/taixiu/TaixiuGame';
+import GamesPage from './features/games/GamesPage';
 import { setupAxiosInterceptor } from './utils/axiosConfig';
 
 export default function App() {
@@ -401,7 +401,7 @@ export default function App() {
         <>
           {view === 'chat' && <Chat darkMode={darkMode} />}
           {view === 'knowledgeadmin' && role === 'admin' && <KnowledgeAdmin darkMode={darkMode} />}
-          {view === 'games' && <TaixiuGame darkMode={darkMode} />}
+          {view === 'games' && <GamesPage darkMode={darkMode} />}
         </>
       )}
     </>

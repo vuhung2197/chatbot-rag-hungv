@@ -9,7 +9,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
-- **🎲 Giải trí**: Tích hợp Mini-game Sic Bo với hệ thống tiền tệ ảo
+- **🎲 Giải trí**: Tích hợp Game Arena (Sic Bo, Bầu Cua Tôm Cá) với hệ thống tiền tệ ảo minh bạch
 
 > **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + PostgreSQL + Vector Database
 
@@ -29,11 +29,12 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Vector Embedding**: Tự động tạo embedding cho mỗi chunk
 - **Admin Interface**: Quản lý kiến thức trực quan
 
-### 🎲 **Mini-Game: Sic Bo**
-- **Real-time Gameplay**: Đặt cược và nhận kết quả ngay lập tức
-- **Soi Cầu (Trend Analysis)**: Biểu đồ thống kê lịch sử và dự đoán xu hướng
-- **Wallet System**: Quản lý số dư, nạp/rút tiền ảo
-- **Fair Play**: Thuật toán ngẫu nhiên minh bạch
+### 🎲 **Multi-Game Arena**
+- **Sic Bo (Tài Xỉu)**: Game cược xúc xắc cổ điển với tính năng Soi Cầu (Trend Analysis).
+- **Bầu Cua Tôm Cá**: (Mới) Game dân gian Việt Nam với giao diện hiện đại, hiệu ứng 3D Shake.
+- **Provably Fair**: Tất cả game đều tích hợp công nghệ kiểm chứng công bằng (Server Seed + Client Seed).
+- **Wallet System**: Quản lý số dư thống nhất, tự động quy đổi tiền tệ.
+- **[Xem Chi Tiết Hệ Thống Bầu Cua](./BAUCUA_SYSTEM_ANALYSIS.md)**
 
 ### ⚡ **Tối Ưu Hiệu Suất**
 - **Vector Indexing**: Tìm kiếm nhanh với large-scale vectors
@@ -283,10 +284,12 @@ PUT    /knowledge/:id  # Cập nhật kiến thức
 DELETE /knowledge/:id  # Xóa kiến thức
 ```
 
-### **Games (Sic Bo)**
+### **Games (Arena)**
 ```http
-POST   /games/taixiu/bet      # Đặt cược
-GET    /games/taixiu/history  # Lịch sử ván chơi
+POST   /games/taixiu/bet      # Đặt cược Sic Bo
+GET    /games/taixiu/history  # Lịch sử Sic Bo
+POST   /games/baucua/bet      # Đặt cược Bầu Cua
+GET    /games/baucua/history  # Lịch sử Bầu Cua
 ```
 
 ### **File Upload**

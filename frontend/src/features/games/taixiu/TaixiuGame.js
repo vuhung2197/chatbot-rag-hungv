@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { BarChart2, TrendingUp, X, HelpCircle, BookOpen } from 'lucide-react';
+import { BarChart2, TrendingUp, X, HelpCircle, BookOpen, ArrowLeft } from 'lucide-react';
 import TrendChart from './components/TrendChart';
 import RoadMap from './components/RoadMap';
 import BridgeGuideModal from './components/BridgeGuideModal';
+import ProvablyFairModal from './components/ProvablyFairModal';
 import './taixiu.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
+const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
     const [balance, setBalance] = useState(0);
     const [currency, setCurrency] = useState('USD');
     const [betAmount, setBetAmount] = useState(0);
@@ -18,13 +19,41 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
     const [history, setHistory] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [lastWinAmount, setLastWinAmount] = useState(0);
+    const [lastBetSnapshot, setLastBetSnapshot] = useState(0);
+    const [isWin, setIsWin] = useState(false);
 
     // New State for Trends
     const [showTrends, setShowTrends] = useState(false);
     const [showGuide, setShowGuide] = useState(false);
+    const [pfData, setPfData] = useState(null);
+    const [showPfModal, setShowPfModal] = useState(false);
 
     // Chips denomination
     const chips = [1000, 5000, 10000, 50000, 100000, 500000];
+
+    const handleHistoryClick = (item) => {
+        if (!item.metadata) return;
+
+        // Parse metadata if needed (MySQL driver usually returns object for JSON columns, but verify)
+        let meta = item.metadata;
+        if (typeof meta === 'string') {
+            try {
+                meta = JSON.parse(meta);
+            } catch (e) {
+                console.error("Invalid JSON metadata", e);
+                return;
+            }
+        }
+
+        // Check if PF data exists (it might be wrapped in 'pf' key based on our backend)
+        const fairData = meta.pf || meta; // Fallback if structure varies
+
+        if (fairData && fairData.serverSeed) {
+            setPfData(fairData);
+            setShowPfModal(true);
+        }
+    };
 
     const fetchWallet = useCallback(async () => {
         try {
@@ -111,9 +140,12 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
 
             const data = apiRes.data;
 
-            setResult(data.result); // { dice: [1,2,3], total: 6, type: 'XIU' }
+            setResult(data.result);
             setGameState('RESULT');
             setBalance(Number(data.newBalance));
+            setIsWin(data.win);
+            setLastWinAmount(data.winAmount);
+            setLastBetSnapshot(betAmount); // Save executed bet amount
 
             // Update history locally or fetch
             fetchHistory();
@@ -147,49 +179,158 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
         <div className={`taixiu-container ${darkMode ? 'dark' : 'light'}`}>
             <BridgeGuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
 
-            <div className="game-header">
-                <h2>🎲 SIC BO</h2>
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => setShowGuide(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-indigo-600 text-white hover:bg-indigo-500"
-                    >
-                        <BookOpen size={16} />
-                        Các Loại Cầu
-                    </button>
-                    <button
-                        onClick={() => setShowTrends(!showTrends)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${showTrends ? 'bg-yellow-500 text-black' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
-                    >
-                        {showTrends ? <X size={16} /> : <TrendingUp size={16} />}
-                        {showTrends ? 'Đóng Soi Cầu' : 'Soi Cầu'}
-                    </button>
-                    <div className="balance-display">
-                        Balance: <span>{formatMoney(balance)}</span>
-                    </div>
+            {/* New Modern Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                <button
+                    onClick={onBack}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '8px',
+                        backgroundColor: darkMode ? '#334155' : '#e5e7eb',
+                        color: darkMode ? 'white' : 'black', border: 'none', cursor: 'pointer'
+                    }}
+                >
+                    <ArrowLeft size={18} /> Back
+                </button>
+                <div style={{
+                    fontSize: '1.5rem', fontWeight: 'bold',
+                    background: 'linear-gradient(to right, #fb923c, #eab308)',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    textTransform: 'uppercase'
+                }}>
+                    🎲 SIC BO (Tài Xỉu)
+                </div>
+                <div style={{
+                    padding: '8px 16px', borderRadius: '9999px',
+                    backgroundColor: '#1e293b',
+                    color: '#facc15', fontFamily: 'monospace', fontWeight: 'bold',
+                    border: '1px solid #334155'
+                }}>
+                    {formatMoney(balance)}
                 </div>
             </div>
+
+            {/* Toolbar for Extra Features */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '24px' }}>
+                <button
+                    onClick={() => setShowGuide(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all bg-indigo-600 text-white hover:bg-indigo-500"
+                >
+                    <BookOpen size={16} />
+                    Các Loại Cầu
+                </button>
+                <button
+                    onClick={() => setShowTrends(!showTrends)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${showTrends ? 'bg-yellow-500 text-black' : 'bg-slate-700 text-white hover:bg-slate-600'}`}
+                >
+                    {showTrends ? <X size={16} /> : <TrendingUp size={16} />}
+                    {showTrends ? 'Đóng Soi Cầu' : 'Soi Cầu'}
+                </button>
+            </div>
+
+            {/* Inject Custom Shake Animation */}
+            <style>
+                {`
+                @keyframes shake-hard {
+                    0% { transform: translate(1px, 1px) rotate(0deg) scale(1); filter: blur(0px); }
+                    25% { transform: translate(-4px, -4px) rotate(-15deg) scale(1.1); filter: blur(2px); }
+                    50% { transform: translate(0px, 0px) rotate(180deg) scale(0.9); filter: blur(4px); }
+                    75% { transform: translate(4px, 4px) rotate(15deg) scale(1.1); filter: blur(2px); }
+                    100% { transform: translate(1px, -1px) rotate(0deg) scale(1); filter: blur(0px); }
+                }
+                .shaking-effect {
+                    animation: shake-hard 0.3s infinite;
+                }
+                @keyframes popIn {
+                    0% { opacity: 0; transform: scale(0.5); }
+                    70% { transform: scale(1.1); }
+                    100% { opacity: 1; transform: scale(1); }
+                }
+                `}
+            </style>
 
             <div className="flex flex-col md:flex-row gap-4 max-w-7xl mx-auto w-full">
                 {/* Main Game Board */}
                 <div className="game-board flex-1">
                     {/* Result Area */}
-                    <div className="dice-area">
+                    <div style={{
+                        height: '192px', position: 'relative', borderRadius: '16px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        overflow: 'hidden', backgroundColor: '#0f172a',
+                        border: '1px solid #334155', boxShadow: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+                        marginBottom: '24px'
+                    }}>
                         {gameState === 'ROLLING' ? (
-                            <div className="shaking-bowl">🥣</div>
+                            <div className="shaking-effect" style={{
+                                fontSize: '8rem',
+                                filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.6))',
+                                cursor: 'wait'
+                            }}>
+                                🎲
+                            </div>
                         ) : gameState === 'RESULT' && result ? (
-                            <div className="dice-result">
-                                <div className="dice-container">
+                            <div className="dice-result" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div className="dice-container" style={{ gap: '24px', marginBottom: '40px' }}>
                                     {result.dice.map((d, i) => (
-                                        <div key={i} className={`dice dice-${d}`}></div>
+                                        <div key={i} className={`dice dice-${d}`} style={{ width: '64px', height: '64px' }}></div>
                                     ))}
                                 </div>
-                                <div className="result-text">
-                                    Total: {result.total} - <span className={result.type === 'TAI' ? 'text-tai' : 'text-xiu'}>{result.type}</span>
+                                <div style={{
+                                    position: 'absolute', bottom: '16px', left: 0, right: 0, textAlign: 'center'
+                                }}>
+                                    <span style={{
+                                        fontSize: '1.5rem', fontWeight: 'bold',
+                                        color: result.type === 'TAI' ? '#facc15' : '#ef4444',
+                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                    }}>
+                                        Total: {result.total} - {result.type}
+                                    </span>
+
+                                    {/* Win/Lose Badge */}
+                                    <div style={{
+                                        marginTop: '4px',
+                                        animation: 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                                        height: '30px' // Reserved height
+                                    }}>
+                                        {(() => {
+                                            const netProfit = lastWinAmount - lastBetSnapshot;
+                                            if (netProfit > 0) {
+                                                return (
+                                                    <div style={{
+                                                        color: '#4ade80', fontSize: '1.2rem', fontWeight: 'bold',
+                                                        textShadow: '0 0 10px rgba(74, 222, 128, 0.5)',
+                                                        background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '8px'
+                                                    }}>
+                                                        <span>🎉 THẮNG</span>
+                                                        <span style={{ color: '#facc15' }}>+{formatMoney(netProfit)}</span>
+                                                    </div>
+                                                );
+                                            } else if (netProfit < 0) {
+                                                return (
+                                                    <div style={{
+                                                        color: '#ef4444', fontSize: '1.2rem', fontWeight: 'bold',
+                                                        textShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+                                                        background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '8px'
+                                                    }}>
+                                                        <span>💸 THUA</span>
+                                                        <span style={{ color: '#fca5a5' }}>-{formatMoney(Math.abs(netProfit))}</span>
+                                                    </div>
+                                                );
+                                            } else {
+                                                return (
+                                                    <div style={{
+                                                        color: '#94a3b8', fontSize: '1.2rem', fontWeight: 'bold',
+                                                        background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center'
+                                                    }}>
+                                                        <span>⚖️ HÒA VỐN</span>
+                                                    </div>
+                                                );
+                                            }
+                                        })()}
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <div className="placeholder-text">Place your bet</div>
+                            <div style={{ color: '#6b7280' }}>Place your bet</div>
                         )}
                     </div>
 
@@ -277,29 +418,47 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
                             <h3>Lịch Sử Cược</h3>
                             <div className="history-list h-[400px] overflow-y-auto">
                                 {history.map(h => (
-                                    <div key={h.id} className="history-item">
-                                        <div className="flex items-center gap-2">
+                                    <div
+                                        key={h.id}
+                                        className="history-item cursor-pointer hover:bg-slate-700/50 transition-colors"
+                                        onClick={() => handleHistoryClick(h)}
+                                        title="Click to verify (Provably Fair)"
+                                    >
+                                        <div className="flex items-center gap-3">
                                             <span
-                                                className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold text-white shadow-sm"
+                                                className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold text-white shadow-sm flex-shrink-0"
                                                 style={{
                                                     backgroundColor: h.result_type === 'TAI' ? '#ef4444' : h.result_type === 'TRIPLE' ? '#22c55e' : '#3b82f6'
                                                 }}
                                             >
                                                 {h.result_type === 'TRIPLE' ? '3' : h.result_type[0]}
                                             </span>
-                                            <div className="flex flex-col">
-                                                <span className="text-xs text-gray-400">#{h.session_id}</span>
-                                                <span className="text-sm font-medium">{h.dice1}+{h.dice2}+{h.dice3} = {h.total_score}</span>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="text-xs text-gray-500 font-mono">#{h.session_id}</div>
+                                                <div className="text-sm font-bold text-yellow-500">
+                                                    {h.dice1} + {h.dice2} + {h.dice3} = {h.total_score}
+                                                </div>
                                             </div>
                                         </div>
-                                        <span
-                                            className="font-bold"
-                                            style={{
-                                                color: h.win_amount > 0 ? '#4caf50' : '#ff5252'
-                                            }}
-                                        >
-                                            {h.win_amount > 0 ? `+${formatMoney(h.win_amount)}` : `-${formatMoney(h.bet_amount)}`}
-                                        </span>
+                                        <div className="flex flex-col items-end gap-3">
+                                            <span
+                                                className="font-bold leading-none"
+                                                style={{
+                                                    color: h.win_amount > 0 ? '#4caf50' : '#ff5252'
+                                                }}
+                                            >
+                                                {h.win_amount > 0
+                                                    ? `+${formatMoney(h.win_amount - h.bet_amount)}`
+                                                    : `-${formatMoney(h.bet_amount)}`
+                                                }
+                                            </span>
+                                            {/* Small indicator if PF data exists */}
+                                            {h.metadata && (
+                                                <div className="flex items-center px-2 py-1 bg-slate-800 rounded text-[10px] text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 transition-colors">
+                                                    🛡️ Verify
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                                 {history.length === 0 && <div className="text-center text-gray-500 mt-10">Chưa có lịch sử</div>}
@@ -313,7 +472,13 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
                     )}
                 </div>
             </div>
-        </div>
+
+            <ProvablyFairModal
+                isOpen={showPfModal}
+                onClose={() => setShowPfModal(false)}
+                data={pfData}
+            />
+        </div >
     );
 };
 

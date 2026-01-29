@@ -370,7 +370,7 @@ WHERE us.status IN ('active', 'trial');
 
 
 -- ============================================
--- GAME SYSTEM: TAI XIU (SIC BO)
+-- GAME SYSTEM: SIC BO
 -- ============================================
 
 CREATE TABLE IF NOT EXISTS game_sessions (

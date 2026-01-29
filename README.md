@@ -9,7 +9,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
-- **🎲 Giải trí**: Tích hợp Mini-game Tài Xỉu (Sic Bo) với hệ thống tiền tệ ảo
+- **🎲 Giải trí**: Tích hợp Mini-game Sic Bo với hệ thống tiền tệ ảo
 
 > **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + PostgreSQL + Vector Database
 
@@ -29,7 +29,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Vector Embedding**: Tự động tạo embedding cho mỗi chunk
 - **Admin Interface**: Quản lý kiến thức trực quan
 
-### 🎲 **Mini-Game: Tài Xỉu (Sic Bo)**
+### 🎲 **Mini-Game: Sic Bo**
 - **Real-time Gameplay**: Đặt cược và nhận kết quả ngay lập tức
 - **Soi Cầu (Trend Analysis)**: Biểu đồ thống kê lịch sử và dự đoán xu hướng
 - **Wallet System**: Quản lý số dư, nạp/rút tiền ảo
@@ -80,7 +80,7 @@ english-chatbot/
 │   │   ├── 📁 auth/           # Authentication
 │   │   ├── 📁 chat/           # Chat Logic & History
 │   │   ├── 📁 knowledge/      # Knowledge Base Management
-│   │   ├── 📁 games/          # Game Logic (Tai Xiu, etc.)
+│   │   ├── 📁 games/          # Game Logic (Sic Bo, etc.)
 │   │   ├── 📁 wallet/         # Wallet & Payment
 │   │   ├── 📁 user/           # User Management
 │   │   └── ...
@@ -97,7 +97,7 @@ english-chatbot/
 │   │   ├── 📁 auth/           # Login, Register, OAuth
 │   │   ├── 📁 chat/           # Chat Interface
 │   │   ├── 📁 knowledge/      # Admin Dashboard & Search
-│   │   ├── 📁 games/          # Game Interfaces (Tai Xiu)
+│   │   ├── 📁 games/          # Game Interfaces (Sic Bo)
 │   │   ├── 📁 wallet/         # Wallet & Transactions
 │   │   └── 📁 user/           # Profile & Settings
 │   ├── 📁 src/components/      # Shared Components
@@ -210,7 +210,7 @@ WHERE email = 'admin@example.com';
 
 4.  **Đăng xuất và đăng nhập lại** để áp dụng quyền mới.
 
-> **Lưu ý**: Tài khoản Admin đầu tiên được tạo cũng sẽ đóng vai trò "Nhà cái" (House) trong game Tài Xỉu để nhận/trả tiền cược.
+> **Lưu ý**: Tài khoản Admin đầu tiên được tạo cũng sẽ đóng vai trò "Nhà cái" (House) trong game Sic Bo để nhận/trả tiền cược.
 
 ---
 
@@ -252,7 +252,7 @@ psql -U postgres -d chatbot -f db/remove_unused_tables.sql
 - Xem và chỉnh sửa chunks
 - Quản lý câu hỏi chưa trả lời
 
-### **4. Chơi Game Tài Xỉu**
+### **4. Chơi Game Sic Bo**
 - Truy cập mục **Games** từ menu
 - Đặt cược vào cửa Tài hoặc Xỉu
 - Sử dụng tính năng **Soi Cầu** để xem lịch sử và dự đoán kết quả
@@ -283,7 +283,7 @@ PUT    /knowledge/:id  # Cập nhật kiến thức
 DELETE /knowledge/:id  # Xóa kiến thức
 ```
 
-### **Games (Tai Xiu)**
+### **Games (Sic Bo)**
 ```http
 POST   /games/taixiu/bet      # Đặt cược
 GET    /games/taixiu/history  # Lịch sử ván chơi

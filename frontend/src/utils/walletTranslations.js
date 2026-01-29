@@ -78,7 +78,15 @@ export const walletTranslations = {
         subscriptionUpgrade: 'Nâng cấp gói',
         monthly: 'tháng',
         yearly: 'năm',
-        currencyChangedFrom: 'Đổi tiền tệ từ'
+        currencyChangedFrom: 'Đổi tiền tệ từ',
+        // Game Transactions
+        game_bet: 'Đặt cược',
+        game_win: 'Thắng cược',
+        game_payout: 'Trả thưởng',
+        game_refund: 'Hoàn tiền',
+        sicbo: 'Sic Bo',
+        user_bet: 'Người chơi cược',
+        payout_user: 'Trả thưởng người chơi'
     },
     en: {
         // WalletDashboard
@@ -158,7 +166,15 @@ export const walletTranslations = {
         subscriptionUpgrade: 'Subscription upgrade to',
         monthly: 'monthly',
         yearly: 'yearly',
-        currencyChangedFrom: 'Currency changed from'
+        currencyChangedFrom: 'Currency changed from',
+        // Game Transactions
+        game_bet: 'Game Bet',
+        game_win: 'Game Win',
+        game_payout: 'Game Payout',
+        game_refund: 'Game Refund',
+        sicbo: 'Sic Bo',
+        user_bet: 'User Bet',
+        payout_user: 'Payout User'
     }
 };
 

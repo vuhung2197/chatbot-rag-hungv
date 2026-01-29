@@ -146,9 +146,9 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
     return (
         <div className={`taixiu-container ${darkMode ? 'dark' : 'light'}`}>
             <BridgeGuideModal isOpen={showGuide} onClose={() => setShowGuide(false)} />
-            
+
             <div className="game-header">
-                <h2>🎲 TÀI XỈU (SIC BO)</h2>
+                <h2>🎲 SIC BO</h2>
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => setShowGuide(true)}
@@ -238,11 +238,11 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate }) => {
                     {/* Chips */}
                     {gameState !== 'ROLLING' && gameState !== 'RESULT' && (
                         <div className="bet-controls">
-                             <div className="manual-bet-input mb-4 flex justify-center">
+                            <div className="manual-bet-input mb-4 flex justify-center">
                                 <span className="p-2 bg-slate-700 rounded-l text-gray-300">$</span>
-                                <input 
-                                    type="number" 
-                                    value={betAmount || ''} 
+                                <input
+                                    type="number"
+                                    value={betAmount || ''}
                                     onChange={(e) => setBetAmount(Number(e.target.value))}
                                     placeholder="Enter amount"
                                     className="bg-slate-800 text-white p-2 w-40 outline-none border-t border-b border-slate-700"

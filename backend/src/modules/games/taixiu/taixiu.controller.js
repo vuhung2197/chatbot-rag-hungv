@@ -30,7 +30,7 @@ export async function placeBet(req, res) {
 
         // 1. AMOUNT VALIDATION
         if (!amount || isNaN(amount) || amount <= 0) {
-           return res.status(400).json({ message: 'Invalid bet amount.' });
+            return res.status(400).json({ message: 'Invalid bet amount.' });
         }
 
         // Decimal Precision Check (Max 2 decimal places)
@@ -50,9 +50,9 @@ export async function placeBet(req, res) {
         // Since we don't know the currency yet without fetching wallet, we can default to a safe check
         // or check it after fetching wallet. Let's check basics first.
         if (amount < 0.1) {
-             // Basic safe guard for USD (0.1) which is tiny for VND. 
-             // We will check stricter logic after fetching wallet currency.
-             return res.status(400).json({ message: 'Bet amount too small (Min 0.1 USD / 1000 VND).' });
+            // Basic safe guard for USD (0.1) which is tiny for VND. 
+            // We will check stricter logic after fetching wallet currency.
+            return res.status(400).json({ message: 'Bet amount too small (Min 0.1 USD / 1000 VND).' });
         }
 
         await connection.beginTransaction();
@@ -107,12 +107,12 @@ export async function placeBet(req, res) {
 
         // Stricter Minimum Bet Check based on Currency
         if (userWallet.currency === 'VND' && amount < 1000) {
-             await connection.rollback();
-             return res.status(400).json({ message: 'Minimum bet is 1,000 VND.' });
+            await connection.rollback();
+            return res.status(400).json({ message: 'Minimum bet is 1,000 VND.' });
         }
         if (userWallet.currency === 'USD' && amount < 0.1) {
-             await connection.rollback();
-             return res.status(400).json({ message: 'Minimum bet is 0.1 USD.' });
+            await connection.rollback();
+            return res.status(400).json({ message: 'Minimum bet is 0.1 USD.' });
         }
 
         if (userBalance < amount) {
@@ -124,9 +124,9 @@ export async function placeBet(req, res) {
         // Payout is 1:1, so House needs at least 'amount' to pay if user wins.
         if (adminBalance < amount) {
             await connection.rollback();
-            return res.status(503).json({ 
+            return res.status(503).json({
                 message: 'Nhà cái đang bảo trì ngân sách (Tạm hết tiền). Vui lòng quay lại sau!',
-                code: 'HOUSE_INSOLVENT' 
+                code: 'HOUSE_INSOLVENT'
             });
         }
 
@@ -166,7 +166,7 @@ export async function placeBet(req, res) {
             `INSERT INTO wallet_transactions 
              (wallet_id, user_id, type, amount, balance_before, balance_after, description, status, metadata)
              VALUES (?, ?, 'purchase', ?, ?, ?, ?, 'completed', ?)`,
-            [userWallet.id, userId, -amountUSD, userBalance, newUserBalance_AfterBet, `Bet ${betType} (Tai Xiu)`, JSON.stringify({ game: 'TAI_XIU', bet: betType })]
+            [userWallet.id, userId, -amountUSD, userBalance, newUserBalance_AfterBet, `Đặt cược ${betType} (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', bet: betType })]
         );
 
         // Log Transfer: Admin Receive
@@ -180,7 +180,7 @@ export async function placeBet(req, res) {
             `INSERT INTO wallet_transactions 
              (wallet_id, user_id, type, amount, balance_before, balance_after, description, status, metadata)
              VALUES (?, ?, 'deposit', ?, ?, ?, ?, 'completed', ?)`,
-            [adminWallet.id, adminId, amountAdminUSD, adminBalance, newAdminBalance_AfterBet, `User Bet ${betType} (Tai Xiu)`, JSON.stringify({ game: 'TAI_XIU', from_user: userId })]
+            [adminWallet.id, adminId, amountAdminUSD, adminBalance, newAdminBalance_AfterBet, `Người chơi cược ${betType} (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', from_user: userId })]
         );
 
         // 5. Roll Dice & Determine Result
@@ -241,7 +241,7 @@ export async function placeBet(req, res) {
                 `INSERT INTO wallet_transactions 
                  (wallet_id, user_id, type, amount, balance_before, balance_after, description, status, metadata)
                  VALUES (?, ?, 'deposit', ?, ?, ?, ?, 'completed', ?)`,
-                [userWallet.id, userId, winUSD, newUserBalance_AfterBet, newUserBalance_AfterWin, `Win ${betType} (Tai Xiu)`, JSON.stringify({ game: 'TAI_XIU', result: resultType })]
+                [userWallet.id, userId, winUSD, newUserBalance_AfterBet, newUserBalance_AfterWin, `Thắng cược ${betType} (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', result: resultType })]
             );
 
             let payoutUSD = payoutAmountAdminCurrency;
@@ -254,7 +254,7 @@ export async function placeBet(req, res) {
                 `INSERT INTO wallet_transactions 
                  (wallet_id, user_id, type, amount, balance_before, balance_after, description, status, metadata)
                  VALUES (?, ?, 'purchase', ?, ?, ?, ?, 'completed', ?)`,
-                [adminWallet.id, adminId, -payoutUSD, newAdminBalance_AfterBet, newAdminBalance_AfterWin, `Payout User Win (Tai Xiu)`, JSON.stringify({ game: 'TAI_XIU', to_user: userId })]
+                [adminWallet.id, adminId, -payoutUSD, newAdminBalance_AfterBet, newAdminBalance_AfterWin, `Trả thưởng thắng cược (Sic Bo)`, JSON.stringify({ game: 'TAI_XIU', to_user: userId })]
             );
 
             finalUserBalance = newUserBalance_AfterWin;

@@ -1,7 +1,7 @@
-# Tài Xỉu (Sic Bo) Game System Documentation
+# Sic Bo Game System Documentation
 
 ## 1. Tổng Quan
-Hệ thống game Tài Xỉu được tích hợp vào ứng dụng Chatbot, cho phép người dùng sử dụng số dư trong ví hiện có để đặt cược. Hệ thống hoạt động theo cơ chế "Nhà cái" (House), trong đó tài khoản Admin đóng vai trò là Nhà cái, trực tiếp nhận tiền cược và trả thưởng cho người dùng.
+Hệ thống game Sic Bo được tích hợp vào ứng dụng Chatbot, cho phép người dùng sử dụng số dư trong ví hiện có để đặt cược. Hệ thống hoạt động theo cơ chế "Nhà cái" (House), trong đó tài khoản Admin đóng vai trò là Nhà cái, trực tiếp nhận tiền cược và trả thưởng cho người dùng.
 
 ## 2. Kiến Trúc Hệ Thống
 

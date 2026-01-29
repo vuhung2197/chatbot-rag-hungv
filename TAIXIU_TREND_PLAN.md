@@ -1,4 +1,4 @@
-# Kế Hoạch Triển Khai: Hệ Thống Soi Cầu Tài Xỉu (Trend Analysis)
+# Kế Hoạch Triển Khai: Hệ Thống Soi Cầu Sic Bo (Trend Analysis)
 
 ## 1. Mục Tiêu
 Cung cấp cho người chơi công cụ trực quan để theo dõi lịch sử và dự đoán kết quả (Soi cầu), tăng tính tương tác và giữ chân người chơi lâu hơn.

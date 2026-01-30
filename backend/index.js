@@ -26,6 +26,7 @@ import slotsRoutes from './src/modules/games/slots/slots.routes.js';
 import paymentRoutes from './src/modules/wallet/routes/payment.routes.js';
 import subscriptionRoutes from './src/modules/subscription/subscription.routes.js';
 import usageRoutes from './src/modules/usage/usage.routes.js';
+import gamesRoutes from './src/modules/games/games.routes.js';
 import errorHandler from './middlewares/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -67,6 +68,7 @@ app.use('/subscription', subscriptionRoutes);
 app.use('/usage', usageRoutes);
 
 // Game Routes
+app.use('/games', gamesRoutes); // General settings
 app.use('/games/taixiu', taixiuRoutes);
 app.use('/games/baucua', baucuaRoutes);
 app.use('/games/wheel', wheelRoutes);

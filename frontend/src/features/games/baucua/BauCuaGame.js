@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
-import ProvablyFairModal from '../taixiu/components/ProvablyFairModal'; // Reuse specific modal or create new one? reusing is fine.
+import ProvablyFairModal from '../taixiu/components/ProvablyFairModal';
+import BauCua3DScene from './BauCua3DScene'; // Reuse specific modal or create new one? reusing is fine.
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -133,13 +134,13 @@ const BauCuaGame = ({ darkMode, onBack }) => {
 
     const formatMoney = (n) => n.toLocaleString('vi-VN') + ' đ';
 
-    // HEX Colors for Mascots (since tailwind classes might fail)
+    // HEX Colors for Mascots (Sync with 3D Scene)
     const MASCOT_COLORS = {
-        'NAI': '#d97706', // Amber 600
+        'NAI': '#854d0e', // Darker Brown
         'BAU': '#16a34a', // Green 600
         'GA': '#ef4444', // Red 500
         'CA': '#3b82f6', // Blue 500
-        'CUA': '#ea580c', // Orange 600
+        'CUA': '#f97316', // Bright Orange
         'TOM': '#db2777'  // Pink 600
     };
 
@@ -206,65 +207,31 @@ const BauCuaGame = ({ darkMode, onBack }) => {
                 {/* Main Game Board */}
                 <div style={{ flex: 1, minWidth: '600px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                    {/* Shaking Bowl / Result Area */}
+                    {/* 3D Scene Container */}
                     <div style={{
-                        height: '192px', position: 'relative', borderRadius: '16px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        height: '400px', position: 'relative', borderRadius: '16px',
                         overflow: 'hidden', backgroundColor: '#0f172a',
                         border: '1px solid #334155', boxShadow: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)'
                     }}>
-                        {gameState === 'SHAKING' ? (
-                            <div className="shaking-effect" style={{
-                                fontSize: '8rem',
-                                filter: 'drop-shadow(0 0 15px rgba(250, 204, 21, 0.6))', // Gold glow
-                                cursor: 'wait'
+                        <BauCua3DScene
+                            result={result ? result.mascots : null}
+                            gameState={gameState}
+                        // onAnimationComplete={() => console.log('Scene settled')} 
+                        />
+
+                        {/* IDLE Overlay (Start Screen) */}
+                        {gameState === 'IDLE' && !result && (
+                            <div style={{
+                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                                background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                zIndex: 10, pointerEvents: 'none'
                             }}>
-                                🎲
+                                <div style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                                    Sẵn sàng xóc!
+                                </div>
                             </div>
-                        ) : result ? (
-                            <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', alignItems: 'center' }}>
-                                {result.mascots.map((m, i) => {
-                                    const mascotObj = MASCOTS.find(x => x.id === m);
-                                    const isGolden = i === goldenDiceIndex;
-                                    return (
-                                        <div key={i} style={{
-                                            width: '120px', height: '120px', borderRadius: '16px',
-                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                            backgroundColor: MASCOT_COLORS[mascotObj?.id] || '#6b7280',
-                                            boxShadow: isGolden ? '0 0 20px 5px rgba(250, 204, 21, 0.8)' : '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                                            border: isGolden ? '4px solid #facc15' : 'none',
-                                            borderBottom: isGolden ? '4px solid #facc15' : '4px solid rgba(0,0,0,0.2)',
-                                            animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
-                                            animationDelay: `${i * 0.1}s`,
-                                            opacity: 0,
-                                            position: 'relative'
-                                        }}>
-                                            {isGolden && (
-                                                <div style={{
-                                                    position: 'absolute', top: '-12px', right: '-12px',
-                                                    background: 'linear-gradient(135deg, #facc15 0%, #ca8a04 100%)',
-                                                    color: '#422006', fontWeight: '900', fontSize: '1rem',
-                                                    width: '32px', height: '32px', borderRadius: '50%',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)', zIndex: 10
-                                                }}>
-                                                    x2
-                                                </div>
-                                            )}
-                                            <span style={{ fontSize: '4rem', filter: 'drop-shadow(0 4px 3px rgb(0 0 0 / 0.07))', lineHeight: 1 }}>{mascotObj?.icon || '?'}</span>
-                                            <span style={{
-                                                fontWeight: 'bold', color: 'white', textTransform: 'uppercase',
-                                                fontSize: '0.875rem', marginTop: '4px', textShadow: '0 1px 2px rgba(0,0,0,0.5)'
-                                            }}>
-                                                {mascotObj?.name}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <div style={{ color: '#6b7280', fontSize: '1.25rem' }}>Đặt cược và Xóc ngay!</div>
                         )}
+
 
                         {/* Win/Lose Notification */}
                         {gameState === 'RESULT' && (
@@ -465,10 +432,9 @@ const BauCuaGame = ({ darkMode, onBack }) => {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                                     {/* Dice Results */}
                                     {h.dice.map((d, i) => {
-                                        // Logic mapping as before
-                                        // MASCOTS array is 0-indexed, d is 1-based index (1-6)
-                                        // If backend returns number 1-6:
-                                        const mIndex = typeof d === 'number' ? d - 1 : 0;
+                                        // Ensure d is a number (1-6)
+                                        const val = Number(d);
+                                        const mIndex = (val >= 1 && val <= 6) ? val - 1 : 0;
                                         // If backend returns string "NAI", etc:
                                         // But my controller returns { dice: [1,2,3] } so it is number.
                                         const mObj = MASCOTS[mIndex];

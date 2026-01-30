@@ -103,42 +103,52 @@ const BauCuaController = {
 
             const sessionId = sessionResult[0].id;
 
-            // 5. Calculate Win & Save Bets
-            const resultCounts = {};
-            [dice1, dice2, dice3].forEach(d => {
-                resultCounts[d] = (resultCounts[d] || 0) + 1;
-            });
+            // 5. Calculate Win & Save Bets with Golden Dice Logic
+            // Generate Golden Dice Index (0-2) using the hash to be consistent (Deterministic based on seed)
+            // Use the last char of hash converted to integer mod 3
+            const lastChar = serverSeedHash.charCodeAt(serverSeedHash.length - 1);
+            const goldenDiceIndex = lastChar % 3; // 0, 1, or 2
 
             let totalWinAmount = 0;
             const betDetails = [];
-            const pfData = { serverSeed, serverSeedHash, clientSeed, nonce };
+            const pfData = { serverSeed, serverSeedHash, clientSeed, nonce, goldenDiceIndex }; // Add golden index to PF data
 
             for (const bet of bets) {
                 const mascotId = MASCOT_MAPPING[bet.type];
-                const count = resultCounts[mascotId] || 0;
+
+                // Calculate multipliers based on dice matches
+                let matchMultiplier = 0;
+                [dice1, dice2, dice3].forEach((d, index) => {
+                    if (d === mascotId) {
+                        // Apply Golden Dice Multiplier (x2) if index matches, otherwise x1
+                        matchMultiplier += (index === goldenDiceIndex ? 2 : 1);
+                    }
+                });
 
                 let win = 0;
                 let status = 'LOST';
-                if (count > 0) {
-                    // Win Rule: Stake + (Stake * Count)
-                    win = bet.amount + (bet.amount * count);
+                if (matchMultiplier > 0) {
+                    // Win Rule: Stake + (Stake * Multiplier)
+                    // Regular: 1 hit = Stake + Stake*1 (Total 2x)
+                    // Golden: 1 hit (Golden) = Stake + Stake*2 (Total 3x)
+                    win = bet.amount + (bet.amount * matchMultiplier);
                     status = 'WON';
                 }
 
                 totalWinAmount += win;
-                betDetails.push({ ...bet, win, count, status });
+                betDetails.push({ ...bet, win, matchMultiplier, status });
 
-                // Save each bet record
-                // Save PF metadata in the first bet or all? Let's save in all for safety or just rely on session lookup?
-                // Better: Save PF data in metadata column.
                 // Convert to USD for storage
                 const betAmountUSD = currencyService.convertCurrency(bet.amount, userWallet.currency, 'USD');
                 const winAmountUSD = currencyService.convertCurrency(win, userWallet.currency, 'USD');
 
+                // Save PF data including goldenDiceIndex in metadata
+                const betPfData = { ...pfData, goldenDiceIndex, currency: 'USD' };
+
                 await connection.execute(
                     `INSERT INTO game_bets (user_id, session_id, bet_type, bet_amount, win_amount, status, metadata)
                      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    [userId, sessionId, bet.type, betAmountUSD, winAmountUSD, status, JSON.stringify({ ...pfData, currency: 'USD' })]
+                    [userId, sessionId, bet.type, betAmountUSD, winAmountUSD, status, JSON.stringify(betPfData)]
                 );
             }
 
@@ -176,7 +186,9 @@ const BauCuaController = {
                     winDetails: betDetails
                 },
                 newBalance: finalUserBalance,
-                pf: pfData
+                newBalance: finalUserBalance,
+                pf: pfData,
+                goldenDiceIndex // Return to frontend
             });
 
         } catch (error) {
@@ -232,7 +244,9 @@ const BauCuaController = {
                         bets: [],
                         totalBet: 0,
                         totalWin: 0,
-                        pf: row.metadata // Valid for all bets in session
+                        totalWin: 0,
+                        pf: row.metadata, // Valid for all bets in session
+                        goldenDiceIndex: typeof row.metadata === 'string' ? JSON.parse(row.metadata)?.goldenDiceIndex : row.metadata?.goldenDiceIndex
                     });
                 }
 

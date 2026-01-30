@@ -29,6 +29,7 @@ const BauCuaGame = ({ darkMode, onBack }) => {
     const [pfData, setPfData] = useState(null);
     const [showPfModal, setShowPfModal] = useState(false);
     const [totalWin, setTotalWin] = useState(0);
+    const [goldenDiceIndex, setGoldenDiceIndex] = useState(null); // Index of the Golden Dice (0-2)
 
     const fetchWallet = useCallback(async () => {
         try {
@@ -67,6 +68,7 @@ const BauCuaGame = ({ darkMode, onBack }) => {
             // If clicking after result, we might want to clear old result visually first, but usually we just add bet
             setGameState('IDLE');
             setResult(null);
+            setGoldenDiceIndex(null);
             setTotalWin(0);
         }
 
@@ -114,6 +116,7 @@ const BauCuaGame = ({ darkMode, onBack }) => {
             setResult(data.result);
             setTotalWin(data.result.totalWin);
             setBalance(data.newBalance);
+            setGoldenDiceIndex(data.goldenDiceIndex);
             setPfData(data.pf); // For Verify button if needed immediately
 
             setGameState('RESULT');
@@ -222,17 +225,32 @@ const BauCuaGame = ({ darkMode, onBack }) => {
                             <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', alignItems: 'center' }}>
                                 {result.mascots.map((m, i) => {
                                     const mascotObj = MASCOTS.find(x => x.id === m);
+                                    const isGolden = i === goldenDiceIndex;
                                     return (
                                         <div key={i} style={{
                                             width: '120px', height: '120px', borderRadius: '16px',
                                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                                             backgroundColor: MASCOT_COLORS[mascotObj?.id] || '#6b7280',
-                                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                                            borderBottom: '4px solid rgba(0,0,0,0.2)',
+                                            boxShadow: isGolden ? '0 0 20px 5px rgba(250, 204, 21, 0.8)' : '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                                            border: isGolden ? '4px solid #facc15' : 'none',
+                                            borderBottom: isGolden ? '4px solid #facc15' : '4px solid rgba(0,0,0,0.2)',
                                             animation: 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
                                             animationDelay: `${i * 0.1}s`,
-                                            opacity: 0
+                                            opacity: 0,
+                                            position: 'relative'
                                         }}>
+                                            {isGolden && (
+                                                <div style={{
+                                                    position: 'absolute', top: '-12px', right: '-12px',
+                                                    background: 'linear-gradient(135deg, #facc15 0%, #ca8a04 100%)',
+                                                    color: '#422006', fontWeight: '900', fontSize: '1rem',
+                                                    width: '32px', height: '32px', borderRadius: '50%',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)', zIndex: 10
+                                                }}>
+                                                    x2
+                                                </div>
+                                            )}
                                             <span style={{ fontSize: '4rem', filter: 'drop-shadow(0 4px 3px rgb(0 0 0 / 0.07))', lineHeight: 1 }}>{mascotObj?.icon || '?'}</span>
                                             <span style={{
                                                 fontWeight: 'bold', color: 'white', textTransform: 'uppercase',
@@ -454,7 +472,22 @@ const BauCuaGame = ({ darkMode, onBack }) => {
                                         // If backend returns string "NAI", etc:
                                         // But my controller returns { dice: [1,2,3] } so it is number.
                                         const mObj = MASCOTS[mIndex];
-                                        return <span key={i} title={mObj?.name} style={{ fontSize: '1.25rem' }}>{mObj?.icon}</span>
+                                        const isGoldenHistory = i === h.goldenDiceIndex;
+                                        return (
+                                            <span key={i} title={mObj?.name} style={{
+                                                fontSize: '1.25rem',
+                                                position: 'relative',
+                                                filter: isGoldenHistory ? 'drop-shadow(0 0 4px #facc15)' : 'none'
+                                            }}>
+                                                {mObj?.icon}
+                                                {isGoldenHistory && <span style={{
+                                                    position: 'absolute', top: -4, right: -4, fontSize: '8px',
+                                                    background: '#facc15', color: 'black', borderRadius: '50%',
+                                                    width: '10px', height: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontWeight: 'bold'
+                                                }}>2</span>}
+                                            </span>
+                                        )
                                     })}
                                 </div>
                                 <div style={{ fontWeight: 'bold', textAlign: 'right', color: h.totalWin - h.totalBet > 0 ? '#22c55e' : (h.totalWin - h.totalBet < 0 ? '#ef4444' : '#9ca3af') }}>

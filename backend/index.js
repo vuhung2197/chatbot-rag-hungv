@@ -22,6 +22,7 @@ import walletRoutes from './src/modules/wallet/routes/wallet.routes.js';
 import taixiuRoutes from './src/modules/games/taixiu/taixiu.routes.js';
 import baucuaRoutes from './src/modules/games/baucua/baucua.routes.js';
 import wheelRoutes from './src/modules/games/wheel/wheel.routes.js';
+import slotsRoutes from './src/modules/games/slots/slots.routes.js';
 import paymentRoutes from './src/modules/wallet/routes/payment.routes.js';
 import subscriptionRoutes from './src/modules/subscription/subscription.routes.js';
 import usageRoutes from './src/modules/usage/usage.routes.js';
@@ -69,6 +70,7 @@ app.use('/usage', usageRoutes);
 app.use('/games/taixiu', taixiuRoutes);
 app.use('/games/baucua', baucuaRoutes);
 app.use('/games/wheel', wheelRoutes);
+app.use('/games/slots', slotsRoutes);
 
 app.context = app; // For rare cases passing app context
 

@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import TaixiuGame from './taixiu/TaixiuGame';
 import BauCuaGame from './baucua/BauCuaGame';
 import WheelGame from './wheel/WheelGame';
-import { ArrowLeft, Dice5, Fish, Command } from 'lucide-react'; // Command icon as Wheel placeholder
+import SlotsGame from './slots/SlotsGame';
+import { ArrowLeft, Dice5, Fish, Command, Gem } from 'lucide-react'; // Command icon as Wheel placeholder
 
 const GamesPage = ({ darkMode }) => {
-    const [selectedGame, setSelectedGame] = useState(null); // 'taixiu' | 'baucua' | null
+    const [selectedGame, setSelectedGame] = useState(null); // 'taixiu' | 'baucua' | 'wheel' | 'slots' | null
 
     if (selectedGame === 'taixiu') {
         return (
@@ -29,6 +30,16 @@ const GamesPage = ({ darkMode }) => {
     if (selectedGame === 'wheel') {
         return (
             <WheelGame
+                darkMode={darkMode}
+                onBack={() => setSelectedGame(null)}
+            />
+        );
+    }
+
+
+    if (selectedGame === 'slots') {
+        return (
+            <SlotsGame
                 darkMode={darkMode}
                 onBack={() => setSelectedGame(null)}
             />
@@ -221,6 +232,54 @@ const GamesPage = ({ darkMode }) => {
                             </div>
                         </div>
                     </div>
+
+                    {/* Slots Card (Jackpot) */}
+                    <div
+                        onClick={() => setSelectedGame('slots')}
+                        className="game-card"
+                        style={{
+                            flex: '1 1 350px', maxWidth: '450px', height: '320px',
+                            borderRadius: '24px', cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                            border: `1px solid ${darkMode ? 'rgba(51, 65, 85, 0.5)' : '#e5e7eb'}`,
+                            background: darkMode ? 'rgba(30, 41, 59, 0.4)' : 'white',
+                            backdropFilter: 'blur(10px)',
+                            boxShadow: darkMode ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.transform = 'translateY(-5px)';
+                            e.currentTarget.style.borderColor = '#d8b4fe'; // Purple for Slots
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = darkMode ? 'rgba(51, 65, 85, 0.5)' : '#e5e7eb';
+                        }}
+                    >
+                        <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', textAlign: 'center' }}>
+                            <div style={{
+                                width: '80px', height: '80px', borderRadius: '20px', marginBottom: '24px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: darkMode ? '#0f172a' : '#f3f4f6',
+                                border: '1px solid rgba(216, 180, 254, 0.2)'
+                            }}>
+                                <Gem size={40} color="#d8b4fe" />
+                            </div>
+
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px', color: darkMode ? 'white' : '#111827' }}>
+                                Cyber Slots
+                            </h3>
+                            <p style={{ fontSize: '0.875rem', color: darkMode ? '#9ca3af' : '#6b7280', marginBottom: 'auto' }}>
+                                Game Nổ Hũ (Jackpot) phong cách Cyberpunk 2077. Cơ hội đổi đời!
+                            </p>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '20px' }}>
+                                <span style={{ display: 'block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#e879f9', boxShadow: '0 0 10px #e879f9' }}></span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#e879f9' }}>
+                                    Jackpot Live
+                                </span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Footer Stats / Info */}
@@ -247,6 +306,7 @@ const GamesPage = ({ darkMode }) => {
                 </div>
             </div>
         </div>
+
     );
 };
 

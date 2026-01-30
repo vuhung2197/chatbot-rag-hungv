@@ -32,7 +32,11 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 ### 🎲 **Multi-Game Arena**
 - **Sic Bo (Tài Xỉu)**: Game cược xúc xắc cổ điển với tính năng Soi Cầu (Trend Analysis).
 - **Bầu Cua Tôm Cá**: Game dân gian Việt Nam với giao diện hiện đại, hiệu ứng 3D Shake.
-- **Wheel of Fortune**: (Mới) Vòng quay may mắn với nhiều mức nhân thưởng hấp dẫn (x1 đến x40).
+- **Wheel of Fortune**: Game vòng quay may mắn với nhiều mức nhân thưởng hấp dẫn (x1 đến x40).
+- **Cyber Slots (Jackpot)**: (Mới) Game Quay Hũ hiện đại với đồ họa Neon Cyberpunk.
+  - **20 Paylines**: 20 dòng thắng cố định giúp tăng tỉ lệ thắng.
+  - **Progressive Jackpot**: Trích 1% tiền cược mỗi lượt quay vào quỹ Hũ chung (Nổ Hũ khi trúng 5 Kim Cương).
+  - **Visual Effects**: Hiệu ứng "Infinite Spin", vẽ line chiến thắng, và màn hình chúc mừng Jackpot hoành tráng.
 - **Provably Fair**: Tất cả game đều tích hợp công nghệ kiểm chứng công bằng (Server Seed + Client Seed).
 - **Wallet System**: Quản lý số dư thống nhất, tự động quy đổi tiền tệ.
 - [Xem Chi Tiết Bầu Cua](./BAUCUA_SYSTEM_ANALYSIS.md) | [Kế Hoạch Wheel](./WHEEL_OF_FORTUNE_PLAN.md)
@@ -320,6 +324,9 @@ POST   /games/baucua/bet      # Đặt cược Bầu Cua
 GET    /games/baucua/history  # Lịch sử Bầu Cua
 POST   /games/wheel/bet       # Đặt cược Wheel of Fortune
 GET    /games/wheel/history   # Lịch sử Wheel of Fortune
+POST   /games/slots/spin      # Quay Slots (Spin)
+GET    /games/slots/jackpot   # Lấy giá trị Jackpot hiện tại
+
 ```
 
 ### **File Upload**

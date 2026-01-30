@@ -194,26 +194,53 @@ npm start
 
 ## 👑 Quản Lý Admin & User
 
-Để truy cập các tính năng quản trị (Knowledge Admin, System Settings), bạn cần có tài khoản với quyền **Admin**.
+Để truy cập các tính năng quản trị (Knowledge Admin, System Settings) và đóng vai trò "Nhà cái" trong các Games, bạn cần có tài khoản **Admin** với số dư lớn.
 
-### **Cách tạo tài khoản Admin**
-Vì lý do bảo mật, không có trang đăng ký công khai cho Admin. Bạn cần nâng cấp một user bình thường thông qua Database.
+### **1. Tạo Tài Khoản Admin Nhanh**
+Chúng tôi cung cấp script tự động để tạo tài khoản admin (hoặc nâng quyền nếu email đã tồn tại).
 
-1.  **Đăng ký** một tài khoản user mới tại trang chủ (ví dụ: `admin@example.com`).
-2.  **Truy cập vào Database** (bằng pgAdmin, DBeaver hoặc dòng lệnh).
-3.  **Chạy lệnh SQL** sau để cấp quyền Admin:
+1.  Mở terminal tại thư mục `backend`:
+    ```bash
+    cd backend
+    ```
+2.  Chạy script:
+    ```bash
+    node create_admin.js
+    ```
+    *   **Mặc định**: Email `admin@example.com` / Password `Admin123!`
+    *   Bạn có thể sửa file `backend/create_admin.js` để đổi email/pass theo ý muốn.
+
+### **2. Nạp Tiền (Top-up) Cho Admin/User**
+Để test game hoặc làm "Nhà cái", tài khoản cần có tiền.
+
+1.  Sửa file `backend/topup_admin.js` (dòng 5 và 6) để nhập Email và Số tiền mong muốn:
+    ```javascript
+    const email = 'admin@example.com'; // Email tài khoản cần nạp
+    const amount = 10000000000;         // Số tiền (USD/VND)
+    ```
+2.  Chạy script:
+    ```bash
+    node topup_admin.js
+    ```
+    *   Script sẽ tự động tìm ví của user và cộng tiền vào (tạo ví mới nếu chưa có).
+    *   Hệ thống hỗ trợ số dư cực lớn (lên tới 30 chữ số thập phân) để phục vụ việc làm "Nhà cái".
+
+### **3. Cách Thủ Công (SQL)**
+Nếu không muốn dùng script, bạn có thể chạy SQL trực tiếp:
 
 ```sql
-UPDATE users 
-SET role = 'admin' 
-WHERE email = 'admin@example.com';
+-- Nâng quyền Admin
+UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
+
+-- Nạp tiền (Ví dụ: 10 Tỷ)
+UPDATE user_wallets 
+SET balance = balance + 10000000000 
+WHERE user_id = (SELECT id FROM users WHERE email = 'your-email@example.com');
 ```
 
-4.  **Đăng xuất và đăng nhập lại** để áp dụng quyền mới.
+> **Lưu ý**: Tài khoản Admin đầu tiên được tạo sẽ mặc định đóng vai trò "Nhà cái" (House) trong các game như Sic Bo, Bầu Cua để nhận/trả tiền cược. Hãy đảm bảo "Nhà cái" luôn có đủ số dư!
 
-> **Lưu ý**: Tài khoản Admin đầu tiên được tạo cũng sẽ đóng vai trò "Nhà cái" (House) trong game Sic Bo để nhận/trả tiền cược.
-
----
+-----
 
 ## 🗄️ Database Setup
 

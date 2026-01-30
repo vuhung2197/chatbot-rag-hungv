@@ -3,9 +3,9 @@ import './bootstrap/env.js';
 import pool from './db.js';
 import bcrypt from 'bcrypt';
 
-const email = 'admin@gmail.com';
-const password = 'password123';
-const name = 'Admin User';
+const email = 'admin@example.com';
+const password = 'Admin123!';
+const name = 'System Admin';
 
 async function createAdmin() {
     try {

@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import TaixiuGame from './taixiu/TaixiuGame';
 import BauCuaGame from './baucua/BauCuaGame';
-import { ArrowLeft, Dice5, Fish } from 'lucide-react';
+import WheelGame from './wheel/WheelGame';
+import { ArrowLeft, Dice5, Fish, Command } from 'lucide-react'; // Command icon as Wheel placeholder
 
 const GamesPage = ({ darkMode }) => {
     const [selectedGame, setSelectedGame] = useState(null); // 'taixiu' | 'baucua' | null
@@ -19,6 +20,15 @@ const GamesPage = ({ darkMode }) => {
     if (selectedGame === 'baucua') {
         return (
             <BauCuaGame
+                darkMode={darkMode}
+                onBack={() => setSelectedGame(null)}
+            />
+        );
+    }
+
+    if (selectedGame === 'wheel') {
+        return (
+            <WheelGame
                 darkMode={darkMode}
                 onBack={() => setSelectedGame(null)}
             />
@@ -153,6 +163,54 @@ const GamesPage = ({ darkMode }) => {
                             </h3>
                             <p style={{ fontSize: '0.875rem', color: darkMode ? '#9ca3af' : '#6b7280', marginBottom: 'auto' }}>
                                 Game dân gian Việt Nam với Gà, Nai, Tôm, Cá... Sắp ra mắt phiên bản đặc biệt.
+                            </p>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '20px' }}>
+                                <span style={{ display: 'block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', boxShadow: '0 0 10px #22c55e' }}></span>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#22c55e' }}>
+                                    Live Now
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Wheel Card */}
+                    <div
+                        onClick={() => setSelectedGame('wheel')}
+                        className="game-card"
+                        style={{
+                            flex: '1 1 350px', maxWidth: '450px', height: '320px',
+                            borderRadius: '24px', cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                            border: `1px solid ${darkMode ? 'rgba(51, 65, 85, 0.5)' : '#e5e7eb'}`,
+                            background: darkMode ? 'rgba(30, 41, 59, 0.4)' : 'white',
+                            backdropFilter: 'blur(10px)',
+                            boxShadow: darkMode ? 'none' : '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                            transition: 'all 0.3s ease'
+                        }}
+                        onMouseEnter={e => {
+                            e.currentTarget.style.transform = 'translateY(-5px)';
+                            e.currentTarget.style.borderColor = '#f1c40f'; // Yellow for Wheel
+                        }}
+                        onMouseLeave={e => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = darkMode ? 'rgba(51, 65, 85, 0.5)' : '#e5e7eb';
+                        }}
+                    >
+                        <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', textAlign: 'center' }}>
+                            <div style={{
+                                width: '80px', height: '80px', borderRadius: '20px', marginBottom: '24px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                backgroundColor: darkMode ? '#0f172a' : '#f3f4f6',
+                                border: '1px solid rgba(241, 196, 15, 0.2)'
+                            }}>
+                                <Command size={40} color="#f1c40f" />
+                            </div>
+
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px', color: darkMode ? 'white' : '#111827' }}>
+                                Wheel of Fortune
+                            </h3>
+                            <p style={{ fontSize: '0.875rem', color: darkMode ? '#9ca3af' : '#6b7280', marginBottom: 'auto' }}>
+                                Vòng quay may mắn với mức thưởng lên tới x40! Thử vận may ngay.
                             </p>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '20px' }}>

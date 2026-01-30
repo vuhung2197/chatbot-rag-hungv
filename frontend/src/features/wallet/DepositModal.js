@@ -138,9 +138,9 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
                                 {t('amount')} {currency === 'VND' ? '(VND)' : '(USD)'}
                             </label>
                             <div className="amount-input-wrapper">
-                                <span className="currency-symbol">
+                                {/* <span className="currency-symbol">
                                     {currency === 'VND' ? '₫' : '$'}
-                                </span>
+                                </span> */}
                                 <input
                                     type="number"
                                     id="amount"

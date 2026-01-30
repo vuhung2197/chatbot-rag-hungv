@@ -19,8 +19,8 @@ services:
     volumes:
       # Persistent data
       - postgres_data:/var/lib/postgresql/data
-      # Init scripts (auto-run on first start) - DISABLED for now, run manually
-      # - ./.migration/postgresql:/docker-entrypoint-initdb.d:ro
+      # Init scripts (auto-run on first start)
+      - ./db/init_postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
       # Backups
       - ./backups/postgresql:/backups
     networks:
@@ -85,8 +85,6 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
       - BACKEND_URL=${BACKEND_URL}
-      - BACKEND_URL=${BACKEND_URL}
-      - BACKEND_URL=${BACKEND_URL}
       - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
       - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
       - VNPAY_URL=${VNPAY_URL}
@@ -120,54 +118,6 @@ services:
     depends_on:
       - backend
 
-  # ============================================
-  # MySQL (Optional - for migration phase)
-  # Keep during migration, remove after
-  # ============================================
-  mysql:
-    image: mysql:8.0
-    container_name: chatbot-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-chatbot}
-      MYSQL_USER: ${MYSQL_USER:-chatbot}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chatbot123}
-      TZ: Asia/Ho_Chi_Minh
-    ports:
-      - "${MYSQL_PORT:-3308}:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - ./backups/mysql:/backups
-    networks:
-      - chatbot-network
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    profiles:
-      - migration # Only start when: docker-compose --profile migration up
-
-  # ============================================
-  # phpMyAdmin (Optional - for migration phase)
-  # ============================================
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: chatbot-phpmyadmin
-    restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
-      UPLOAD_LIMIT: 100M
-    ports:
-      - "${PHPMYADMIN_PORT:-8080}:80"
-    networks:
-      - chatbot-network
-    depends_on:
-      - mysql
-    profiles:
-      - migration # Only start when: docker-compose --profile migration up
-
 # ============================================
 # Networks
 # ============================================
@@ -185,7 +135,4 @@ volumes:
     driver: local
   pgadmin_data:
     name: chatbot_pgadmin_data
-    driver: local
-  mysql_data:
-    name: chatbot_mysql_data
     driver: local

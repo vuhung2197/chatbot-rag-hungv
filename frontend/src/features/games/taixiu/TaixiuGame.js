@@ -167,7 +167,6 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
         setGameState('IDLE');
         setResult(null);
         setBetAmount(0);
-        // Keep selectedBet or clear? Let's keep for easy re-bet.
     };
 
     // Helper to format currency
@@ -189,7 +188,7 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                         color: darkMode ? 'white' : 'black', border: 'none', cursor: 'pointer'
                     }}
                 >
-                    <ArrowLeft size={18} /> Back
+                    <ArrowLeft size={18} /> Quay lại
                 </button>
                 <div style={{
                     fontSize: '1.5rem', fontWeight: 'bold',
@@ -330,7 +329,9 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                                 </div>
                             </div>
                         ) : (
-                            <div style={{ color: '#6b7280' }}>Place your bet</div>
+                            <div style={{ color: '#94a3b8', fontSize: '1.2rem', fontWeight: '500', letterSpacing: '0.05em' }}>
+                                CHỜ ĐẶT CƯỢC...
+                            </div>
                         )}
                     </div>
 
@@ -364,16 +365,49 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                     {/* Controls */}
                     <div className="controls">
                         {gameState === 'RESULT' ? (
-                            <button className="btn-action play-again" onClick={resetGame}>PLAY AGAIN</button>
+                            <button className="btn-action play-again" onClick={resetGame}
+                                style={{
+                                    background: 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)',
+                                    color: 'white', border: 'none', boxShadow: '0 4px 14px 0 rgba(34, 197, 94, 0.39)',
+                                    padding: '12px 40px', borderRadius: '12px', cursor: 'pointer', fontWeight: 'bold'
+                                }}
+                            >
+                                CHƠI TIẾP
+                            </button>
                         ) : (
                             <button
                                 className="btn-action place-bet"
                                 onClick={placeBet}
                                 disabled={loading || betAmount === 0 || !selectedBet}
+                                style={{
+                                    background: loading ? '#475569' : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    boxShadow: loading ? 'none' : '0 4px 14px 0 rgba(245, 158, 11, 0.39)',
+                                    padding: '12px 60px',
+                                    borderRadius: '12px',
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    fontWeight: 'bold',
+                                    fontSize: '1.1rem',
+                                    letterSpacing: '0.05em',
+                                    textTransform: 'uppercase',
+                                    transition: 'all 0.3s ease',
+                                    animation: (!loading && betAmount > 0 && selectedBet) ? 'pulse-gold 2s infinite' : 'none'
+                                }}
                             >
-                                {loading ? 'ROLLING...' : 'PLACE BET'}
+                                {loading ? 'ĐANG QUAY...' : 'ĐẶT CƯỢC'}
                             </button>
                         )}
+
+                        <style>
+                            {`
+                            @keyframes pulse-gold {
+                                0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+                                70% { box-shadow: 0 0 0 15px rgba(245, 158, 11, 0); }
+                                100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                            }
+                            `}
+                        </style>
                     </div>
 
                     {/* Chips */}
@@ -385,7 +419,7 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                                     type="number"
                                     value={betAmount || ''}
                                     onChange={(e) => setBetAmount(Number(e.target.value))}
-                                    placeholder="Enter amount"
+                                    placeholder="Nhập số tiền"
                                     className="bg-slate-800 text-white p-2 w-40 outline-none border-t border-b border-slate-700"
                                     min="0"
                                 />
@@ -398,7 +432,7 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                                         {val >= 1000 ? (val / 1000) + 'k' : val}
                                     </button>
                                 ))}
-                                <button className="clear-btn" onClick={clearBet}>Clear</button>
+                                <button className="clear-btn" onClick={clearBet} style={{ backgroundColor: '#ef4444', border: 'none', color: 'white', fontWeight: 'bold' }}>Xóa</button>
                             </div>
                         </div>
                     )}
@@ -415,53 +449,76 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                         </div>
                     ) : (
                         <div className="game-history">
-                            <h3>Lịch Sử Cược</h3>
-                            <div className="history-list h-[400px] overflow-y-auto">
+                            <h3 style={{ borderBottom: '1px solid #334155', paddingBottom: '10px', marginBottom: '15px' }}>Lịch Sử Cược</h3>
+                            <div className="history-list-container" style={{ height: '450px', overflowY: 'auto', paddingRight: '8px' }}>
                                 {history.map(h => (
                                     <div
                                         key={h.id}
-                                        className="history-item cursor-pointer hover:bg-slate-700/50 transition-colors"
+                                        style={{
+                                            display: 'flex', flexDirection: 'column', gap: '8px',
+                                            padding: '12px', marginBottom: '12px', cursor: 'pointer',
+                                            borderRadius: '12px', backgroundColor: 'rgba(30, 41, 59, 0.4)',
+                                            border: '1px solid rgba(51, 65, 85, 0.5)', transition: 'background 0.2s'
+                                        }}
                                         onClick={() => handleHistoryClick(h)}
-                                        title="Click to verify (Provably Fair)"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <span
-                                                className="w-8 h-8 flex items-center justify-center rounded-full text-xs font-bold text-white shadow-sm flex-shrink-0"
-                                                style={{
-                                                    backgroundColor: h.result_type === 'TAI' ? '#ef4444' : h.result_type === 'TRIPLE' ? '#22c55e' : '#3b82f6'
-                                                }}
-                                            >
-                                                {h.result_type === 'TRIPLE' ? '3' : h.result_type[0]}
-                                            </span>
-                                            <div className="flex flex-col gap-1">
-                                                <div className="text-xs text-gray-500 font-mono">#{h.session_id}</div>
-                                                <div className="text-sm font-bold text-yellow-500">
-                                                    {h.dice1} + {h.dice2} + {h.dice3} = {h.total_score}
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div
+                                                    style={{
+                                                        width: '40px', height: '40px', borderRadius: '50%',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '1rem', fontWeight: '900', color: '#fff',
+                                                        background: h.result_type === 'TAI'
+                                                            ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+                                                            : h.result_type === 'TRIPLE'
+                                                                ? 'linear-gradient(135deg, #22c55e 0%, #15803d 100%)'
+                                                                : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                                                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)', flexShrink: 0,
+                                                        border: '2px solid rgba(255,255,255,0.1)'
+                                                    }}
+                                                >
+                                                    {h.result_type === 'TRIPLE' ? '3' : h.result_type === 'TAI' ? 'T' : 'X'}
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold' }}>PHIÊN #{h.session_id}</div>
+                                                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center', fontWeight: 'bold', fontSize: '1rem' }}>
+                                                        <span style={{ color: '#94a3b8' }}>{h.dice1}</span>
+                                                        <span style={{ color: '#475569' }}>·</span>
+                                                        <span style={{ color: '#94a3b8' }}>{h.dice2}</span>
+                                                        <span style={{ color: '#475569' }}>·</span>
+                                                        <span style={{ color: '#94a3b8' }}>{h.dice3}</span>
+                                                        <span style={{ margin: '0 4px', color: '#475569' }}>=</span>
+                                                        <span style={{ color: '#facc15' }}>{h.total_score}</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-3">
-                                            <span
-                                                className="font-bold leading-none"
-                                                style={{
-                                                    color: h.win_amount > 0 ? '#4caf50' : '#ff5252'
-                                                }}
-                                            >
-                                                {h.win_amount > 0
-                                                    ? `+${formatMoney(h.win_amount - h.bet_amount)}`
-                                                    : `-${formatMoney(h.bet_amount)}`
-                                                }
-                                            </span>
-                                            {/* Small indicator if PF data exists */}
-                                            {h.metadata && (
-                                                <div className="flex items-center px-2 py-1 bg-slate-800 rounded text-[10px] text-indigo-400 hover:bg-slate-700 hover:text-indigo-300 transition-colors">
-                                                    🛡️ Verify
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.9rem', fontWeight: '900',
+                                                        color: h.win_amount > 0 ? '#4ade80' : '#ef4444'
+                                                    }}
+                                                >
+                                                    {h.win_amount > 0
+                                                        ? `+${formatMoney(h.win_amount - h.bet_amount)}`
+                                                        : `-${formatMoney(h.bet_amount)}`
+                                                    }
                                                 </div>
-                                            )}
+                                                {h.metadata && (
+                                                    <div style={{
+                                                        marginTop: '4px', fontSize: '10px', color: '#818cf8', fontWeight: 'bold',
+                                                        padding: '2px 6px', background: 'rgba(129, 140, 248, 0.1)', borderRadius: '4px',
+                                                        border: '1px solid rgba(129, 140, 248, 0.2)'
+                                                    }}>
+                                                        🛡️ CHI TIẾT
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
-                                {history.length === 0 && <div className="text-center text-gray-500 mt-10">Chưa có lịch sử</div>}
+                                {history.length === 0 && <div style={{ textAlign: 'center', color: '#64748b', marginTop: '40px' }}>Chưa có lịch sử</div>}
                             </div>
                             <div className="mt-4 p-4 bg-slate-800/50 rounded-lg">
                                 <p className="text-xs text-center text-gray-400">
@@ -478,7 +535,7 @@ const TaixiuGame = ({ darkMode, onBalanceUpdate, onBack }) => {
                 onClose={() => setShowPfModal(false)}
                 data={pfData}
             />
-        </div >
+        </div>
     );
 };
 

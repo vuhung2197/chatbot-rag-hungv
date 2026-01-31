@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
 import ProvablyFairModal from '../taixiu/components/ProvablyFairModal';
-import BauCua3DScene from './BauCua3DScene'; // Reuse specific modal or create new one? reusing is fine.
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -32,6 +31,7 @@ const BauCuaGame = ({ darkMode, onBack }) => {
     const [totalWin, setTotalWin] = useState(0);
     const [goldenDiceIndex, setGoldenDiceIndex] = useState(null); // Index of the Golden Dice (0-2)
 
+
     const fetchWallet = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
@@ -43,6 +43,7 @@ const BauCuaGame = ({ darkMode, onBack }) => {
             console.error(err);
         }
     }, []);
+
 
     const fetchHistory = useCallback(async () => {
         try {
@@ -207,31 +208,65 @@ const BauCuaGame = ({ darkMode, onBack }) => {
                 {/* Main Game Board */}
                 <div style={{ flex: 1, minWidth: '600px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                    {/* 3D Scene Container */}
+                    {/* 2D Scene Container */}
                     <div style={{
                         height: '400px', position: 'relative', borderRadius: '16px',
                         overflow: 'hidden', backgroundColor: '#0f172a',
-                        border: '1px solid #334155', boxShadow: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)'
+                        border: '1px solid #334155', boxShadow: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
                     }}>
-                        <BauCua3DScene
-                            result={result ? result.mascots : null}
-                            gameState={gameState}
-                        // onAnimationComplete={() => console.log('Scene settled')} 
-                        />
 
-                        {/* IDLE Overlay (Start Screen) */}
-                        {gameState === 'IDLE' && !result && (
-                            <div style={{
-                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                                background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                zIndex: 10, pointerEvents: 'none'
+                        {/* Shaking Bowl / Result */}
+                        {(gameState === 'IDLE' || gameState === 'SHAKING') && !result && (
+                            <div className={gameState === 'SHAKING' ? 'shaking-effect' : ''} style={{
+                                width: '200px', height: '200px', borderRadius: '50%',
+                                background: 'radial-gradient(circle at 30% 30%, #60a5fa, #2563eb)',
+                                boxShadow: '0 25px 50px -12px rgba(37, 99, 235, 0.5)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: '4px solid #93c5fd', position: 'relative'
                             }}>
-                                <div style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 'bold', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
-                                    Sẵn sàng xóc!
-                                </div>
+                                <div style={{ fontSize: '5rem' }}>🥣</div>
+                                {gameState === 'IDLE' && (
+                                    <div style={{
+                                        position: 'absolute', bottom: '-40px', width: '200px', textAlign: 'center',
+                                        color: '#cbd5e1', fontWeight: 'bold'
+                                    }}>
+                                        Sẵn sàng xóc!
+                                    </div>
+                                )}
                             </div>
                         )}
 
+                        {/* Result Display */}
+                        {(gameState === 'RESULT' || result) && (
+                            <div style={{ display: 'flex', gap: '20px', animation: 'popIn 0.5s ease-out' }}>
+                                {result.mascots.map((mId, index) => {
+                                    // Find mascot obj
+                                    const mObj = MASCOTS.find(m => m.id === mId);
+                                    // Make golden dice shine
+                                    const isGolden = index === goldenDiceIndex;
+
+                                    return (
+                                        <div key={index} style={{
+                                            width: '100px', height: '100px', borderRadius: '16px',
+                                            backgroundColor: isGolden ? '#fef08a' : 'white',
+                                            border: isGolden ? '4px solid #eab308' : 'none',
+                                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                            boxShadow: isGolden ? '0 0 30px #eab308' : '0 10px 25px -5px rgba(0,0,0,0.1)',
+                                            transform: isGolden ? 'scale(1.1)' : 'scale(1)'
+                                        }}>
+                                            <span style={{ fontSize: '3.5rem' }}>{mObj?.icon}</span>
+                                            <span style={{
+                                                fontSize: '0.875rem', fontWeight: 'bold',
+                                                color: isGolden ? '#854d0e' : '#334155', textTransform: 'uppercase'
+                                            }}>
+                                                {mObj?.name}
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        )}
 
                         {/* Win/Lose Notification */}
                         {gameState === 'RESULT' && (

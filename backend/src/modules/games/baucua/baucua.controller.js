@@ -174,6 +174,7 @@ const BauCuaController = {
                 );
             }
 
+            // 7. Commit
             await connection.commit();
 
             res.json({
@@ -244,7 +245,6 @@ const BauCuaController = {
                         bets: [],
                         totalBet: 0,
                         totalWin: 0,
-                        totalWin: 0,
                         pf: row.metadata, // Valid for all bets in session
                         goldenDiceIndex: typeof row.metadata === 'string' ? JSON.parse(row.metadata)?.goldenDiceIndex : row.metadata?.goldenDiceIndex
                     });
@@ -292,7 +292,9 @@ const BauCuaController = {
             console.error("BauCua History Error:", error);
             res.status(500).json({ message: 'Error fetching history' });
         }
-    }
+    },
+
+
 };
 
 export default BauCuaController;

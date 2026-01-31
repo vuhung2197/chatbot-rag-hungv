@@ -8,4 +8,5 @@ const router = express.Router();
 router.post('/bet', verifyToken, BauCuaController.placeBet);
 router.get('/history', verifyToken, BauCuaController.getHistory);
 
+
 export default router;

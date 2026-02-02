@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # ============================================
@@ -19,14 +19,18 @@ services:
     volumes:
       # Persistent data
       - postgres_data:/var/lib/postgresql/data
-      # Init scripts (auto-run on first start) - DISABLED for now, run manually
-      # - ./.migration/postgresql:/docker-entrypoint-initdb.d:ro
+      # Init scripts (auto-run on first start)
+      - ./db/init_postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
       # Backups
       - ./backups/postgresql:/backups
     networks:
       - chatbot-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-chatbot}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-chatbot}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,8 +45,8 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     ports:
       - "${PGADMIN_PORT:-5050}:80"
     volumes:
@@ -81,8 +85,6 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
       - BACKEND_URL=${BACKEND_URL}
-      - BACKEND_URL=${BACKEND_URL}
-      - BACKEND_URL=${BACKEND_URL}
       - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
       - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
       - VNPAY_URL=${VNPAY_URL}
@@ -97,53 +99,24 @@ services:
     networks:
       - chatbot-network
 
-  # ============================================
-  # MySQL (Optional - for migration phase)
-  # Keep during migration, remove after
-  # ============================================
-  mysql:
-    image: mysql:8.0
-    container_name: chatbot-mysql
+  frontend:
+    build: ./frontend
+    container_name: chatbot-frontend
     restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-chatbot}
-      MYSQL_USER: ${MYSQL_USER:-chatbot}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chatbot123}
-      TZ: Asia/Ho_Chi_Minh
     ports:
-      - "${MYSQL_PORT:-3308}:3306"
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - WDS_SOCKET_PORT=0
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      - ./backups/mysql:/backups
-    networks:
-      - chatbot-network
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    profiles:
-      - migration  # Only start when: docker-compose --profile migration up
-
-  # ============================================
-  # phpMyAdmin (Optional - for migration phase)
-  # ============================================
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: chatbot-phpmyadmin
-    restart: unless-stopped
-    environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
-      UPLOAD_LIMIT: 100M
-    ports:
-      - "${PHPMYADMIN_PORT:-8080}:80"
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
     networks:
       - chatbot-network
     depends_on:
-      - mysql
-    profiles:
-      - migration  # Only start when: docker-compose --profile migration up
+      - backend
 
 # ============================================
 # Networks
@@ -162,7 +135,4 @@ volumes:
     driver: local
   pgadmin_data:
     name: chatbot_pgadmin_data
-    driver: local
-  mysql_data:
-    name: chatbot_mysql_data
     driver: local

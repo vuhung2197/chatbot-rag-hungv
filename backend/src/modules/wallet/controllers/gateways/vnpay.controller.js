@@ -17,7 +17,7 @@ export async function vnpayReturn(req, res) {
 
         if (!result.success) {
             console.error('❌ VNPay payment failed:', result.message);
-            return res.redirect(`${frontendUrl}/wallet?payment=failed&message=${encodeURIComponent(result.message)}`);
+            return res.redirect(`${frontendUrl.trim()}/wallet?payment=failed&message=${encodeURIComponent(result.message)}`);
         }
 
         const orderIdParts = result.orderId.split('_');
@@ -94,8 +94,10 @@ export async function vnpayReturn(req, res) {
 
             await connection.commit();
 
+
             console.log(`✅ Payment completed successfully for transaction ${transactionId}`);
-            res.redirect(`${frontendUrl}/profile?payment=success&amount=${creditedAmount}&currency=${wallet.currency}`);
+            console.log('Redirecting to frontend:', frontendUrl);
+            res.redirect(`${frontendUrl.trim()}/wallet?payment=success&amount=${creditedAmount}&currency=${wallet.currency}`);
 
         } catch (error) {
             await connection.rollback();

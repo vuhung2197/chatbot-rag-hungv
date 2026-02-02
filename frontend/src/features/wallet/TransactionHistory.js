@@ -173,17 +173,24 @@ const TransactionHistory = ({ currency = 'USD', refreshTrigger = 0 }) => {
                                                 {(() => {
                                                     // Helper to translate description
                                                     const desc = transaction.description || '';
-                                                    if (desc.startsWith('Deposit')) {
-                                                        const parts = desc.split(' ');
-                                                        // Example: "Deposit 100000 VND" -> "Nạp tiền 100000 VND"
-                                                        if (parts.length >= 3) {
-                                                            return `${t('deposit')} ${parts.slice(1).join(' ')}`;
+                                                    let meta = transaction.metadata;
+
+                                                    // Parse metadata if valid string
+                                                    if (typeof meta === 'string') {
+                                                        try {
+                                                            meta = JSON.parse(meta);
+                                                        } catch (e) {
+                                                            meta = null;
                                                         }
+                                                    }
+
+                                                    // 1. Fallback to String Matching for Legacy or non-metadata rows.
+                                                    if (desc.startsWith('Deposit') || desc.startsWith('Nạp tiền')) {
+                                                        // Extract amount if strictly following "Deposit [Amount] [Currency]"
+                                                        // But "Nạp tiền" might be complex. Simple fallback:
                                                         return t('deposit');
                                                     }
                                                     if (desc.startsWith('Subscription upgrade to')) {
-                                                        // Example: "Subscription upgrade to Pro (monthly)"
-                                                        // Extract tier name and cycle
                                                         const tierMatch = desc.match(/to (.*?) \((.*?)\)/);
                                                         if (tierMatch) {
                                                             const tierName = tierMatch[1];
@@ -193,10 +200,10 @@ const TransactionHistory = ({ currency = 'USD', refreshTrigger = 0 }) => {
                                                         return t('subscription');
                                                     }
                                                     if (desc.startsWith('Currency changed from')) {
-                                                        // Example: "Currency changed from USD to VND"
                                                         const parts = desc.split(' ');
                                                         return `${t('currencyChangedFrom')} ${parts[3]} ${t('to')} ${parts[5]}`;
                                                     }
+
                                                     // Fallback for untranslated descriptions
                                                     return desc || `${transaction.type} transaction`;
                                                 })()}

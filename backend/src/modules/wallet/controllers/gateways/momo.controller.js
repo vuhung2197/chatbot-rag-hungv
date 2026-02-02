@@ -14,7 +14,7 @@ export async function momoReturn(req, res) {
 
         if (!result.success) {
             console.error('❌ MoMo payment failed:', result.message);
-            return res.redirect(`${frontendUrl}/wallet?payment=failed&message=${encodeURIComponent(result.message)}`);
+            return res.redirect(`${frontendUrl.trim()}/wallet?payment=failed&message=${encodeURIComponent(result.message)}`);
         }
 
         const orderIdParts = result.orderId.split('_');
@@ -90,8 +90,9 @@ export async function momoReturn(req, res) {
             );
 
             await connection.commit();
+
             console.log(`✅ MoMo payment completed successfully for transaction ${transactionId}`);
-            res.redirect(`${frontendUrl}/profile?payment=success&amount=${creditedAmount}&currency=${wallet.currency}`);
+            res.redirect(`${frontendUrl.trim()}/wallet?payment=success&amount=${creditedAmount}&currency=${wallet.currency}`);
 
         } catch (error) {
             await connection.rollback();

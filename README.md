@@ -9,8 +9,9 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
+- **🎲 Giải trí**: Tích hợp Game Arena (Sic Bo, Bầu Cua Tôm Cá) với hệ thống tiền tệ ảo minh bạch
 
-> **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + MySQL + Vector Database
+> **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + PostgreSQL + Vector Database
 
 ---
 
@@ -27,6 +28,18 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Auto Chunking**: Chia nhỏ nội dung thành semantic chunks
 - **Vector Embedding**: Tự động tạo embedding cho mỗi chunk
 - **Admin Interface**: Quản lý kiến thức trực quan
+
+### 🎲 **Multi-Game Arena**
+- **Sic Bo (Tài Xỉu)**: Game cược xúc xắc cổ điển với tính năng Soi Cầu (Trend Analysis).
+- **Bầu Cua Tôm Cá**: Game dân gian Việt Nam với giao diện hiện đại, hiệu ứng 3D Shake.
+- **Wheel of Fortune**: Game vòng quay may mắn với nhiều mức nhân thưởng hấp dẫn (x1 đến x40).
+- **Cyber Slots (Jackpot)**: (Mới) Game Quay Hũ hiện đại với đồ họa Neon Cyberpunk.
+  - **20 Paylines**: 20 dòng thắng cố định giúp tăng tỉ lệ thắng.
+  - **Progressive Jackpot**: Trích 1% tiền cược mỗi lượt quay vào quỹ Hũ chung (Nổ Hũ khi trúng 5 Kim Cương).
+  - **Visual Effects**: Hiệu ứng "Infinite Spin", vẽ line chiến thắng, và màn hình chúc mừng Jackpot hoành tráng.
+- **Provably Fair**: Tất cả game đều tích hợp công nghệ kiểm chứng công bằng (Server Seed + Client Seed).
+- **Wallet System**: Quản lý số dư thống nhất, tự động quy đổi tiền tệ.
+- [Xem Chi Tiết Bầu Cua](./BAUCUA_SYSTEM_ANALYSIS.md) | [Kế Hoạch Wheel](./WHEEL_OF_FORTUNE_PLAN.md)
 
 ### ⚡ **Tối Ưu Hiệu Suất**
 - **Vector Indexing**: Tìm kiếm nhanh với large-scale vectors
@@ -48,11 +61,12 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │    Backend      │    │   Database      │
-│   (React)       │◄──►│   (Node.js)     │◄──►│   (MySQL)       │
+│   (React)       │◄──►│   (Node.js)     │◄──►│ (PostgreSQL)    │
 │                 │    │                 │    │                 │
 │ • Chat Features │    │ • RAG Engine    │    │ • Knowledge     │
 │ • Admin Module  │    │ • Vector Search │    │ • Vectors       │
 │ • User Module   │    │ • Modules API   │    │ • Users         │
+│ • Game Module   │    │ • Game Engine   │    │ • Game Sessions │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -72,6 +86,7 @@ english-chatbot/
 │   │   ├── 📁 auth/           # Authentication
 │   │   ├── 📁 chat/           # Chat Logic & History
 │   │   ├── 📁 knowledge/      # Knowledge Base Management
+│   │   ├── 📁 games/          # Game Logic (Sic Bo, etc.)
 │   │   ├── 📁 wallet/         # Wallet & Payment
 │   │   ├── 📁 user/           # User Management
 │   │   └── ...
@@ -87,7 +102,8 @@ english-chatbot/
 │   ├── 📁 src/features/        # Feature Modules (UI & Logic)
 │   │   ├── 📁 auth/           # Login, Register, OAuth
 │   │   ├── 📁 chat/           # Chat Interface
-│   │   ├── 📁 knowledge/      # Admin Dashboard
+│   │   ├── 📁 knowledge/      # Admin Dashboard & Search
+│   │   ├── 📁 games/          # Game Interfaces (Sic Bo)
 │   │   ├── 📁 wallet/         # Wallet & Transactions
 │   │   └── 📁 user/           # Profile & Settings
 │   ├── 📁 src/components/      # Shared Components
@@ -107,7 +123,7 @@ english-chatbot/
 ### **1. Yêu Cầu Hệ Thống**
 - **Docker** + **Docker Compose**
 - **Node.js** 18+ (cho development)
-- **MySQL** 8.0+ (hoặc sử dụng Docker)
+- **PostgreSQL** 13+ (với pgvector extension)
 
 ### **2. Clone Repository**
 ```bash
@@ -126,12 +142,17 @@ nano .env
 
 **Cấu hình `.env`:**
 ```env
-# Database
+# Database (PostgreSQL)
 DB_HOST=localhost
-DB_USER=chatbot_user
-DB_PASSWORD=chatbot_pass
-DB_NAME=chatbot
-DB_ROOT_PASSWORD=rootpass
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres123
+DB_DATABASE=chatbot
+
+# PostgreSQL Docker (Optional)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres123
+POSTGRES_DB=chatbot
 
 # OpenAI API
 OPENAI_API_KEY=sk-your-openai-api-key
@@ -172,28 +193,78 @@ npm start
 ### **6. Truy Cập Ứng Dụng**
 - **Frontend**: http://localhost:3000
 - **Backend API**: http://localhost:3001
-- **Database**: localhost:3306
+- **Database**: localhost:5432
 
 ---
+
+## 👑 Quản Lý Admin & User
+
+Để truy cập các tính năng quản trị (Knowledge Admin, System Settings) và đóng vai trò "Nhà cái" trong các Games, bạn cần có tài khoản **Admin** với số dư lớn.
+
+### **1. Tạo Tài Khoản Admin Nhanh**
+Chúng tôi cung cấp script tự động để tạo tài khoản admin (hoặc nâng quyền nếu email đã tồn tại).
+
+1.  Mở terminal tại thư mục `backend`:
+    ```bash
+    cd backend
+    ```
+2.  Chạy script:
+    ```bash
+    node create_admin.js
+    ```
+    *   **Mặc định**: Email `admin@example.com` / Password `Admin123!`
+    *   Bạn có thể sửa file `backend/create_admin.js` để đổi email/pass theo ý muốn.
+
+### **2. Nạp Tiền (Top-up) Cho Admin/User**
+Để test game hoặc làm "Nhà cái", tài khoản cần có tiền.
+
+1.  Sửa file `backend/topup_admin.js` (dòng 5 và 6) để nhập Email và Số tiền mong muốn:
+    ```javascript
+    const email = 'admin@example.com'; // Email tài khoản cần nạp
+    const amount = 10000000000;         // Số tiền (USD/VND)
+    ```
+2.  Chạy script:
+    ```bash
+    node topup_admin.js
+    ```
+    *   Script sẽ tự động tìm ví của user và cộng tiền vào (tạo ví mới nếu chưa có).
+    *   Hệ thống hỗ trợ số dư cực lớn (lên tới 30 chữ số thập phân) để phục vụ việc làm "Nhà cái".
+
+### **3. Cách Thủ Công (SQL)**
+Nếu không muốn dùng script, bạn có thể chạy SQL trực tiếp:
+
+```sql
+-- Nâng quyền Admin
+UPDATE users SET role = 'admin' WHERE email = 'your-email@example.com';
+
+-- Nạp tiền (Ví dụ: 10 Tỷ)
+UPDATE user_wallets 
+SET balance = balance + 10000000000 
+WHERE user_id = (SELECT id FROM users WHERE email = 'your-email@example.com');
+```
+
+> **Lưu ý**: Tài khoản Admin đầu tiên được tạo sẽ mặc định đóng vai trò "Nhà cái" (House) trong các game như Sic Bo, Bầu Cua để nhận/trả tiền cược. Hãy đảm bảo "Nhà cái" luôn có đủ số dư!
+
+-----
 
 ## 🗄️ Database Setup
 
 ### **1. Khởi Tạo Database**
 ```bash
 # Chạy script khởi tạo
-mysql -u root -p < db/init.sql
+psql -U postgres -f db/init.sql
 ```
 
 ### **2. Tối Ưu Vector Database**
 ```bash
 # Chạy script tối ưu hóa vector
-mysql -u root -p chatbot < db/vector_optimization.sql
+psql -U postgres -d chatbot -f db/vector_optimization.sql
 ```
 
 ### **3. Dọn Dẹp Database (Nếu Cần)**
 ```bash
 # Loại bỏ các bảng không cần thiết
-mysql -u root -p chatbot < db/remove_unused_tables.sql
+psql -U postgres -d chatbot -f db/remove_unused_tables.sql
 ```
 
 ---
@@ -214,10 +285,10 @@ mysql -u root -p chatbot < db/remove_unused_tables.sql
 - Xem và chỉnh sửa chunks
 - Quản lý câu hỏi chưa trả lời
 
-### **4. Chọn Model LLM**
-- Quản lý và chuyển đổi giữa các model (OpenAI, Ollama)
-- Cấu hình temperature và max tokens
-- Monitor performance của từng model
+### **4. Chơi Game Sic Bo**
+- Truy cập mục **Games** từ menu
+- Đặt cược vào cửa Tài hoặc Xỉu
+- Sử dụng tính năng **Soi Cầu** để xem lịch sử và dự đoán kết quả
 
 ---
 
@@ -243,6 +314,19 @@ GET    /knowledge      # Lấy danh sách kiến thức
 POST   /knowledge      # Thêm kiến thức
 PUT    /knowledge/:id  # Cập nhật kiến thức
 DELETE /knowledge/:id  # Xóa kiến thức
+```
+
+### **Games (Arena)**
+```http
+POST   /games/taixiu/bet      # Đặt cược Sic Bo
+GET    /games/taixiu/history  # Lịch sử Sic Bo
+POST   /games/baucua/bet      # Đặt cược Bầu Cua
+GET    /games/baucua/history  # Lịch sử Bầu Cua
+POST   /games/wheel/bet       # Đặt cược Wheel of Fortune
+GET    /games/wheel/history   # Lịch sử Wheel of Fortune
+POST   /games/slots/spin      # Quay Slots (Spin)
+GET    /games/slots/jackpot   # Lấy giá trị Jackpot hiện tại
+
 ```
 
 ### **File Upload**
@@ -271,7 +355,7 @@ GET  /upload/:id      # Lấy file
 node test/vector_performance_test.js
 
 # Xem database stats
-mysql -u root -p -e "SELECT COUNT(*) FROM knowledge_chunks;"
+psql -U postgres -d chatbot -c "SELECT COUNT(*) FROM knowledge_chunks;"
 
 # Monitor logs
 docker-compose logs -f backend
@@ -284,7 +368,7 @@ docker-compose logs -f backend
 ### **Code Structure**
 - **Backend**: Express.js với modular architecture
 - **Frontend**: React với Feature-based architecture
-- **Database**: MySQL với vector optimization
+- **Database**: PostgreSQL với pgvector optimization
 - **AI**: OpenAI API với Advanced RAG pattern
 
 ### **Key Features**
@@ -338,6 +422,7 @@ export OPENAI_API_KEY=your-api-key
 - [x] Advanced RAG implementation
 - [x] Hybrid search (vector + keyword)
 - [x] Context re-ranking
+- [x] Integrate Mini-games (Sic Bo)
 
 ### **Phase 3: Intelligence** 📋
 - [ ] ML-based algorithm selection
@@ -377,7 +462,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - OpenAI API for GPT integration
 - React community for excellent documentation
-- MySQL team for vector search capabilities
+- PostgreSQL team and pgvector for vector search capabilities
 - All contributors and testers
 
 ---

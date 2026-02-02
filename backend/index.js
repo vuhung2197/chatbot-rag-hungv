@@ -1,3 +1,4 @@
+
 import express from 'express';
 import cors from 'cors';
 import './bootstrap/env.js';
@@ -5,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Import Routes
 import authRoutes from './src/modules/auth/auth.routes.js';
 import userRoutes from './src/modules/user/user.routes.js';
 import passwordRoutes from './src/modules/user/password.routes.js';
@@ -20,6 +22,7 @@ import walletRoutes from './src/modules/wallet/routes/wallet.routes.js';
 import paymentRoutes from './src/modules/wallet/routes/payment.routes.js';
 import subscriptionRoutes from './src/modules/subscription/subscription.routes.js';
 import usageRoutes from './src/modules/usage/usage.routes.js';
+
 import errorHandler from './middlewares/errorHandler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -40,24 +43,31 @@ app.use(cookieParser());
 // Serve static files (avatars)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Import routes
-app.use('/chat', chatRoutes);
-app.use('/advanced-chat', advancedChatRoutes);
-app.use('/knowledge', knowledgeRoutes);
-app.use('/suggest-next-word', suggestRoutes);
-app.use('/unanswered', unansweredRoutes);
-app.use('/upload', uploadRoutes);
+// Register Routes
 app.use('/auth', authRoutes);
-app.use('/usage', usageRoutes);
-app.use('/subscription', subscriptionRoutes);
-app.use('/payment', paymentRoutes);
-app.use('/conversations', conversationRoutes);
-app.use('/user', userRoutes);
 app.use('/auth/password', passwordRoutes);
 app.use('/auth/sessions', sessionRoutes);
+app.use('/user', userRoutes);
+
+app.use('/chat', chatRoutes);
+app.use('/advanced-chat', advancedChatRoutes);
+app.use('/conversations', conversationRoutes);
+app.use('/suggest-next-word', suggestRoutes);
+app.use('/unanswered', unansweredRoutes);
+
+app.use('/knowledge', knowledgeRoutes);
+app.use('/upload', uploadRoutes);
+
 app.use('/wallet', walletRoutes);
+app.use('/payment', paymentRoutes);
+app.use('/subscription', subscriptionRoutes);
+app.use('/usage', usageRoutes);
+
+
+
 app.context = app; // For rare cases passing app context
 
+// Error Handler
 app.use(errorHandler);
 
 const PORT = 3001;

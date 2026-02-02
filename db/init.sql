@@ -368,3 +368,9 @@ JOIN subscription_tiers st ON us.tier_id = st.id
 WHERE us.status IN ('active', 'trial');
 
 
+
+-- ============================================
+-- GAME SYSTEM: SIC BO
+-- ============================================
+
+

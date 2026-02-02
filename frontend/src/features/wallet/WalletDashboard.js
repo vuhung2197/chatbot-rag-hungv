@@ -55,11 +55,15 @@ const WalletDashboard = ({ onCurrencyChange, refreshTrigger = 0 }) => {
             const token = localStorage.getItem('token');
 
             // Fetch wallet info and stats in parallel
+            // Add timestamp to prevent caching
+            const t = Date.now();
+            const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+            
             const [walletRes, statsRes] = await Promise.all([
-                axios.get('http://localhost:3001/wallet', {
+                axios.get(`${API_URL}/wallet?t=${t}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 }),
-                axios.get('http://localhost:3001/wallet/stats', {
+                axios.get(`${API_URL}/wallet/stats?t=${t}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 })
             ]);

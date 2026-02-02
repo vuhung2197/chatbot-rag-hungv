@@ -9,7 +9,7 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
 - **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
 - **🔒 Bảo mật**: Authentication và authorization đầy đủ
-- **🎲 Giải trí**: Tích hợp Game Arena (Sic Bo, Bầu Cua Tôm Cá) với hệ thống tiền tệ ảo minh bạch
+
 
 > **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + PostgreSQL + Vector Database
 
@@ -29,17 +29,6 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Vector Embedding**: Tự động tạo embedding cho mỗi chunk
 - **Admin Interface**: Quản lý kiến thức trực quan
 
-### 🎲 **Multi-Game Arena**
-- **Sic Bo (Tài Xỉu)**: Game cược xúc xắc cổ điển với tính năng Soi Cầu (Trend Analysis).
-- **Bầu Cua Tôm Cá**: Game dân gian Việt Nam với giao diện hiện đại, hiệu ứng 3D Shake.
-- **Wheel of Fortune**: Game vòng quay may mắn với nhiều mức nhân thưởng hấp dẫn (x1 đến x40).
-- **Cyber Slots (Jackpot)**: (Mới) Game Quay Hũ hiện đại với đồ họa Neon Cyberpunk.
-  - **20 Paylines**: 20 dòng thắng cố định giúp tăng tỉ lệ thắng.
-  - **Progressive Jackpot**: Trích 1% tiền cược mỗi lượt quay vào quỹ Hũ chung (Nổ Hũ khi trúng 5 Kim Cương).
-  - **Visual Effects**: Hiệu ứng "Infinite Spin", vẽ line chiến thắng, và màn hình chúc mừng Jackpot hoành tráng.
-- **Provably Fair**: Tất cả game đều tích hợp công nghệ kiểm chứng công bằng (Server Seed + Client Seed).
-- **Wallet System**: Quản lý số dư thống nhất, tự động quy đổi tiền tệ.
-- [Xem Chi Tiết Bầu Cua](./BAUCUA_SYSTEM_ANALYSIS.md) | [Kế Hoạch Wheel](./WHEEL_OF_FORTUNE_PLAN.md)
 
 ### ⚡ **Tối Ưu Hiệu Suất**
 - **Vector Indexing**: Tìm kiếm nhanh với large-scale vectors
@@ -66,7 +55,6 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 │ • Chat Features │    │ • RAG Engine    │    │ • Knowledge     │
 │ • Admin Module  │    │ • Vector Search │    │ • Vectors       │
 │ • User Module   │    │ • Modules API   │    │ • Users         │
-│ • Game Module   │    │ • Game Engine   │    │ • Game Sessions │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -86,7 +74,7 @@ english-chatbot/
 │   │   ├── 📁 auth/           # Authentication
 │   │   ├── 📁 chat/           # Chat Logic & History
 │   │   ├── 📁 knowledge/      # Knowledge Base Management
-│   │   ├── 📁 games/          # Game Logic (Sic Bo, etc.)
+
 │   │   ├── 📁 wallet/         # Wallet & Payment
 │   │   ├── 📁 user/           # User Management
 │   │   └── ...
@@ -103,7 +91,7 @@ english-chatbot/
 │   │   ├── 📁 auth/           # Login, Register, OAuth
 │   │   ├── 📁 chat/           # Chat Interface
 │   │   ├── 📁 knowledge/      # Admin Dashboard & Search
-│   │   ├── 📁 games/          # Game Interfaces (Sic Bo)
+
 │   │   ├── 📁 wallet/         # Wallet & Transactions
 │   │   └── 📁 user/           # Profile & Settings
 │   ├── 📁 src/components/      # Shared Components
@@ -243,7 +231,7 @@ SET balance = balance + 10000000000
 WHERE user_id = (SELECT id FROM users WHERE email = 'your-email@example.com');
 ```
 
-> **Lưu ý**: Tài khoản Admin đầu tiên được tạo sẽ mặc định đóng vai trò "Nhà cái" (House) trong các game như Sic Bo, Bầu Cua để nhận/trả tiền cược. Hãy đảm bảo "Nhà cái" luôn có đủ số dư!
+
 
 -----
 
@@ -285,10 +273,6 @@ psql -U postgres -d chatbot -f db/remove_unused_tables.sql
 - Xem và chỉnh sửa chunks
 - Quản lý câu hỏi chưa trả lời
 
-### **4. Chơi Game Sic Bo**
-- Truy cập mục **Games** từ menu
-- Đặt cược vào cửa Tài hoặc Xỉu
-- Sử dụng tính năng **Soi Cầu** để xem lịch sử và dự đoán kết quả
 
 ---
 
@@ -316,18 +300,7 @@ PUT    /knowledge/:id  # Cập nhật kiến thức
 DELETE /knowledge/:id  # Xóa kiến thức
 ```
 
-### **Games (Arena)**
-```http
-POST   /games/taixiu/bet      # Đặt cược Sic Bo
-GET    /games/taixiu/history  # Lịch sử Sic Bo
-POST   /games/baucua/bet      # Đặt cược Bầu Cua
-GET    /games/baucua/history  # Lịch sử Bầu Cua
-POST   /games/wheel/bet       # Đặt cược Wheel of Fortune
-GET    /games/wheel/history   # Lịch sử Wheel of Fortune
-POST   /games/slots/spin      # Quay Slots (Spin)
-GET    /games/slots/jackpot   # Lấy giá trị Jackpot hiện tại
 
-```
 
 ### **File Upload**
 ```http
@@ -422,7 +395,7 @@ export OPENAI_API_KEY=your-api-key
 - [x] Advanced RAG implementation
 - [x] Hybrid search (vector + keyword)
 - [x] Context re-ranking
-- [x] Integrate Mini-games (Sic Bo)
+
 
 ### **Phase 3: Intelligence** 📋
 - [ ] ML-based algorithm selection

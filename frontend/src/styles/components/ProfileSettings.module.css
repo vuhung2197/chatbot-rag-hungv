@@ -1,0 +1,127 @@
+/* ProfileSettings specific styles - chỉ giữ lại những styles unique cho component này */
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #ffffff;
+  color: #1a1a1a;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.container.darkMode {
+  background-color: #1e1e1e;
+  color: #e8e8e8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.header.darkMode {
+  border-bottom-color: #3a3a3a;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.title.darkMode {
+  color: #ffffff;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.closeButton.darkMode {
+  color: #999;
+}
+
+.closeButton:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.closeButton.darkMode:hover {
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  margin-bottom: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.sectionTitle.darkMode {
+  color: #ffffff;
+}
+
+.accountInfo {
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #e8e8e8;
+}
+
+.accountInfo.darkMode {
+  background-color: #2a2a2a;
+  border-color: #3a3a3a;
+}
+
+.infoRow {
+  margin-bottom: 8px;
+}
+
+.infoRow:last-child {
+  margin-bottom: 0;
+}
+
+.buttonContainer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.loading {
+  padding: 40px;
+}
+
+.error {
+  padding: 40px;
+  text-align: center;
+}
+
+.actionSection {
+  margin: 20px 0;
+}

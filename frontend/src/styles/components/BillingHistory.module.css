@@ -1,0 +1,214 @@
+/* BillingHistory specific styles */
+
+.tableContainer {
+  overflow-x: auto;
+  margin-top: 16px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.tableContainer.darkMode {
+  background-color: #1a1a1a;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.table.darkMode {
+  background-color: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.table thead {
+  background-color: #f8f9fa;
+}
+
+.table.darkMode thead {
+  background-color: #2a2a2a;
+}
+
+.table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.table.darkMode th {
+  color: #999;
+  border-bottom-color: #444;
+}
+
+.table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 14px;
+  color: #333;
+}
+
+.table.darkMode td {
+  color: #f0f0f0;
+  border-bottom-color: #444;
+}
+
+.table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.table.darkMode tbody tr:hover {
+  background-color: #2d2d2d;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.invoiceNumber {
+  font-family: monospace;
+  font-weight: 500;
+  color: #7137ea;
+}
+
+.table.darkMode .invoiceNumber {
+  color: #9d6ff5;
+}
+
+.tierName {
+  font-weight: 500;
+  color: #333;
+}
+
+.table.darkMode .tierName {
+  color: #f0f0f0;
+}
+
+.amount {
+  font-weight: 600;
+  color: #28a745;
+}
+
+.table.darkMode .amount {
+  color: #6bff6b;
+}
+
+.billingCycle {
+  text-transform: capitalize;
+  color: #666;
+}
+
+.table.darkMode .billingCycle {
+  color: #999;
+}
+
+.period {
+  font-size: 12px;
+  color: #666;
+}
+
+.table.darkMode .period {
+  color: #999;
+}
+
+.statusBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.statusActive {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.table.darkMode .statusActive {
+  background-color: #1f4a1f;
+  color: #6bff6b;
+}
+
+.statusCancelled {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.table.darkMode .statusCancelled {
+  background-color: #4a1f1f;
+  color: #ff6b6b;
+}
+
+.statusExpired {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.table.darkMode .statusExpired {
+  background-color: #4a3a1f;
+  color: #ffc107;
+}
+
+.statusTrial {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.table.darkMode .statusTrial {
+  background-color: #2d3a4a;
+  color: #90caf9;
+}
+
+.statusDefault {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.table.darkMode .statusDefault {
+  background-color: #3d3d3d;
+  color: #ccc;
+}
+
+.date {
+  color: #666;
+  font-size: 13px;
+}
+
+.table.darkMode .date {
+  color: #999;
+}
+
+.footer {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border-left: 3px solid #7137ea;
+}
+
+.footer.darkMode {
+  background-color: #2d2d2d;
+  border-left-color: #9d6ff5;
+}
+
+.footerText {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
+.footer.darkMode .footerText {
+  color: #999;
+}
+

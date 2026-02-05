@@ -1,0 +1,138 @@
+version: "3.8"
+
+services:
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: chatbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chatbot}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+      TZ: Asia/Ho_Chi_Minh
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Persistent data
+      - postgres_data:/var/lib/postgresql/data
+      # Init scripts (auto-run on first start)
+      - ./db/init_postgres.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      # Backups
+      - ./backups/postgresql:/backups
+    networks:
+      - chatbot-network
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-chatbot}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # pgAdmin 4 - Web UI for PostgreSQL
+  # ============================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: chatbot-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      # Persistent pgAdmin data (servers, preferences)
+      - pgadmin_data:/var/lib/pgadmin
+      # Pre-configured servers
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+      # Backups (accessible from pgAdmin)
+      - ./backups/postgresql:/backups
+    networks:
+      - chatbot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ============================================
+  # Backend API
+  # ============================================
+  backend:
+    build: ./backend
+    container_name: chatbot-backend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - DB_DATABASE=${POSTGRES_DB:-chatbot}
+      - PORT=3001
+      - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET}
+      - HMAC_KEY=${HMAC_KEY}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - BACKEND_URL=${BACKEND_URL}
+      - VNPAY_TMN_CODE=${VNPAY_TMN_CODE}
+      - VNPAY_HASH_SECRET=${VNPAY_HASH_SECRET}
+      - VNPAY_URL=${VNPAY_URL}
+      - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+
+  frontend:
+    build: ./frontend
+    container_name: chatbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:3001
+      - WDS_SOCKET_PORT=0
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+    networks:
+      - chatbot-network
+    depends_on:
+      - backend
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  chatbot-network:
+    driver: bridge
+    name: chatbot-network
+
+# ============================================
+# Volumes
+# ============================================
+volumes:
+  postgres_data:
+    name: chatbot_postgres_data
+    driver: local
+  pgadmin_data:
+    name: chatbot_pgadmin_data
+    driver: local

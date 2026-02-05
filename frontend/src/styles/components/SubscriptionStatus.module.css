@@ -1,0 +1,154 @@
+/* SubscriptionStatus specific styles - chỉ giữ lại những styles unique cho component này */
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.tierName {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.tierName.free {
+  color: #999;
+}
+
+.tierName.free.darkMode {
+  color: #666;
+}
+
+.tierName.pro {
+  color: #7137ea;
+}
+
+.tierName.team {
+  color: #28a745;
+}
+
+.status {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.status.darkMode {
+  color: #999;
+}
+
+.priceContainer {
+  text-align: right;
+}
+
+.price {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.price.darkMode {
+  color: #f0f0f0;
+}
+
+.priceLabel {
+  font-size: 12px;
+  color: #666;
+}
+
+.priceLabel.darkMode {
+  color: #999;
+}
+
+.subscriptionInfo {
+  font-size: 14px;
+  color: #666;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #ddd;
+}
+
+.subscriptionInfo.darkMode {
+  color: #ccc;
+  border-top-color: #555;
+}
+
+.infoRow {
+  margin-bottom: 8px;
+}
+
+.buttonContainer {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.featuresCard {
+  padding: 16px;
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.featuresCard.darkMode {
+  background-color: #1a1a1a;
+  border-color: #555;
+}
+
+.featuresTitle {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.featuresTitle.darkMode {
+  color: #f0f0f0;
+}
+
+.featuresList {
+  margin: 0;
+  padding-left: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.featuresList.darkMode {
+  color: #ccc;
+}
+
+/* Auto-renewal status classes */
+
+.autoRenewOn {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.autoRenewOff {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: #007bff;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 8px;
+  vertical-align: middle;
+  transition: transform 0.2s, color 0.2s;
+  line-height: 1;
+}
+
+.toggleButton:hover {
+  transform: scale(1.1);
+  color: #0056b3;
+}
+
+.toggleButton:active {
+  transform: scale(0.95);
+}

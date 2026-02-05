@@ -1,0 +1,120 @@
+/* OAuthProviders specific styles - chỉ giữ lại những styles unique cho component này */
+
+.providersList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.providerCard {
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+}
+
+.providerCard.darkMode {
+  border-color: #555;
+}
+
+.providerCardLinked {
+  background-color: #e8f5e9;
+}
+
+.providerCardLinked.darkMode {
+  background-color: #2d4a2d;
+}
+
+.providerCardUnlinked {
+  background-color: #f5f5f5;
+}
+
+.providerCardUnlinked.darkMode {
+  background-color: #3d3d3d;
+}
+
+.providerInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.providerIcon {
+  font-size: 24px;
+}
+
+.providerDetails {
+  flex: 1;
+}
+
+.providerName {
+  font-weight: 500;
+  color: #333;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.providerName.darkMode {
+  color: #f0f0f0;
+}
+
+.providerEmail {
+  font-size: 12px;
+  color: #666;
+}
+
+.providerEmail.darkMode {
+  color: #999;
+}
+
+.providerDate {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.providerDate.darkMode {
+  color: #999;
+}
+
+.providerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.linkedBadge {
+  padding: 4px 12px;
+  background-color: #28a745;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.container {
+  margin-top: 20px;
+}
+
+.loading {
+  margin-top: 20px;
+}
+
+.description {
+  margin-bottom: 16px;
+}
+
+.descriptionText {
+  font-size: 14px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.infoMessage {
+  margin-top: 16px;
+}

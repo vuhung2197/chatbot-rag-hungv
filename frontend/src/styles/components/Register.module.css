@@ -1,0 +1,8 @@
+/* Register specific styles - chỉ giữ lại những styles unique cho component này */
+
+.form {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #ccc;
+}

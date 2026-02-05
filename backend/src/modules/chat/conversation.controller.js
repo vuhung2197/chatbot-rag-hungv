@@ -26,8 +26,8 @@ export async function getConversations(req, res) {
         COUNT(*) as message_count,
         MAX(created_at) as last_message_at,
         MIN(created_at) as created_at,
-        COALESCE(MAX(is_archived), FALSE) as is_archived,
-        COALESCE(MAX(is_pinned), FALSE) as is_pinned
+        COALESCE(MAX(is_archived::int)::boolean, FALSE) as is_archived,
+        COALESCE(MAX(is_pinned::int)::boolean, FALSE) as is_pinned
        FROM user_questions 
        WHERE user_id = ? AND conversation_id IS NOT NULL
        GROUP BY conversation_id

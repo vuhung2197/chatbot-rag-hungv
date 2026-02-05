@@ -17,7 +17,7 @@ export default function Chat({ darkMode = false }) {
   const [loading, setLoading] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
-  const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
+
   const [advancedResponse, setAdvancedResponse] = useState(null);
   const [showConversations, setShowConversations] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
@@ -125,7 +125,7 @@ export default function Chat({ darkMode = false }) {
     const hash = hashQuestion(input);
     const cached = JSON.parse(localStorage.getItem('chatbot_cache') || '{}');
 
-    if (cached[hash] && !useAdvancedRAG) {
+    if (cached[hash]) {
       const cachedData = cached[hash];
       // Support old cache (string) and new cache (object)
       const reply = typeof cachedData === 'string' ? cachedData : cachedData.reply;
@@ -144,31 +144,21 @@ export default function Chat({ darkMode = false }) {
 
     try {
       let res;
-      if (useAdvancedRAG) {
-        // Sử dụng Advanced RAG
-        res = await axios.post(
-          `${API_URL}/advanced-chat`,
-          { message: input, model, conversationId: currentConversationId },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+
+      // Always use the unified chat endpoint (which includes Advanced RAG logic)
+      res = await axios.post(
+        `${API_URL}/chat`,
+        { message: input, model, conversationId: currentConversationId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      // Optional: Set advancedResponse if backend returns reasoning/chunks explicitly in root
+      if (res.data.reasoning_steps) {
         setAdvancedResponse(res.data);
-      } else {
-        // Sử dụng RAG thông thường
-        res = await axios.post(
-          `${API_URL}/chat`,
-          { message: input, model, conversationId: currentConversationId },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
       }
 
       // Cập nhật conversationId từ response nếu có
@@ -195,7 +185,7 @@ export default function Chat({ darkMode = false }) {
         'Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.',
       ].includes(data.reply);
 
-      if (!isNoAnswer && !useAdvancedRAG) {
+      if (!isNoAnswer) {
         cached[hash] = {
           reply: data.reply,
           metadata: data.metadata,
@@ -257,22 +247,7 @@ export default function Chat({ darkMode = false }) {
               Cuộc trò chuyện
             </button>
 
-            <div className={styles.ragToggle}>
-              <div
-                className={`${styles.ragOption} ${!useAdvancedRAG ? styles.ragOptionActive : ''}`}
-                onClick={() => setUseAdvancedRAG(false)}
-                title="RAG thông thường: Nhanh cho câu hỏi đơn giản"
-              >
-                RAG
-              </div>
-              <div
-                className={`${styles.ragOption} ${useAdvancedRAG ? styles.ragOptionActive : ''}`}
-                onClick={() => setUseAdvancedRAG(true)}
-                title="Advanced RAG: Multi-chunk reasoning cho câu hỏi phức tạp"
-              >
-                Advanced
-              </div>
-            </div>
+
 
             <button
               onClick={() => setShowModelPopup(true)}

@@ -1,6 +1,7 @@
 import pool from '../db.js';
 import { getEmbedding } from './embeddingVector.js';
 import { cosineSimilarity } from './embeddingVector.js';
+import axios from 'axios';
 
 /**
  * Advanced RAG System với Multi-Chunk Reasoning - FIXED VERSION
@@ -8,48 +9,62 @@ import { cosineSimilarity } from './embeddingVector.js';
  */
 
 /**
- * 1. Multi-Stage Retrieval - FIXED
- * Lấy chunks theo nhiều giai đoạn để đảm bảo coverage tốt
+ * 1. Multi-Stage Retrieval - UPGRADED TO HYBRID SEARCH (Phase 3)
+ * Kết hợp Vector Search và Full-Text Search (keyword) bằng thuật toán RRF
  */
 export async function multiStageRetrieval(questionEmbedding, question, maxChunks = 8) {
   try {
-    const stages = [
-      { topK: 5, threshold: 0.7, name: 'high_similarity' },
-      { topK: 8, threshold: 0.5, name: 'medium_similarity' },
-      { topK: 12, threshold: 0.3, name: 'low_similarity' }
-    ];
+    console.log('🔄 Starting Hybrid Search...');
 
-    let allChunks = [];
+    // Run Vector Search and Text Search in parallel
+    const [vectorChunks, textChunks] = await Promise.all([
+      performVectorRetrieval(questionEmbedding),
+      retrieveChunksByFullText(question, 10)
+    ]);
 
-    for (const stage of stages) {
-      try {
-        const chunks = await retrieveChunksWithThreshold(
-          questionEmbedding,
-          stage.topK,
-          stage.threshold
-        );
+    console.log(`📊 Hybrid Stats: Vector=${vectorChunks.length}, Text=${textChunks.length}`);
 
-        // Thêm metadata về stage
-        chunks.forEach(chunk => {
-          chunk.retrieval_stage = stage.name;
-          chunk.retrieval_score = chunk.score;
-        });
+    // Fuse results using Reciprocal Rank Fusion (RRF)
+    const fusedChunks = reciprocalRankFusion(vectorChunks, textChunks);
 
-        console.log(`🔹 Stage ${stage.name}: Found ${chunks.length} chunks`);
-        allChunks.push(...chunks);
-      } catch (error) {
-        console.error(`❌ Error in stage ${stage.name}:`, error);
-        // Continue with other stages
-      }
-    }
+    console.log(`✅ After RRF Fusion: ${fusedChunks.length} chunks`);
 
-    // Remove duplicates và sort
-    const uniqueChunks = removeDuplicateChunks(allChunks);
-    return uniqueChunks.slice(0, maxChunks);
+    return fusedChunks.slice(0, maxChunks);
   } catch (error) {
-    console.error('❌ Error in multiStageRetrieval:', error);
+    console.error('❌ Error in multiStageRetrieval (Hybrid):', error);
     return [];
   }
+}
+
+/**
+ * Internal Vector Retrieval Strategy (Original logic moved here)
+ */
+async function performVectorRetrieval(questionEmbedding) {
+  const stages = [
+    { topK: 5, threshold: 0.65, name: 'high_similarity' }, // Adjusted threshold slightly
+    { topK: 8, threshold: 0.45, name: 'medium_similarity' }
+  ];
+
+  let allChunks = [];
+
+  for (const stage of stages) {
+    try {
+      const chunks = await retrieveChunksWithThreshold(
+        questionEmbedding,
+        stage.topK,
+        stage.threshold
+      );
+      chunks.forEach(chunk => {
+        chunk.retrieval_stage = stage.name;
+        chunk.retrieval_score = chunk.score;
+        chunk.source_type = 'vector';
+      });
+      allChunks.push(...chunks);
+    } catch (error) {
+      console.error(`❌ Error in vector stage ${stage.name}:`, error);
+    }
+  }
+  return removeDuplicateChunks(allChunks);
 }
 
 /**
@@ -252,11 +267,28 @@ export async function adaptiveRetrieval(question, questionEmbedding) {
 }
 
 /**
- * 6. Context Re-ranking - FIXED
- * Sắp xếp lại context dựa trên relevance và coherence
+ * 6. Context Re-ranking - FIXED (Implemented Phase 1: Cohere & Threshold)
+ * Sắp xếp lại context dựa trên relevance thực sự
  */
-export function rerankContext(chunks, questionEmbedding, question) {
+export async function rerankContext(chunks, questionEmbedding, question) {
   try {
+    // Check if Cohere API Key is available
+    if (process.env.COHERE_API_KEY) {
+      console.log('🚀 Using Cohere Re-ranking...');
+      const reranked = await rerankWithCohere(chunks, question);
+
+      // Filter by Threshold < 0.3 (OOK Handling)
+      const validChunks = reranked.filter(c => c.final_score >= 0.3);
+
+      if (validChunks.length === 0) {
+        console.warn('⚠️ All chunks filtered out by Cohere threshold (Score < 0.3)');
+        return [];
+      }
+      return validChunks;
+    }
+
+    // Fallback to Heuristic
+    console.log('⚠️ No COHERE_API_KEY found, using heuristic re-ranking...');
     return chunks.map(chunk => {
       // Tính relevance score
       const relevanceScore = chunk.score || 0;
@@ -288,6 +320,56 @@ export function rerankContext(chunks, questionEmbedding, question) {
   }
 }
 
+/**
+ * Call Cohere Rerank API
+ */
+export async function rerankWithCohere(chunks, query) {
+  try {
+    const documents = chunks.map(c => `${c.title || ''}: ${c.content || ''}`);
+
+    // Use multilingual model for best performance with Vietnamese
+    const model = 'rerank-multilingual-v3.0';
+
+    const response = await axios.post(
+      'https://api.cohere.ai/v1/rerank',
+      {
+        model: model,
+        query: query,
+        documents: documents,
+        top_n: chunks.length
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.COHERE_API_KEY}`,
+          'Content-Type': 'application/json',
+          'X-Client-Name': 'English-Chatbot-Backend'
+        },
+        timeout: 10000
+      }
+    );
+
+    const results = response.data.results;
+
+    // Map scores back to chunks
+    const rerankedChunks = results.map(result => {
+      const originalChunk = chunks[result.index];
+      return {
+        ...originalChunk,
+        final_score: result.relevance_score,
+        relevance_score: result.relevance_score, // Sync for compatibility
+        source: 'cohere-rerank'
+      };
+    });
+
+    // Sort by new score
+    return rerankedChunks.sort((a, b) => b.final_score - a.final_score);
+
+  } catch (error) {
+    console.error('❌ Cohere API Error:', error.response?.data || error.message);
+    throw error; // Throw to trigger fallback
+  }
+}
+
 // Helper functions - FIXED
 async function retrieveChunksWithThreshold(embedding, topK, threshold) {
   try {
@@ -305,7 +387,10 @@ async function retrieveChunksWithThreshold(embedding, topK, threshold) {
       LIMIT $3
     `, [vectorStr, threshold, topK]);
 
-    return scored;
+    return scored.map(row => ({
+      ...row,
+      embedding: typeof row.embedding === 'string' ? JSON.parse(row.embedding) : row.embedding
+    }));
   } catch (error) {
     console.error('❌ Error in retrieveChunksWithThreshold:', error);
     return [];
@@ -467,11 +552,90 @@ function calculateCompletenessScore(chunk, question) {
   }
 }
 
+/**
+ * Perform Full-Text Search (BM25-like behavior via Postgres)
+ */
+async function retrieveChunksByFullText(query, limit = 10) {
+  try {
+    // Clean query for FTS (remove special chars)
+    const cleanQuery = query.replace(/[^\w\s]/g, ' ').trim().split(/\s+/).join(' | ');
+    if (!cleanQuery) return [];
+
+    const [rows] = await pool.execute(`
+      SELECT 
+        id, 
+        title, 
+        content, 
+        embedding::text as embedding,
+        ts_rank(to_tsvector('english', title || ' ' || content), to_tsquery('english', $1)) as text_score
+      FROM knowledge_chunks 
+      WHERE to_tsvector('english', title || ' ' || content) @@ to_tsquery('english', $1)
+      ORDER BY text_score DESC
+      LIMIT $2
+    `, [cleanQuery, limit]);
+
+    return rows.map(r => ({
+      ...r,
+      embedding: typeof r.embedding === 'string' ? JSON.parse(r.embedding) : r.embedding,
+      score: 0, // Placeholder, will be recalculated in RRF
+      retrieval_stage: 'full_text_search',
+      source_type: 'text'
+    }));
+
+  } catch (error) {
+    console.warn('⚠️ Full-Text Search failed (likely syntax error or no match):', error.message);
+    return [];
+  }
+}
+
+/**
+ * Reciprocal Rank Fusion (RRF)
+ * Combines two ranked lists into one
+ * Score = 1 / (k + rank)
+ */
+function reciprocalRankFusion(vectorResults, textResults, k = 60) {
+  const fusedScores = new Map();
+  const chunkMap = new Map();
+
+  // Helper to process a list
+  const processList = (list, weight = 1.0) => {
+    list.forEach((chunk, index) => {
+      const id = chunk.id;
+      if (!chunkMap.has(id)) chunkMap.set(id, chunk);
+
+      const currentScore = fusedScores.get(id) || 0;
+      // RRF Formula: 1 / (k + rank)
+      const rrfScore = (1 / (k + index + 1)) * weight;
+
+      fusedScores.set(id, currentScore + rrfScore);
+    });
+  };
+
+  // Apply RRF
+  processList(vectorResults, 1.0); // Vector weight
+  processList(textResults, 1.0);   // Text weight
+
+  // Convert back to array
+  const fusedResults = [];
+  for (const [id, score] of fusedScores.entries()) {
+    const chunk = chunkMap.get(id);
+    fusedResults.push({
+      ...chunk,
+      score: score, // Update score to RRF score
+      debug_info: `RRF Score: ${score.toFixed(4)}`
+    });
+  }
+
+  // Sort by new RRF score
+  return fusedResults.sort((a, b) => b.score - a.score);
+}
+
 export default {
   multiStageRetrieval,
   semanticClustering,
   multiHopReasoning,
   fuseContext,
   adaptiveRetrieval,
-  rerankContext
+  rerankContext,
+  rerankWithCohere
 };

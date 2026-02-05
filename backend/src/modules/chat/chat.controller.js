@@ -16,6 +16,7 @@ import {
     rerankWithCohere
 } from '../../../services/advancedRAGFixed.js';
 import { callLLM } from '../../../services/llmService.js';
+import { performWebSearch } from '../../../services/webSearch.service.js';
 import { classifyIntent, INTENTS } from '../../../services/intentRouter.js';
 
 // ==================== HELPER FUNCTIONS ====================
@@ -288,6 +289,61 @@ export async function chat(req, res) {
                 reply: directReply,
                 reasoning_steps: [`Intent: GREETING (${reasoning})`, 'Action: Direct Chat (No RAG)'],
                 chunks_used: []
+            });
+        }
+
+        // Xử lý tìm kiếm web (Live Search)
+        if (intent === INTENTS.LIVE_SEARCH) {
+            console.log('🌍 Performing LIVE_SEARCH...');
+            const t0 = Date.now();
+            const searchContext = await performWebSearch(message);
+
+            const systemPrompt = `Bạn là một trợ lý cập nhật tin tức thông minh. 
+Nhiệm vụ của bạn là trả lời câu hỏi của người dùng dựa trên kết quả tìm kiếm web mới nhất được cung cấp.
+Thời gian hiện tại: ${new Date().toLocaleString('vi-VN')}
+
+Yêu cầu:
+1. Trả lời chính xác, ngắn gọn và đi thẳng vào vấn đề.
+2. NẾU kết quả tìm kiếm có chứa thông tin, HÃY DẪN NGUỒN (Link URL) ở cuối câu trả lời dạng [Title](URL).
+3. Nếu không tìm thấy thông tin, hãy thành thật nói không biết.
+4. Trình bày đẹp bằng Markdown.`;
+
+            const replyRaw = await callLLM(modelConfig, [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
+            ], 0.4, 800);
+
+            const reply = toAdvancedMarkdown(replyRaw);
+            const processTime = Date.now() - t0;
+
+            const reasoningSteps = [
+                `Intent: LIVE_SEARCH (${reasoning})`,
+                `Performed Web Search via Tavily AI`,
+                `Synthesized answer from top web results`,
+                `Processing time: ${processTime}ms`
+            ];
+
+            // Save to DB and return response (similar logic)
+            if (userId) {
+                const finalConversationId = await getOrCreateConversationId(userId, conversationId);
+                const metadata = { processing_time: processTime, model: modelConfig.name, intent: intent, source: 'web_search' };
+                await pool.execute(
+                    'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [userId, finalConversationId, null, message, reply, true, JSON.stringify(metadata)]
+                );
+                await trackUsage(userId, 'web_search', { tokens: searchContext.length });
+                return res.json({
+                    reply,
+                    conversationId: finalConversationId,
+                    chunks_used: [], // Web search doesn't use RAG chunks
+                    reasoning_steps: reasoningSteps
+                });
+            }
+
+            return res.json({
+                reply,
+                chunks_used: [],
+                reasoning_steps: reasoningSteps
             });
         }
 

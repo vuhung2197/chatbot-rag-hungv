@@ -15,9 +15,11 @@ export default function Chat({ darkMode = false }) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
+  // New state for realtime status update
+  const [loadingStatus, setLoadingStatus] = useState('Đang suy nghĩ...');
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
-  const [useAdvancedRAG, setUseAdvancedRAG] = useState(false);
+
   const [advancedResponse, setAdvancedResponse] = useState(null);
   const [showConversations, setShowConversations] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
@@ -33,7 +35,8 @@ export default function Chat({ darkMode = false }) {
         return;
       }
 
-      setAdvancedResponse(null); // Clear previous analysis when loading new conversation
+      // Clear previous analysis when loading new conversation
+      setAdvancedResponse(null);
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
@@ -57,7 +60,8 @@ export default function Chat({ darkMode = false }) {
           };
         });
 
-        setHistory(formattedHistory.reverse()); // Reverse để hiển thị từ cũ đến mới
+        // Reverse để hiển thị từ cũ đến mới
+        setHistory(formattedHistory.reverse());
       } catch (err) {
         console.error('Error loading conversation messages:', err);
       }
@@ -125,7 +129,7 @@ export default function Chat({ darkMode = false }) {
     const hash = hashQuestion(input);
     const cached = JSON.parse(localStorage.getItem('chatbot_cache') || '{}');
 
-    if (cached[hash] && !useAdvancedRAG) {
+    if (cached[hash]) {
       const cachedData = cached[hash];
       // Support old cache (string) and new cache (object)
       const reply = typeof cachedData === 'string' ? cachedData : cachedData.reply;
@@ -142,77 +146,83 @@ export default function Chat({ darkMode = false }) {
 
     const token = localStorage.getItem('token');
 
+    // Add temp user message to history immediatelly
+    const newHistory = [...history, { user: input, bot: '', createdAt: timestamp }];
+    setHistory(newHistory);
+    setInput('');
+    setLoading(true);
+    setLoadingStatus('Đang kết nối đến server...');
+
     try {
-      let res;
-      if (useAdvancedRAG) {
-        // Sử dụng Advanced RAG
-        res = await axios.post(
-          `${API_URL}/advanced-chat`,
-          { message: input, model, conversationId: currentConversationId },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        setAdvancedResponse(res.data);
-      } else {
-        // Sử dụng RAG thông thường
-        res = await axios.post(
-          `${API_URL}/chat`,
-          { message: input, model, conversationId: currentConversationId },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      }
-
-      // Cập nhật conversationId từ response nếu có
-      if (res.data.conversationId) {
-        setCurrentConversationId(res.data.conversationId);
-      }
-
-      const data = res.data;
-      setHistory([
-        ...history,
-        {
-          user: input,
-          bot: data.reply,
-          createdAt: timestamp,
-          chunks_used: data.chunks_used,
-          metadata: data.metadata
+      const response = await fetch(`${API_URL}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
-      ]);
+        body: JSON.stringify({ message: input, model, conversationId: currentConversationId })
+      });
 
-      const isNoAnswer = [
-        'Xin lỗi, tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.',
-        'Không thể tính embedding câu hỏi!',
-        'Bot đang bận, vui lòng thử lại sau!',
-        'Tôi chưa có kiến thức phù hợp để trả lời câu hỏi này.',
-      ].includes(data.reply);
+      if (!response.ok) throw new Error(response.statusText);
 
-      if (!isNoAnswer && !useAdvancedRAG) {
-        cached[hash] = {
-          reply: data.reply,
-          metadata: data.metadata,
-          chunks_used: data.chunks_used
-        };
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let botReply = '';
+      let metadata = {};
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'status') {
+                setLoadingStatus(data.content);
+              }
+              else if (data.type === 'text') {
+                botReply = data.content; // Currently replacing, later can append if LLM streams tokens
+                setHistory(prev => {
+                  const last = prev[prev.length - 1];
+                  return [...prev.slice(0, -1), { ...last, bot: botReply }];
+                });
+              }
+              else if (data.type === 'done') {
+                console.log('Stream Done:', data);
+                setAdvancedResponse(data);
+                metadata = data;
+                if (data.conversationId) {
+                  setCurrentConversationId(data.conversationId);
+                }
+              }
+              else if (data.type === 'error') {
+                botReply = "Đã xảy ra lỗi: " + data.message;
+              }
+            } catch (e) { console.error('Error parsing SSE data', e); }
+          }
+        }
+      }
+
+      // Finalize state
+      setLoading(false);
+      setLoadingStatus('Đang suy nghĩ...'); // Reset for next time
+
+      // Cache result logic (Similar to old code)
+      if (botReply && !botReply.includes('lỗi')) {
+        cached[hash] = { reply: botReply, metadata: metadata, chunks_used: metadata.chunks_used };
         localStorage.setItem('chatbot_cache', JSON.stringify(cached));
       }
 
-      setInput('');
     } catch (err) {
-      setHistory([
-        { user: input, bot: 'Lỗi khi gửi câu hỏi!', createdAt: timestamp },
-        ...history,
-      ]);
-      setInput('');
+      setHistory(prev => [...prev.slice(0, -1), { user: input, bot: 'Lỗi kết nối server!', createdAt: timestamp }]);
+      setLoading(false);
+      console.error(err);
     }
-    setLoading(false);
   }
 
 
@@ -257,22 +267,7 @@ export default function Chat({ darkMode = false }) {
               Cuộc trò chuyện
             </button>
 
-            <div className={styles.ragToggle}>
-              <div
-                className={`${styles.ragOption} ${!useAdvancedRAG ? styles.ragOptionActive : ''}`}
-                onClick={() => setUseAdvancedRAG(false)}
-                title="RAG thông thường: Nhanh cho câu hỏi đơn giản"
-              >
-                RAG
-              </div>
-              <div
-                className={`${styles.ragOption} ${useAdvancedRAG ? styles.ragOptionActive : ''}`}
-                onClick={() => setUseAdvancedRAG(true)}
-                title="Advanced RAG: Multi-chunk reasoning cho câu hỏi phức tạp"
-              >
-                Advanced
-              </div>
-            </div>
+
 
             <button
               onClick={() => setShowModelPopup(true)}
@@ -414,7 +409,7 @@ export default function Chat({ darkMode = false }) {
                   <div className={`${styles.loadingDot} ${styles.loadingDot3}`}></div>
                   <div className={styles.loadingDot}></div>
                 </div>
-                <span>Đang suy nghĩ...</span>
+                <span>{loadingStatus}</span>
               </div>
             </div>
           )}

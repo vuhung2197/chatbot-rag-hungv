@@ -23,8 +23,8 @@ export async function processRenewals() {
        JOIN user_wallets uw ON us.user_id = uw.user_id
        WHERE us.status = 'active'
          AND us.auto_renew = TRUE
-         AND us.current_period_end <= NOW() + INTERVAL 1 HOUR
-         AND us.current_period_end > NOW() - INTERVAL 1 HOUR`, // Only renew if very close to end
+         AND us.current_period_end <= NOW() + INTERVAL '1 hour'
+         AND us.current_period_end > NOW() - INTERVAL '1 hour'`, // Only renew if very close to end
         );
 
         console.log(`[SubscriptionWorker] Found ${expiringSubs.length} subscriptions to renew`);

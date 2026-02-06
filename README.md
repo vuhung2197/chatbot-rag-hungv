@@ -42,6 +42,8 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 - **Multi-Hop Reasoning**: Tìm mối liên kết giữa chunks
 - **Context Re-ranking**: Sắp xếp lại context theo độ liên quan
 - **Adaptive Retrieval**: Điều chỉnh retrieval dựa trên độ phức tạp
+- **Query Rewriting**: Tự động viết lại câu hỏi dựa trên lịch sử hội thoại để tìm kiếm chính xác hơn
+- **Streaming Response**: Phản hồi theo thời gian thực với server-sent events (SSE)
 
 ---
 
@@ -237,7 +239,8 @@ POST /auth/logout      # Đăng xuất
 
 ### **Chat**
 ```http
-POST /chat            # Gửi tin nhắn
+POST /chat/stream     # Gửi tin nhắn (Streaming + Context Aware)
+POST /chat            # Gửi tin nhắn (Legacy/Block)
 GET  /chat/history    # Lịch sử chat
 DELETE /chat/history/:id # Xóa tin nhắn
 ```

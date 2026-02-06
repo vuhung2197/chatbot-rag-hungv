@@ -241,6 +241,70 @@ async function askAdvancedChatGPT(question, context, systemPrompt, model) {
 }
 
 
+// ==================== NEW HELPER FUNCTIONS (CONTEXT) ====================
+
+/**
+ * Lấy lịch sử chat gần nhất để làm context
+ */
+async function getChatHistory(userId, conversationId, limit = 6) {
+    if (!conversationId || !userId) {
+        console.log('⚠️ getChatHistory: Missing userId or conversationId', { userId, conversationId });
+        return [];
+    }
+    try {
+        console.log(`🔍 Fetching history for User: ${userId}, Conv: ${conversationId}`);
+        const [rows] = await pool.execute(
+            `SELECT question, bot_reply FROM user_questions 
+             WHERE user_id = ? AND conversation_id = ? 
+             ORDER BY created_at DESC LIMIT ?`,
+            [userId, conversationId, limit]
+        );
+        console.log(`✅ Found ${rows.length} history items.`);
+
+        // Rows are DESC (newest first), so reverse them to get chronological order
+        const history = [];
+        for (let i = rows.length - 1; i >= 0; i--) {
+            const row = rows[i];
+            if (row.question) history.push({ role: 'user', content: row.question });
+            if (row.bot_reply) history.push({ role: 'assistant', content: row.bot_reply });
+        }
+        return history;
+    } catch (e) {
+        console.warn('⚠️ Filed to fetch history:', e.message);
+        return [];
+    }
+}
+
+/**
+ * Viết lại câu hỏi dựa trên lịch sử để search tốt hơn (Query Expansion)
+ */
+async function rewriteQuery(message, history, modelConfig) {
+    if (!history || history.length === 0) return message;
+
+    // Create a mini-history string (last 2 turns)
+    const historyText = history.slice(-4).map(h => `${h.role === 'user' ? 'User' : 'AI'}: ${h.content}`).join('\n');
+
+    const systemPrompt = `Bạn là chuyên gia về ngôn ngữ. Nhiệm vụ của bạn là viết lại câu hỏi follow-up của người dùng thành một câu hỏi độc lập (Standalone Question) đầy đủ ngữ cảnh, dựa trên lịch sử hội thoại.
+- GIỮ NGUYÊN nội dung cốt lõi của câu hỏi.
+- THAY THẾ các đại từ thay thế (nó, anh ấy, cái đó...) bằng danh từ cụ thể từ lịch sử.
+- NẾU câu hỏi đã rõ ràng, giữ nguyên.
+- CHỈ TRẢ VỀ CÂU HỎI ĐÃ VIẾT LẠI. KHÔNG trả lời câu hỏi.`;
+
+    try {
+        const rewritten = await callLLM(modelConfig, [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: `Lịch sử hội thoại:\n${historyText}\n\nCâu hỏi hiện tại: ${message}\n\nViết lại:` }
+        ], 0.3, 200);
+
+        const clean = rewritten.trim().replace(/^['"]|['"]$/g, '');
+        console.log(`📝 Query Rewrite: "${message}" -> "${clean}"`);
+        return clean;
+    } catch (e) {
+        console.error('Rewrite query failed:', e.message);
+        return message;
+    }
+}
+
 // ==================== CONTROLLER FUNCTIONS ====================
 
 /**
@@ -263,10 +327,21 @@ export async function chat(req, res) {
         : { url: 'https://api.openai.com/v1', name: 'gpt-4o-mini' }; // Default fallback
 
     try {
+        // Prepare History & Context
+        let history = [];
+        let processingMessage = message; // Message used for Processing (Intent, Search) - NOT display
+
+        if (userId && conversationId) {
+            history = await getChatHistory(userId, conversationId);
+            if (history.length > 0) {
+                processingMessage = await rewriteQuery(message, history, modelConfig);
+            }
+        }
+
         // =================================================================
         // BƯỚC 1: ROUTER - Phân loại ý định (Intent Classification)
         // =================================================================
-        const { intent, reasoning } = await classifyIntent(message, modelConfig);
+        const { intent, reasoning } = await classifyIntent(processingMessage, modelConfig);
         console.log(`🧭 Intent: ${intent} | ${reasoning}`);
 
         // Xử lý các intent không cần tra cứu kiến thức (Non-Knowledge)
@@ -282,6 +357,7 @@ export async function chat(req, res) {
             const directSystemPrompt = "Bạn là trợ lý AI thân thiện. Hãy trả lời người dùng một cách tự nhiên, lịch sự và ngắn gọn.";
             const messages = [
                 { role: 'system', content: directSystemPrompt },
+                ...history.slice(-4),
                 { role: 'user', content: message }
             ];
             const directReply = await callLLM(modelConfig, messages, 0.7, 200);
@@ -296,7 +372,7 @@ export async function chat(req, res) {
         if (intent === INTENTS.LIVE_SEARCH) {
             console.log('🌍 Performing LIVE_SEARCH...');
             const t0 = Date.now();
-            const searchContext = await performWebSearch(message);
+            const searchContext = await performWebSearch(processingMessage);
 
             const systemPrompt = `Bạn là một trợ lý cập nhật tin tức thông minh. 
 Nhiệm vụ của bạn là trả lời câu hỏi của người dùng dựa trên kết quả tìm kiếm web mới nhất được cung cấp.
@@ -310,6 +386,7 @@ Yêu cầu:
 
             const replyRaw = await callLLM(modelConfig, [
                 { role: 'system', content: systemPrompt },
+                ...history.slice(-4),
                 { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
             ], 0.4, 800);
 
@@ -353,22 +430,22 @@ Yêu cầu:
         console.log('🧠 Starting RAG Pipeline for:', message);
         const t0 = Date.now();
 
-        // 2.1 Tạo Embedding cho câu hỏi
+        // 2.1 Tạo Embedding cho câu hỏi (Dùng rewritten query)
         let questionEmbedding;
         try {
-            questionEmbedding = await getEmbedding(message);
+            questionEmbedding = await getEmbedding(processingMessage);
         } catch (error) {
             console.error('❌ Embedding Error:', error);
             return res.json({ reply: 'Lỗi hệ thống khi xử lý câu hỏi (Embedding).' });
         }
 
         // 2.2 Adaptive Retrieval Parameters (Tuỳ chọn: có thể hardcode nếu muốn đơn giản)
-        const retrievalParams = await adaptiveRetrieval(message, questionEmbedding);
+        const retrievalParams = await adaptiveRetrieval(processingMessage, questionEmbedding);
 
         // 2.3 Thực hiện tìm kiếm (Vector + Keyword + RRF Fusion)
         const rawChunks = await multiStageRetrieval(
             questionEmbedding,
-            message,
+            processingMessage,
             retrievalParams.maxChunks
         );
 
@@ -377,7 +454,7 @@ Yêu cầu:
         // =================================================================
         let finalChunks = [];
         try {
-            finalChunks = await rerankContext(rawChunks, questionEmbedding, message);
+            finalChunks = await rerankContext(rawChunks, questionEmbedding, processingMessage);
         } catch (error) {
             console.error('❌ Re-ranking Error:', error);
             finalChunks = rawChunks; // Fallback
@@ -403,7 +480,7 @@ Yêu cầu:
             try {
                 const results = await Promise.all([
                     semanticClustering(finalChunks, questionEmbedding),
-                    multiHopReasoning(finalChunks.slice(0, 5), questionEmbedding, message)
+                    multiHopReasoning(finalChunks.slice(0, 5), questionEmbedding, processingMessage)
                 ]);
                 clusters = results[0];
                 reasoningChains = results[1];
@@ -411,7 +488,7 @@ Yêu cầu:
         }
 
         // 4.2 Tạo prompt ngữ cảnh
-        const fusedContext = fuseContext(finalChunks, reasoningChains, message);
+        const fusedContext = fuseContext(finalChunks, reasoningChains, processingMessage);
 
         // =================================================================
         // BƯỚC 5: LLM GENERATION (Sinh câu trả lời)
@@ -429,6 +506,7 @@ ${fusedContext}
             // Cho phép context dài hơn cho câu hỏi phức tạp
             const replyRaw = await callLLM(modelConfig, [
                 { role: 'system', content: systemPrompt },
+                ...history.slice(-6), // Pass history (max 6 turns)
                 { role: 'user', content: message }
             ], 0.3, 1000);
 
@@ -567,5 +645,166 @@ export async function getAdvancedRAGStats(req, res) {
     } catch (err) {
         console.error('❌ Lỗi get stats:', err);
         res.status(500).json({ success: false, error: err.message });
+    }
+}
+
+/**
+ * Controller xử lý Chat với cơ chế Streaming (Server-Sent Events)
+ * Endpoint: /chat/stream
+ */
+export async function streamChat(req, res) {
+    const { message, model, conversationId } = req.body;
+    const userId = req.user?.id;
+
+    if (!message) return res.status(400).json({ error: 'No message provided' });
+
+    // Validate Model
+    const modelConfig = (model && model.url && model.name)
+        ? model
+        : { url: 'https://api.openai.com/v1', name: 'gpt-4o-mini' };
+
+    // Setup headers for SSE
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Helper to send events
+    const sendEvent = (type, data) => {
+        res.write(`data: ${JSON.stringify({ type, ...data })}\n\n`);
+    };
+
+    try {
+        // Step 1: Router
+        sendEvent('status', { content: '🧭 Đang phân tích ngữ cảnh & câu hỏi...' });
+
+        // Prepare History & Context
+        let history = [];
+        let processingMessage = message;
+        if (userId && conversationId) {
+            history = await getChatHistory(userId, conversationId);
+            if (history.length > 0) {
+                processingMessage = await rewriteQuery(message, history, modelConfig);
+            }
+        }
+
+        const { intent, reasoning } = await classifyIntent(processingMessage, modelConfig);
+        sendEvent('status', { content: `🔍 Intent detected: ${intent}` });
+
+        let reply = '';
+        let reasoningDetail = [`Intent: ${intent}`];
+        let chunksUsed = [];
+        let metadata = {};
+
+        // Case 1: Greeting
+        if (intent === INTENTS.GREETING) {
+            sendEvent('status', { content: '👋 Đang soạn câu trả lời...' });
+            const directReply = await callLLM(modelConfig, [
+                { role: 'system', content: "Bạn là trợ lý AI thân thiện. Hãy trả lời ngắn gọn." },
+                ...history.slice(-4),
+                { role: 'user', content: message }
+            ]);
+            reply = directReply;
+            sendEvent('text', { content: reply });
+        }
+
+        // Case 2: Live Search
+        else if (intent === INTENTS.LIVE_SEARCH) {
+            sendEvent('status', { content: '🌍 Đang tìm kiếm trên internet...' });
+            const searchContext = await performWebSearch(processingMessage);
+
+            sendEvent('status', { content: '📝 Đang tổng hợp thông tin...' });
+            const systemPrompt = `Bạn là trợ lý cập nhật tin tức. Trả lời dựa trên thông tin sau:\n${searchContext}`;
+
+            reply = await callLLM(modelConfig, [
+                { role: 'system', content: systemPrompt },
+                ...history.slice(-4),
+                { role: 'user', content: message }
+            ]);
+            // Note: callLLM hiện tại chưa support stream token, nên ta gửi cả chunk text
+            sendEvent('text', { content: reply });
+        }
+
+        // Case 3: Knowledge RAG (Simplified for Stream Demo)
+        else if (intent === INTENTS.KNOWLEDGE) {
+            sendEvent('status', { content: '🧠 Đang tra cứu dữ liệu nội bộ...' });
+            // Reuse existing RAG logic here if needed, or simplified version
+            const questionEmbedding = await getEmbedding(processingMessage);
+            const rawChunks = await multiStageRetrieval(questionEmbedding, processingMessage, 5);
+            chunksUsed = rawChunks.map(c => ({
+                id: c.id,
+                title: c.title,
+                content: c.content,
+                score: c.score,
+                source: c.source_type || 'vector',
+                stage: c.retrieval_stage || 'retrieval'
+            }));
+
+            if (rawChunks.length === 0) {
+                reply = "Xin lỗi, tôi không tìm thấy thông tin trong tài liệu.";
+            } else {
+                sendEvent('status', { content: '💡 Đang suy luận...' });
+                const fusedContext = fuseContext(rawChunks, [], processingMessage);
+                reply = await callLLM(modelConfig, [
+                    { role: 'system', content: "Trả lời câu hỏi dựa trên context sau:\n" + fusedContext },
+                    ...history.slice(-6),
+                    { role: 'user', content: message }
+                ]);
+            }
+            sendEvent('text', { content: reply });
+        }
+
+        // Case 4: Off Topic
+        else {
+            reply = "Xin lỗi, tôi không thể trả lời câu hỏi này.";
+            sendEvent('text', { content: reply });
+        }
+
+        // Save to DB and get Conversation ID
+        let finalConversationId = conversationId;
+        if (userId) {
+            finalConversationId = await getOrCreateConversationId(userId, conversationId);
+
+            // Determine title if new conversation
+            let conversationTitle = null;
+            if (!conversationId) { // Only check if new conversation
+                const [existingMessages] = await pool.execute(
+                    'SELECT COUNT(*) as count FROM user_questions WHERE user_id = ? AND conversation_id = ?',
+                    [userId, finalConversationId]
+                );
+                if (existingMessages[0].count === 0) {
+                    conversationTitle = message.trim().substring(0, 50);
+                }
+            }
+
+            const metadata = {
+                processing_time: 0, // Placeholder
+                model: modelConfig.name,
+                total_chunks: chunksUsed.length,
+                intent: intent,
+                source: 'stream'
+            };
+
+            await pool.execute(
+                'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [userId, finalConversationId, conversationTitle, message, reply, true, JSON.stringify(metadata)]
+            );
+
+            // Track usage
+            await trackUsage(userId, 'stream_chat', { tokens: reply.length / 4 });
+        }
+
+        // Finalize
+        sendEvent('done', {
+            reply,
+            reasoning_steps: reasoningDetail,
+            chunks_used: chunksUsed,
+            conversationId: finalConversationId
+        });
+
+    } catch (error) {
+        console.error('Stream Error:', error);
+        sendEvent('error', { message: 'Đã xảy ra lỗi trong quá trình xử lý.' });
+    } finally {
+        res.end();
     }
 }

@@ -1,7 +1,7 @@
 import express from 'express';
 // Import verifyToken from shared middleware if needed, though chat currently handles guest mode (userId optional)
 import { verifyToken } from '../../shared/middlewares/auth.middleware.js';
-import { chat, history } from './chat.controller.js';
+import { chat, history, streamChat } from './chat.controller.js';
 import { suggest } from './suggestion.controller.js';
 import { deleteHistoryItem } from './conversation.controller.js';
 
@@ -19,6 +19,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 router.post('/', optionalAuth, chat);
+router.post('/stream', optionalAuth, streamChat); // New streaming endpoint
 router.get('/history', verifyToken, history);
 router.delete('/history/:id', verifyToken, deleteHistoryItem);
 router.get('/suggest', suggest);

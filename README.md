@@ -38,9 +38,10 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 
 ### 🚀 **Advanced RAG**
 - **Multi-Stage Retrieval**: Lấy chunks theo nhiều giai đoạn
+- **Hybrid Search (RRF)**: Kết hợp Vector Search (Semantic) và Full-Text Search (Keyword)
 - **Semantic Clustering**: Nhóm chunks theo chủ đề
 - **Multi-Hop Reasoning**: Tìm mối liên kết giữa chunks
-- **Context Re-ranking**: Sắp xếp lại context theo độ liên quan
+- **Context Re-ranking**: Sắp xếp lại context theo độ liên quan (Cohere/Heuristic)
 - **Adaptive Retrieval**: Điều chỉnh retrieval dựa trên độ phức tạp
 - **Query Rewriting**: Tự động viết lại câu hỏi dựa trên lịch sử hội thoại để tìm kiếm chính xác hơn
 - **Streaming Response**: Phản hồi theo thời gian thực với server-sent events (SSE)
@@ -61,9 +62,42 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 ```
 
 ### **RAG Processing Flow**
+```mermaid
+graph TD
+    A[User Question] --> B{History?}
+    B -- Yes --> C[Query Rewriting]
+    B -- No --> D[Hybrid Search]
+    C --> D
+    D --> E[Vector Search]
+    D --> F[Full-Text Search]
+    E --> G[Reciprocal Rank Fusion]
+    F --> G
+    G --> H[Cohere Re-ranking]
+    H --> I[Multi-Hop Reasoning]
+    I --> J[Context Fusion]
+    J --> K[LLM Generation]
+    K --> L[Streaming Response]
 ```
-User Question → Embedding → Vector Search → Context → GPT → Response
-```
+
+#### **Chi Tiết Các Bước Xử Lý:**
+
+1.  **📝 Query Rewriting (Viết Lại Câu Hỏi)**
+    *   LLM phân tích lịch sử hội thoại để viết lại câu hỏi của người dùng thành một câu hoàn chỉnh, rõ nghĩa (VD: "Nó ở đâu?" -> "Trụ sở công ty ở đâu?").
+
+2.  **🔍 Hybrid Search (Tìm Kiếm Lai)**
+    *   **Vector Search**: Tìm kiếm dựa trên ngữ nghĩa (Semantic) sử dụng embedding vectors.
+    *   **Full-Text Search**: Tìm kiếm dựa trên từ khóa chính xác (Keyword Matching).
+
+3.  **⚗️ Fusion & Re-ranking**
+    *   **RRF (Reciprocal Rank Fusion)**: Thuật toán kết hợp kết quả từ Vector và Keyword search để đảm bảo không bỏ sót thông tin quan trọng.
+    *   **Cohere Re-ranking**: Sử dụng mô hình AI chuyên dụng để chấm điểm lại độ liên quan của từng đoạn thông tin (Chunk) với câu hỏi, loại bỏ tin rác.
+
+4.  **🧠 Advanced Reasoning (Suy Luận Nâng Cao)**
+    *   **Semantic Clustering**: Gom nhóm các đoạn thông tin có cùng chủ đề.
+    *   **Multi-Hop Reasoning**: Tự động tìm kiếm thêm các thông tin liên kết logic nếu câu trả lời cần tổng hợp từ nhiều nguồn (A -> B -> C).
+
+5.  **💡 Generation (Sinh Câu Trả Lời)**
+    *   Tổng hợp Context đã được làm sạch và gửi cho LLM để sinh câu trả lời tự nhiên, chính xác.
 
 ---
 

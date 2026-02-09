@@ -1,4 +1,4 @@
-import pool from '../../../../db.js';
+import pool from '#db';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';

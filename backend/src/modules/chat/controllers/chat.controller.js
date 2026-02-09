@@ -1,5 +1,5 @@
 import { StatusCodes } from 'http-status-codes';
-import '../../../../bootstrap/env.js';
+import '#bootstrap/env.js';
 import chatService from '../services/chat.service.js';
 import { getOrCreateConversationId } from './conversation.controller.js';
 

@@ -9,7 +9,7 @@ import {
 } from '../controllers/knowledge.controller.js';
 
 const router = express.Router();
-import { verifyToken, requireAdmin } from '../../../shared/middlewares/auth.middleware.js';
+import { verifyToken, requireAdmin } from '#shared/middlewares/auth.middleware.js';
 
 router.use(verifyToken, requireAdmin);
 

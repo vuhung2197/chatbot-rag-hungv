@@ -1,9 +1,9 @@
-import pool from '../../../../db.js';
+import pool from '#db';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import crypto from 'crypto';
-import { sendVerificationEmail } from '../../../../services/emailService.js';
+import { sendVerificationEmail } from '#services/emailService.js';
 
 class UserService {
     getAvatarsDir() {

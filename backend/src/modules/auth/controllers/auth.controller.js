@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { google } from 'googleapis';
-import '../../../../bootstrap/env.js';
-import { makeStateCookie, verifyStateCookie } from '../../../../helpers/cookieState.js';
+import '#bootstrap/env.js';
+import { makeStateCookie, verifyStateCookie } from '#helpers/cookieState.js';
 import authService from '../services/auth.service.js';
 
 const oauth2Client = new google.auth.OAuth2(

@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '#db';
 import { getEmbedding } from './embeddingVector.js';
 import { cosineSimilarity } from './embeddingVector.js';
 import axios from 'axios';

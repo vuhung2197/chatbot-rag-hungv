@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { verifyToken } from '../../../shared/middlewares/auth.middleware.js';
+import { verifyToken } from '#shared/middlewares/auth.middleware.js';
 import {
     getProfile,
     updateProfile,

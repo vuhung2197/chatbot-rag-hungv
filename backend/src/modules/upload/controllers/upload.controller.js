@@ -1,6 +1,6 @@
 import { StatusCodes } from 'http-status-codes';
 import uploadService from '../services/upload.service.js';
-import usageService from '../../usage/services/usage.service.js';
+import usageService from '#modules/usage/services/usage.service.js';
 
 /**
  * Xử lý upload file kiến thức và huấn luyện tự động.

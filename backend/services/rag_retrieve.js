@@ -1,4 +1,4 @@
-import pool from '../db.js';
+import pool from '#db';
 import { cachedVectorSearch, hybridVectorSearch } from './vectorDatabase.js';
 
 /**

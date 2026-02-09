@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import mammoth from 'mammoth';
-import pool from '../../../../db.js';
-import { updateChunksForKnowledge } from '../../../../services/updateChunks.js';
+import pool from '#db';
+import { updateChunksForKnowledge } from '#services/updateChunks.js';
 
 class UploadService {
     async processFile(file) {

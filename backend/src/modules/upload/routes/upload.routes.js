@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { verifyToken } from '../../../shared/middlewares/auth.middleware.js';
+import { verifyToken } from '#shared/middlewares/auth.middleware.js';
 import { uploadAndTrain } from '../controllers/upload.controller.js';
 
 const router = express.Router();

@@ -1,6 +1,6 @@
-import pool from '../../../../db.js';
-import { updateChunksForKnowledge } from '../../../../services/updateChunks.js';
-import { getEmbedding } from '../../../../services/embeddingVector.js';
+import pool from '#db';
+import { updateChunksForKnowledge } from '#services/updateChunks.js';
+import { getEmbedding } from '#services/embeddingVector.js';
 
 // Helper: Extract keywords
 function extractKeywords(text) {

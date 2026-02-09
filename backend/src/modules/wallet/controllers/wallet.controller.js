@@ -1,5 +1,5 @@
 import walletService from '../services/wallet.service.js';
-import currencyService from '../../../../services/currencyService.js';
+import currencyService from '#services/currencyService.js';
 import { CURRENCY } from '../wallet.constants.js';
 
 /**

@@ -2,7 +2,7 @@ import express from 'express';
 import { advancedChat, getAdvancedRAGStats } from '../controllers/chat.controller.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import pool from '../../../../db.js';
+import pool from '#db';
 
 const router = express.Router();
 

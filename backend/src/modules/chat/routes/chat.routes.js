@@ -1,6 +1,6 @@
 import express from 'express';
 // Import verifyToken from shared middleware if needed, though chat currently handles guest mode (userId optional)
-import { verifyToken } from '../../../shared/middlewares/auth.middleware.js';
+import { verifyToken } from '#shared/middlewares/auth.middleware.js';
 import { chat, history, streamChat } from '../controllers/chat.controller.js';
 import { suggest } from '../controllers/suggestion.controller.js';
 import { deleteHistoryItem } from '../controllers/conversation.controller.js';

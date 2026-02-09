@@ -1,5 +1,5 @@
 import express from 'express';
-import { verifyToken } from '../../../shared/middlewares/auth.middleware.js';
+import { verifyToken } from '#shared/middlewares/auth.middleware.js';
 import {
     getConversations,
     renameConversation,

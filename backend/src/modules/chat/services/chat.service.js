@@ -1,8 +1,8 @@
-import pool from '../../../../db.js';
-import { getEmbedding } from '../../../../services/embeddingVector.js';
-import { hashQuestion } from '../../../../utils/hash.js';
+import pool from '#db';
+import { getEmbedding } from '#services/embeddingVector.js';
+import { hashQuestion } from '#utils/hash.js';
 import conversationService from './conversation.service.js';
-import usageService from '../../usage/services/usage.service.js';
+import usageService from '#modules/usage/services/usage.service.js';
 import {
     multiStageRetrieval,
     semanticClustering,
@@ -10,10 +10,10 @@ import {
     fuseContext,
     adaptiveRetrieval,
     rerankContext
-} from '../../../../services/advancedRAGFixed.js';
-import { callLLM } from '../../../../services/llmService.js';
-import { performWebSearch } from '../../../../services/webSearch.service.js';
-import { classifyIntent, INTENTS } from '../../../../services/intentRouter.js';
+} from '#services/advancedRAGFixed.js';
+import { callLLM } from '#services/llmService.js';
+import { performWebSearch } from '#services/webSearch.service.js';
+import { classifyIntent, INTENTS } from '#services/intentRouter.js';
 
 // ==================== HELPER FUNCTIONS ====================
 

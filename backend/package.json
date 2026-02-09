@@ -2,6 +2,16 @@
   "name": "english-chatbot-backend",
   "version": "1.0.0",
   "main": "index.js",
+  "imports": {
+    "#services/*": "./services/*",
+    "#modules/*": "./src/modules/*",
+    "#shared/*": "./src/shared/*",
+    "#utils/*": "./utils/*",
+    "#db": "./db.js",
+    "#bootstrap/*": "./bootstrap/*",
+    "#helpers/*": "./helpers/*",
+    "#middlewares/*": "./middlewares/*"
+  },
   "scripts": {
     "start": "node index.js",
     "lint": "eslint . --fix",

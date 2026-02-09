@@ -1,7 +1,7 @@
-import pool from '../db.js';
-import { splitIntoSemanticChunks } from '../utils/chunking.js';
+import pool from '#db';
+import { splitIntoSemanticChunks } from '#utils/chunking.js';
 import { getEmbedding } from './embeddingVector.js';
-import '../bootstrap/env.js';
+import '#bootstrap/env.js';
 
 /**
  * Chạy toàn bộ quá trình:

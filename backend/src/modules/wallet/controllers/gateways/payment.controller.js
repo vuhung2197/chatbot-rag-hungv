@@ -1,4 +1,4 @@
-import pool from '../../../../../db.js';
+import pool from '#db';
 
 /**
  * Create payment intent for subscription upgrade

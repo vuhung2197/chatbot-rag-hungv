@@ -1,5 +1,5 @@
-import pool from '../../../../db.js';
-import currencyService from '../../../../services/currencyService.js';
+import pool from '#db';
+import currencyService from '#services/currencyService.js';
 import { WALLET_STATUS, TRANSACTION_TYPE, TRANSACTION_STATUS, DEFAULTS, ACTIONS } from '../wallet.constants.js';
 
 class WalletService {

@@ -1,4 +1,4 @@
-import pool from '../../../../db.js';
+import pool from '#db';
 import crypto from 'crypto';
 
 class ConversationService {

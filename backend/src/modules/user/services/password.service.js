@@ -1,7 +1,7 @@
-import pool from '../../../../db.js';
+import pool from '#db';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import { sendPasswordResetEmail } from '../../../../services/emailService.js';
+import { sendPasswordResetEmail } from '#services/emailService.js';
 
 class PasswordService {
     async changePassword(userId, currentPassword, newPassword) {

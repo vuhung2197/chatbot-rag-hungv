@@ -1,7 +1,7 @@
-import pool from '../../../../db.js';
-import currencyService from '../../../../services/currencyService.js';
-import vnpayService from '../../../../services/vnpayService.js';
-import momoService from '../../../../services/momoService.js';
+import pool from '#db';
+import currencyService from '#services/currencyService.js';
+import vnpayService from '#services/vnpayService.js';
+import momoService from '#services/momoService.js';
 
 /**
  * Get available payment methods

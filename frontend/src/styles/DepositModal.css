@@ -406,3 +406,17 @@
         padding: 1rem;
     }
 }
+/* Payment Method Logos */
+.method-icon.has-logo {
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    padding: 0;
+    overflow: hidden;
+}
+
+.method-icon.has-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}

@@ -132,7 +132,7 @@ curl -X GET http://localhost:3001/wallet \
 {
   "wallet": {
     "id": 1,
-    "balance": "100.00",  // ✅ Should be updated!
+    "balance": "100.00",
     "currency": "USD",
     "status": "active"
   }

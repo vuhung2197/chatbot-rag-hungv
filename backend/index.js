@@ -7,21 +7,21 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Import Routes
-import authRoutes from './src/modules/auth/auth.routes.js';
-import userRoutes from './src/modules/user/user.routes.js';
-import passwordRoutes from './src/modules/user/password.routes.js';
-import sessionRoutes from './src/modules/user/session.routes.js';
-import chatRoutes from './src/modules/chat/chat.routes.js';
-import advancedChatRoutes from './src/modules/chat/advancedChat.routes.js';
-import conversationRoutes from './src/modules/chat/conversation.routes.js';
-import suggestRoutes from './src/modules/chat/suggestion.routes.js';
-import unansweredRoutes from './src/modules/chat/unanswered.routes.js';
-import knowledgeRoutes from './src/modules/knowledge/knowledge.routes.js';
-import uploadRoutes from './src/modules/upload/upload.routes.js';
+import authRoutes from './src/modules/auth/routes/auth.routes.js';
+import userRoutes from './src/modules/user/routes/user.routes.js';
+import passwordRoutes from './src/modules/user/routes/password.routes.js';
+import sessionRoutes from './src/modules/user/routes/session.routes.js';
+import chatRoutes from './src/modules/chat/routes/chat.routes.js';
+import advancedChatRoutes from './src/modules/chat/routes/advancedChat.routes.js';
+import conversationRoutes from './src/modules/chat/routes/conversation.routes.js';
+import suggestRoutes from './src/modules/chat/routes/suggestion.routes.js';
+import unansweredRoutes from './src/modules/chat/routes/unanswered.routes.js';
+import knowledgeRoutes from './src/modules/knowledge/routes/knowledge.routes.js';
+import uploadRoutes from './src/modules/upload/routes/upload.routes.js';
 import walletRoutes from './src/modules/wallet/routes/wallet.routes.js';
 import paymentRoutes from './src/modules/wallet/routes/payment.routes.js';
-import subscriptionRoutes from './src/modules/subscription/subscription.routes.js';
-import usageRoutes from './src/modules/usage/usage.routes.js';
+import subscriptionRoutes from './src/modules/subscription/routes/subscription.routes.js';
+import usageRoutes from './src/modules/usage/routes/usage.routes.js';
 import subscriptionWorker from './services/subscriptionWorker.js';
 
 import errorHandler from './middlewares/errorHandler.js';

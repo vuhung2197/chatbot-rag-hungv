@@ -168,11 +168,13 @@ class UsageService {
                                 type === 'tokens' ? 'tokens_used' : null;
 
                 if (updateField) {
+                    // Round to integer for tokens_used column (INTEGER type in DB)
+                    const finalValue = type === 'tokens' ? Math.round(value) : value;
                     await pool.execute(
                         `UPDATE user_usage 
            SET ${updateField} = ${updateField} + ? 
            WHERE user_id = ? AND date = ?`,
-                        [value, userId, today]
+                        [finalValue, userId, today]
                     );
                 }
             } else {
@@ -181,7 +183,8 @@ class UsageService {
                     advanced_rag_count: type === 'advanced_rag' ? value : 0,
                     file_uploads_count: type === 'file_upload' ? value : 0,
                     file_uploads_size_mb: type === 'file_size' ? value : 0,
-                    tokens_used: type === 'tokens' ? value : 0
+                    // Round tokens to integer for DB compatibility
+                    tokens_used: type === 'tokens' ? Math.round(value) : 0
                 };
 
                 await pool.execute(

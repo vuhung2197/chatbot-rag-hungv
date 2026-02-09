@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import pool from '../../../db.js';
+import pool from '#db';
 
 /**
  * Middleware xác thực token JWT của người dùng.

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import '../bootstrap/env.js'; // Đảm bảo biến môi trường được nạp
+import '#bootstrap/env.js'; // Đảm bảo biến môi trường được nạp
 
 /**
  * Lấy embedding vector cho một đoạn văn bản sử dụng AI (ví dụ: OpenAI API).

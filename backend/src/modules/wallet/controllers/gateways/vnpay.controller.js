@@ -1,6 +1,6 @@
-import pool from '../../../../../db.js';
-import vnpayService from '../../../../../services/vnpayService.js';
-import currencyService from '../../../../../services/currencyService.js';
+import pool from '#db';
+import vnpayService from '#services/vnpayService.js';
+import currencyService from '#services/currencyService.js';
 
 /**
  * VNPay Return URL Handler

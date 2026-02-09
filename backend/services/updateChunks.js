@@ -1,7 +1,7 @@
 // services/updateChunks.js
-import { splitIntoSemanticChunks } from '../utils/chunking.js';
-import { createHash } from '../utils/hash.js';
-import pool from '../db.js';
+import { splitIntoSemanticChunks } from '#utils/chunking.js';
+import { createHash } from '#utils/hash.js';
+import pool from '#db';
 import { getEmbedding } from './embeddingVector.js';
 
 /**

@@ -151,8 +151,8 @@ english-chatbot/
 
 ### **2. Clone Repository**
 ```bash
-git clone <repository-url>
-cd english-chatbot
+git clone https://github.com/vuhung2197/chatbot-rag-hungv.git
+cd chatbot-rag-hungv
 ```
 
 ### **3. Cấu Hình Environment**

@@ -216,6 +216,27 @@ class UsageService {
             console.error('Error tracking usage:', error);
         }
     }
+
+    /**
+     * Đếm số lần Web Search hôm nay (cho rate limiting)
+     * @param {number} userId
+     * @returns {Promise<number>} Số lần web search hôm nay
+     */
+    async getWebSearchCount(userId) {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const [rows] = await pool.execute(
+                `SELECT COUNT(*) as count FROM user_questions 
+                 WHERE user_id = ? AND DATE(created_at) = ? 
+                 AND (metadata LIKE '%"source":"web_search"%' OR metadata LIKE '%"source":"kb_fallback_web"%')`,
+                [userId, today]
+            );
+            return rows[0]?.count || 0;
+        } catch (error) {
+            console.warn('⚠️ Error counting web searches:', error.message);
+            return 0; // Fail open - cho phép search nếu lỗi đếm
+        }
+    }
 }
 
 export default new UsageService();

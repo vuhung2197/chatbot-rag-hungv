@@ -461,6 +461,67 @@ export default function Chat({ darkMode = false }) {
                 )}
               </div>
 
+              {/* Web Sources Display (Gap 4) */}
+              {advancedResponse.web_sources?.length > 0 && (
+                <div className={styles.advancedRagSection}>
+                  <strong>🌐 Web Sources ({advancedResponse.source_type === 'kb_fallback_web' ? 'Fallback từ KB' : 'Tìm kiếm trực tiếp'}):</strong>
+                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {advancedResponse.web_sources.map((source, index) => (
+                      <a
+                        key={index}
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          background: 'rgba(59, 130, 246, 0.08)',
+                          borderLeft: '3px solid #3b82f6',
+                          color: '#3b82f6',
+                          textDecoration: 'none',
+                          fontSize: '13px',
+                          transition: 'background 0.2s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)'}
+                      >
+                        <span>🔗</span>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {source.title}
+                        </span>
+                        <span style={{ fontSize: '11px', opacity: 0.6 }}>↗</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Source Type Badge */}
+              {advancedResponse.source_type && (
+                <div style={{ marginTop: '6px', marginBottom: '4px' }}>
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '2px 10px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    background: advancedResponse.source_type === 'web_search' ? '#dbeafe' :
+                      advancedResponse.source_type === 'kb_fallback_web' ? '#fef3c7' :
+                        advancedResponse.source_type === 'rate_limited' ? '#fee2e2' : '#e0e7ff',
+                    color: advancedResponse.source_type === 'web_search' ? '#1d4ed8' :
+                      advancedResponse.source_type === 'kb_fallback_web' ? '#92400e' :
+                        advancedResponse.source_type === 'rate_limited' ? '#dc2626' : '#4338ca'
+                  }}>
+                    {advancedResponse.source_type === 'web_search' ? '🌐 Web Search' :
+                      advancedResponse.source_type === 'kb_fallback_web' ? '📭 KB → Web Fallback' :
+                        advancedResponse.source_type === 'rate_limited' ? '⚠️ Rate Limited' :
+                          advancedResponse.source_type === 'stream' ? '📚 Knowledge Base' : advancedResponse.source_type}
+                  </span>
+                </div>
+              )}
               {advancedResponse.metadata && (
                 <div className={styles.advancedRagMetadata}>
                   <div className={styles.advancedRagMetadataRow}>

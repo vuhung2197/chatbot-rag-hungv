@@ -1,0 +1,66 @@
+﻿PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-26T07:36:58.192Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+≡ƒöä [SubscriptionWorker] Starting renewal process...
+≡ƒÜÇ [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+docker : Error getting reading passages: 
+TypeError: Cannot read properties of 
+undefined (reading '0')
+At line:1 char:1
++ docker logs chatbot-backend --tail 30 
+2>&1 | Out-File -Encoding utf8  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: 
+    (Error getting r...d (reading '0'):Str  
+  ing) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommand 
+   Error
+ 
+    at Object.getPassages (file:///app/src/m
+odules/reading/repositories/reading.reposito
+ry.js:34:45)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:95:5)
+    at async Object.getPassages (file:///app
+/src/modules/reading/services/reading.servic
+e.js:10:37)
+    at async getPassages (file:///app/src/mo
+dules/reading/controllers/reading.controller
+.js:9:26)
+Error getting reading passages: TypeError: 
+Cannot read properties of undefined 
+(reading '0')
+    at Object.getPassages (file:///app/src/m
+odules/reading/repositories/reading.reposito
+ry.js:34:45)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:95:5)
+    at async Object.getPassages (file:///app
+/src/modules/reading/services/reading.servic
+e.js:10:37)
+≡ƒöù Calling LLM: {
+    at async getPassages (file:///app/src/mo
+dules/reading/controllers/reading.controller
+.js:9:26)
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.8,
+  max_tokens: 2000,
+  messages_count: 2
+}
+Error generating passage: TypeError: Cannot 
+read properties of undefined (reading '0')
+Γ£à LLM response received successfully
+    at Object.createPassage (file:///app/src
+/modules/reading/repositories/reading.reposi
+tory.js:53:20)
+    at process.processTicksAndRejections 
+(node:internal/process/task_queues:95:5)
+    at async Object.generatePassage (file://
+/app/src/modules/reading/services/reading.se
+rvice.js:28:25)
+    at async generatePassage (file:///app/sr
+c/modules/reading/controllers/reading.contro
+ller.js:40:29)

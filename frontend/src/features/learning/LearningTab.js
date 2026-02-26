@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { learningService } from './learningService';
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -17,6 +17,24 @@ export default function LearningTab({ darkMode }) {
     const [score, setScore] = useState(0);
     const [quizAnswers, setQuizAnswers] = useState([]);
 
+    // Nâng cấp: Lấy curriculum (giáo trình)
+    const [curriculum, setCurriculum] = useState(null);
+    const [loadingCurriculum, setLoadingCurriculum] = useState(true);
+
+    useEffect(() => {
+        const fetchCurriculum = async () => {
+            try {
+                const data = await learningService.getCurriculum();
+                setCurriculum(data);
+            } catch (error) {
+                console.error("Failed to load curriculum", error);
+            } finally {
+                setLoadingCurriculum(false);
+            }
+        };
+        fetchCurriculum();
+    }, []);
+
     const themeVars = darkMode ? {
         '--card-bg': '#1e293b', '--border-color': '#334155',
         '--text-primary': '#f8fafc', '--text-secondary': '#cbd5e1'
@@ -31,10 +49,10 @@ export default function LearningTab({ darkMode }) {
         borderRadius: '16px', color: 'var(--text-primary)', ...themeVars
     };
 
-    const startLesson = async () => {
+    const startLesson = async (topicTitle) => {
         setView('loading');
         try {
-            const data = await learningService.getLesson(category, level);
+            const data = await learningService.getLesson(category, level, topicTitle);
             setLessonData(data.lesson);
             setView('lesson');
         } catch (error) {
@@ -115,10 +133,34 @@ export default function LearningTab({ darkMode }) {
                         </div>
                     </div>
 
-                    <button onClick={startLesson} style={{ width: '100%', padding: '16px', background: '#ec4899', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                        ✨ Xin AI Giáo Trình Nhỏ
-                    </button>
-                    <p style={{ textAlign: 'center', marginTop: '16px', color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>Lưu ý: Bạn học xong sẽ được đưa thẳng vào Sổ Tay Kiến Thức để luyện tập lâu dài.</p>
+                    {loadingCurriculum ? (
+                        <div style={{ textAlign: 'center', padding: '20px' }}>Đang tải giáo trình...</div>
+                    ) : (
+                        <div>
+                            <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Chương trình học {CATEGORIES.find(c => c.id === category)?.name} ({level})</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {curriculum && curriculum[category] && curriculum[category][level] ? (
+                                    curriculum[category][level].map((lesson, index) => (
+                                        <div key={lesson.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', background: darkMode ? '#1e293b' : '#f8fafc', border: '1px solid var(--border-color)', borderRadius: '12px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#7137ea', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                                                    {index + 1}
+                                                </div>
+                                                <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{lesson.title}</span>
+                                            </div>
+                                            <button onClick={() => startLesson(lesson.title)} style={{ padding: '8px 16px', background: '#ec4899', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+                                                ✨ Học ngay
+                                            </button>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', textAlign: 'center' }}>Chưa có giáo trình cho phần này.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <p style={{ textAlign: 'center', marginTop: '24px', color: 'var(--text-secondary)', fontStyle: 'italic', fontSize: '0.9rem' }}>Lưu ý: Bạn học xong sẽ được đưa thẳng vào Sổ Tay Kiến Thức để luyện tập lâu dài.</p>
                 </>
             )}
 

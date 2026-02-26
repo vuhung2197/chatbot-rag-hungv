@@ -3,10 +3,10 @@ import learningRepository from '../repositories/learning.repository.js';
 
 export const learningService = {
     // 1. Lấy bài giảng từ AI
-    async getMiniLesson(category, level) {
+    async getMiniLesson(category, level, topicTitle) {
         // Có thể lưu cache vào Redis hoặc cất DB để tái sử dụng, nhưng vì tên gọi 'Bite-sized AI Lessons', ta sẽ sinh ngẫu nhiên mỗi lần cho phong phú.
         // Trừ khi User chọn "lịch sử", ở đây MVP ta sinh real-time.
-        const lessonPlan = await learningAiService.generateLesson(category, level);
+        const lessonPlan = await learningAiService.generateLesson(category, level, topicTitle);
         return lessonPlan;
     },
 

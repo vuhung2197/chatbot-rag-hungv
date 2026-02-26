@@ -1,15 +1,26 @@
 import learningService from '../services/learning.service.js';
+import { LEARNING_CURRICULUM } from '../data/curriculum.data.js';
 
 export const learningController = {
+    // [GET] /api/learning/curriculum
+    async getCurriculum(req, res) {
+        try {
+            return res.json({ curriculum: LEARNING_CURRICULUM });
+        } catch (error) {
+            console.error('Lỗi [GET] /learning/curriculum:', error);
+            res.status(500).json({ error: error.message });
+        }
+    },
+
     // [GET] /api/learning/lesson?category=grammar&level=B1
     async generateLesson(req, res) {
         try {
-            const { category, level } = req.query;
-            if (!category || !level) {
-                return res.status(400).json({ error: 'Missing category or level' });
+            const { category, level, topicTitle } = req.query;
+            if (!category || !level || !topicTitle) {
+                return res.status(400).json({ error: 'Missing category or level or topicTitle' });
             }
 
-            const lessonPlan = await learningService.getMiniLesson(category, level);
+            const lessonPlan = await learningService.getMiniLesson(category, level, topicTitle);
             return res.json({ lesson: lessonPlan });
         } catch (error) {
             console.error('Lỗi [GET] /learning/lesson:', error);

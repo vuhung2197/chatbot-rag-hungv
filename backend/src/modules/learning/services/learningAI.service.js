@@ -1,22 +1,20 @@
 import { callLLM } from '#services/llmService.js';
 
 export const learningAiService = {
-    async generateLesson(category, level) {
-        const categoryNames = {
-            'grammar': 'Ngữ pháp',
-            'pattern': 'Mẫu câu giao tiếp',
-            'pronunciation': 'Phát âm'
-        };
+  async generateLesson(category, level, topicTitle) {
+    const categoryNames = {
+      'grammar': 'Ngữ pháp',
+      'pattern': 'Mẫu câu giao tiếp',
+      'pronunciation': 'Phát âm'
+    };
 
-        const systemPrompt = `You are a lively, expert English teacher creating a 3-minute bite-sized micro-lesson for a Vietnamese learner.
+    const systemPrompt = `You are a lively, expert English teacher creating a 3-minute bite-sized micro-lesson for a Vietnamese learner.
 Category: ${categoryNames[category]}
 Student Level: ${level} (CEFR)
+Topic to Teach: "${topicTitle}"
 
 Task:
-1. Choose a highly practical, specific topic suitable for this level and category. Don't be too broad.
-   - If grammar: focus on one tense, preposition rule, or sentence structure.
-   - If pattern: focus on one useful speaking idiom or sentence starter (e.g., "I was wondering if...", "No matter how...").
-   - If pronunciation: focus on a challenging sound pair (e.g., /ɪ/ vs /i:/, or word stress rules).
+1. Create a highly practical, focused lesson specifically on the topic: "${topicTitle}". Do not deviate to other subjects.
 2. Write a short theory section in Vietnamese (clear, engaging, easy to understand).
 3. Provide 3 clear examples with English and Vietnamese translation.
 4. Create a 3-question multiple-choice quiz to test understanding.
@@ -47,26 +45,26 @@ Return ONLY a perfectly valid JSON object matching this structure:
 
 Important: Return JUST the JSON, no markdown formatting (\`\`\`json).`;
 
-        const modelConfig = {
-            name: 'gpt-4o-mini',
-            url: 'https://api.openai.com/v1',
-            temperature: 0.7,
-            maxTokens: 1500
-        };
+    const modelConfig = {
+      name: 'gpt-4o-mini',
+      url: 'https://api.openai.com/v1',
+      temperature: 0.7,
+      maxTokens: 1500
+    };
 
-        try {
-            const rawResponse = await callLLM(modelConfig, [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: 'Generate lesson now.' }
-            ]);
+    try {
+      const rawResponse = await callLLM(modelConfig, [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Generate lesson now.' }
+      ]);
 
-            const cleanJson = rawResponse.replace(/```json\n?|```/g, '').trim();
-            return JSON.parse(cleanJson);
-        } catch (error) {
-            console.error('Learning AI Service Error:', error);
-            throw new Error('Could not generate lesson at this time. Please try again.');
-        }
+      const cleanJson = rawResponse.replace(/```json\n?|```/g, '').trim();
+      return JSON.parse(cleanJson);
+    } catch (error) {
+      console.error('Learning AI Service Error:', error);
+      throw new Error('Could not generate lesson at this time. Please try again.');
     }
+  }
 };
 
 export default learningAiService;

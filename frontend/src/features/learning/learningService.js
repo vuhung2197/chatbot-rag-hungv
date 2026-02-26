@@ -9,8 +9,13 @@ const getConfig = () => ({
 });
 
 export const learningService = {
-    getLesson: async (category, level) => {
-        const response = await axios.get(`${API_URL}/learning/lesson?category=${category}&level=${level}`, getConfig());
+    getCurriculum: async () => {
+        const response = await axios.get(`${API_URL}/learning/curriculum`, getConfig());
+        return response.data.curriculum;
+    },
+
+    getLesson: async (category, level, topicTitle) => {
+        const response = await axios.get(`${API_URL}/learning/lesson?category=${category}&level=${level}&topicTitle=${encodeURIComponent(topicTitle)}`, getConfig());
         return response.data;
     },
 

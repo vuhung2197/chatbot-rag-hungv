@@ -7,6 +7,9 @@ const router = express.Router();
 // Middleware auth chung
 router.use(verifyToken);
 
+// [GET] /api/learning/curriculum
+router.get('/curriculum', learningController.getCurriculum);
+
 // [GET] /api/learning/lesson
 router.get('/lesson', learningController.generateLesson);
 

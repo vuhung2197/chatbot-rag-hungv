@@ -22,6 +22,11 @@ import walletRoutes from '#modules/wallet/routes/wallet.routes.js';
 import paymentRoutes from '#modules/wallet/routes/payment.routes.js';
 import subscriptionRoutes from '#modules/subscription/routes/subscription.routes.js';
 import usageRoutes from '#modules/usage/routes/usage.routes.js';
+import writingRoutes from '#modules/writing/routes/writing.routes.js';
+import listeningRoutes from '#modules/listening/routes/listening.routes.js';
+import readingRoutes from '#modules/reading/routes/reading.routes.js';
+import speakingRoutes from '#modules/speaking/routes/speaking.routes.js';
+import learningRoutes from '#modules/learning/routes/learning.routes.js';
 import subscriptionWorker from '#services/subscriptionWorker.js';
 
 import errorHandler from '#middlewares/errorHandler.js';
@@ -63,7 +68,11 @@ app.use('/wallet', walletRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/subscription', subscriptionRoutes);
 app.use('/usage', usageRoutes);
-
+app.use('/writing', writingRoutes);
+app.use('/listening', listeningRoutes);
+app.use('/reading', readingRoutes);
+app.use('/speaking', speakingRoutes);
+app.use('/learning', learningRoutes);
 
 
 app.context = app; // For rare cases passing app context

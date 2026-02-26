@@ -2,6 +2,16 @@
   "name": "english-chatbot-backend",
   "version": "1.0.0",
   "main": "index.js",
+  "imports": {
+    "#services/*": "./services/*",
+    "#modules/*": "./src/modules/*",
+    "#shared/*": "./src/shared/*",
+    "#utils/*": "./utils/*",
+    "#db": "./db.js",
+    "#bootstrap/*": "./bootstrap/*",
+    "#helpers/*": "./helpers/*",
+    "#middlewares/*": "./middlewares/*"
+  },
   "scripts": {
     "start": "node index.js",
     "lint": "eslint . --fix",
@@ -31,7 +41,7 @@
     "markitdown": "^0.0.4",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.45",
-    "multer": "^2.0.1",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.10",
     "openai": "^4.104.0",
     "pdf-parse": "^1.1.1",

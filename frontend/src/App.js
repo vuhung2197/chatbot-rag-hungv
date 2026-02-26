@@ -3,6 +3,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Chat from './features/chat/Chat';
 import KnowledgeAdmin from './features/knowledge/KnowledgeAdmin';
+import WritingTab from './features/writing/WritingTab';
+import ListeningTab from './features/listening/ListeningTab';
+import ReadingTab from './features/reading/ReadingTab';
+import SpeakingTab from './features/speaking/SpeakingTab';
+import LearningTab from './features/learning/LearningTab';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
 import UsageCounter from './features/user/UsageCounter';
@@ -334,9 +339,75 @@ export default function App() {
             border: '1px solid #7137ea',
             borderRadius: 8,
             padding: '8px 16px',
+            cursor: 'pointer'
           }}
         >
           Knowledge Search
+        </button>
+        <button
+          onClick={() => setView('writing')}
+          style={{
+            background: view === 'writing' ? '#7137ea' : '#f6f9fc',
+            color: view === 'writing' ? '#fff' : '#333',
+            border: '1px solid #7137ea',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          ✍️ Writing Practice
+        </button>
+        <button
+          onClick={() => setView('listening')}
+          style={{
+            background: view === 'listening' ? '#7137ea' : '#f6f9fc',
+            color: view === 'listening' ? '#fff' : '#333',
+            border: '1px solid #7137ea',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          🎧 Listening Practice
+        </button>
+        <button
+          onClick={() => setView('reading')}
+          style={{
+            background: view === 'reading' ? '#7137ea' : '#f6f9fc',
+            color: view === 'reading' ? '#fff' : '#333',
+            border: '1px solid #7137ea',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          📖 Reading Practice
+        </button>
+        <button
+          onClick={() => setView('speaking')}
+          style={{
+            background: view === 'speaking' ? '#ec4899' : '#f6f9fc',
+            color: view === 'speaking' ? '#fff' : '#333',
+            border: '1px solid #ec4899',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          🎙️ Speaking Practice
+        </button>
+        <button
+          onClick={() => setView('learning')}
+          style={{
+            background: view === 'learning' ? '#ec4899' : '#f6f9fc',
+            color: view === 'learning' ? '#fff' : '#333',
+            border: '1px solid #ec4899',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          🎓 Learning Hub
         </button>
         {role === 'admin' && (
           <button
@@ -390,7 +461,11 @@ export default function App() {
         <>
           {view === 'chat' && <Chat darkMode={darkMode} />}
           {view === 'knowledgeadmin' && role === 'admin' && <KnowledgeAdmin darkMode={darkMode} />}
-
+          {view === 'writing' && <WritingTab darkMode={darkMode} />}
+          {view === 'listening' && <ListeningTab darkMode={darkMode} />}
+          {view === 'reading' && <ReadingTab darkMode={darkMode} />}
+          {view === 'speaking' && <SpeakingTab darkMode={darkMode} />}
+          {view === 'learning' && <LearningTab darkMode={darkMode} />}
         </>
       )}
     </>

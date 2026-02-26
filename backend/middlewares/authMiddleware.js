@@ -1,1 +1,1 @@
-export { verifyToken, requireAdmin } from '../src/shared/middlewares/auth.middleware.js';
+export { verifyToken, requireAdmin } from '#shared/middlewares/auth.middleware.js';

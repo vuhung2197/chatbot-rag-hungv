@@ -1,0 +1,50 @@
+    at Layer.handle [as handle_request] (/app/node_modules/express/lib/router/layer.js:95:5)
+    at next (/app/node_modules/express/lib/router/route.js:149:13)
+    at verifyToken (file:///app/src/shared/middlewares/auth.middleware.js:57:9)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+Error generating passage: Error: AI failed to generate reading passage: Invalid model configuration: missing url or name
+    at Object.generatePassage (file:///app/src/modules/reading/services/readingAI.service.js:59:19)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.generatePassage (file:///app/src/modules/reading/services/reading.service.js:25:22)
+    at async generatePassage (file:///app/src/modules/reading/controllers/reading.controller.js:40:29)
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-26T07_34_21_899Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-26T07:36:58.192Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+Error getting reading passages: TypeError: Cannot read properties of undefined (reading '0')
+    at Object.getPassages (file:///app/src/modules/reading/repositories/reading.repository.js:34:45)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.getPassages (file:///app/src/modules/reading/services/reading.service.js:10:37)
+    at async getPassages (file:///app/src/modules/reading/controllers/reading.controller.js:9:26)
+Error getting reading passages: TypeError: Cannot read properties of undefined (reading '0')
+    at Object.getPassages (file:///app/src/modules/reading/repositories/reading.repository.js:34:45)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.getPassages (file:///app/src/modules/reading/services/reading.service.js:10:37)
+    at async getPassages (file:///app/src/modules/reading/controllers/reading.controller.js:9:26)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.8,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+Error generating passage: TypeError: Cannot read properties of undefined (reading '0')
+    at Object.createPassage (file:///app/src/modules/reading/repositories/reading.repository.js:53:20)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.generatePassage (file:///app/src/modules/reading/services/reading.service.js:28:25)
+    at async generatePassage (file:///app/src/modules/reading/controllers/reading.controller.js:40:29)

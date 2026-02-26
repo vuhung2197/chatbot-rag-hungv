@@ -1,5 +1,5 @@
 // Vector Database Service - Tối ưu cho large-scale vector search
-import pool from '../db.js';
+import pool from '#db';
 
 /**
  * Vector Database Service với các tối ưu hóa:

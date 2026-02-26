@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import '../bootstrap/env.js';
+import '#bootstrap/env.js';
 
 /**
  * Email Service using Nodemailer
@@ -53,10 +53,10 @@ function getTransporter() {
  */
 export async function sendVerificationEmail(email, token) {
   const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
-  
+
   // Format token for better readability (split into groups of 8 characters)
   const formattedToken = token.match(/.{1,8}/g)?.join('-') || token;
-  
+
   const mailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || 'English Chatbot'}" <${process.env.EMAIL_USER}>`,
     to: email,
@@ -138,7 +138,7 @@ ${verificationUrl}
 
   try {
     const emailTransporter = getTransporter();
-    
+
     if (!emailTransporter) {
       // Fallback: Log to console in development
       console.log('📧 [Email Service Not Configured] Verification email would be sent:');
@@ -153,14 +153,14 @@ ${verificationUrl}
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Error sending email:', error);
-    
+
     // Fallback: Log to console
     console.log('📧 [Email Send Failed] Verification URL:');
     console.log(`   To: ${email}`);
     console.log(`   URL: ${verificationUrl}`);
-    
-    return { 
-      success: false, 
+
+    return {
+      success: false,
       error: error.message,
       verificationUrl // Return URL as fallback
     };
@@ -172,7 +172,7 @@ ${verificationUrl}
  */
 export async function sendPasswordResetEmail(email, token) {
   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-  
+
   const mailOptions = {
     from: `"${process.env.EMAIL_FROM_NAME || 'English Chatbot'}" <${process.env.EMAIL_USER}>`,
     to: email,
@@ -213,7 +213,7 @@ Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua emai
 
   try {
     const emailTransporter = getTransporter();
-    
+
     if (!emailTransporter) {
       console.log('📧 [Email Service Not Configured] Password reset email would be sent:');
       console.log(`   To: ${email}`);
@@ -235,7 +235,7 @@ Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua emai
  */
 export async function testEmailConfig() {
   const emailTransporter = getTransporter();
-  
+
   if (!emailTransporter) {
     return { success: false, message: 'Email service not configured' };
   }

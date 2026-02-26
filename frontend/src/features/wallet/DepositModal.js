@@ -111,6 +111,33 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
         ? [50000, 100000, 200000, 500000, 1000000]
         : [10, 20, 50, 100, 200];
 
+    // Helper to render payment icons
+    const getPaymentMethodIcon = (methodName) => {
+        const name = methodName.toLowerCase();
+
+        // Official Logos
+        const logos = {
+            vnpay: "https://sandbox.vnpayment.vn/paymentv2/images/logo-vnpay.png",
+            momo: "https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png",
+            zalopay: "https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png"
+        };
+
+        if (logos[name]) {
+            return <img src={logos[name]} alt={methodName} />;
+        }
+
+        // FontAwesome Icons
+        if (name === 'stripe') return <i className="fab fa-stripe fa-lg"></i>;
+        if (name === 'paypal') return <i className="fab fa-paypal fa-lg"></i>;
+        if (name.includes('bank')) return <i className="fas fa-university"></i>;
+
+        return <i className="fas fa-credit-card"></i>;
+    };
+
+    const isLogo = (methodName) => {
+        return ['vnpay', 'momo', 'zalopay'].includes(methodName.toLowerCase());
+    };
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="deposit-modal" onClick={(e) => e.stopPropagation()}>
@@ -198,10 +225,8 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
                                             disabled={loading}
                                         />
                                         <div className="method-content">
-                                            <div className="method-icon">
-                                                {method.name === 'vnpay' && <i className="fas fa-credit-card"></i>}
-                                                {method.name === 'momo' && <i className="fas fa-mobile-alt"></i>}
-                                                {method.name === 'stripe' && <i className="fab fa-stripe"></i>}
+                                            <div className={`method-icon ${isLogo(method.name) ? 'has-logo' : ''}`}>
+                                                {getPaymentMethodIcon(method.name)}
                                             </div>
                                             <div className="method-info">
                                                 <span className="method-name">{method.display_name}</span>
@@ -209,6 +234,7 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
                                                     {method.name === 'vnpay' && 'ATM, Visa, MasterCard'}
                                                     {method.name === 'momo' && 'MoMo Wallet'}
                                                     {method.name === 'stripe' && 'Credit/Debit Card'}
+                                                    {method.name === 'zalopay' && 'ZaloPay Wallet'}
                                                 </span>
                                             </div>
                                             <i className="fas fa-check-circle check-icon"></i>

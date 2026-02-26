@@ -1,5 +1,5 @@
-import pool from '../../../../db.js';
-import currencyService from '../../../../services/currencyService.js';
+import pool from '#db';
+import currencyService from '#services/currencyService.js';
 
 // ============================================
 // BANK ACCOUNT MANAGEMENT

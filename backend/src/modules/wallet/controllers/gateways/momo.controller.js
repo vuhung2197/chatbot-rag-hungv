@@ -1,6 +1,6 @@
-import pool from '../../../../../db.js';
-import momoService from '../../../../../services/momoService.js';
-import currencyService from '../../../../../services/currencyService.js';
+import pool from '#db';
+import momoService from '#services/momoService.js';
+import currencyService from '#services/currencyService.js';
 
 /**
  * MoMo Return URL Handler

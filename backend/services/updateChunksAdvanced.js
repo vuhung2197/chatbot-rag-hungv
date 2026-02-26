@@ -1,6 +1,6 @@
-import { academicChunking, caseStudyChunking } from '../utils/advancedChunking.js';
-import { createHash } from '../utils/hash.js';
-import pool from '../db.js';
+import { academicChunking, caseStudyChunking } from '#utils/advancedChunking.js';
+import { createHash } from '#utils/hash.js';
+import pool from '#db';
 import { getEmbedding } from './embeddingVector.js';
 
 /**
@@ -12,7 +12,7 @@ import { getEmbedding } from './embeddingVector.js';
  */
 export async function updateChunksAdvanced(id, title, content, chunkingType = 'auto') {
   console.log(`🔄 Updating chunks for knowledge ${id} with ${chunkingType} chunking...`);
-  
+
   // Chọn thuật toán chunking
   let chunks;
   switch (chunkingType) {
@@ -25,9 +25,9 @@ export async function updateChunksAdvanced(id, title, content, chunkingType = 'a
     case 'auto':
     default:
       // Tự động chọn dựa trên nội dung
-      if (content.toLowerCase().includes('case study') || 
-          content.toLowerCase().includes('ví dụ') ||
-          content.toLowerCase().includes('ứng dụng')) {
+      if (content.toLowerCase().includes('case study') ||
+        content.toLowerCase().includes('ví dụ') ||
+        content.toLowerCase().includes('ứng dụng')) {
         chunks = caseStudyChunking(content);
         console.log('📚 Detected case study content, using case study chunking');
       } else {
@@ -46,13 +46,13 @@ export async function updateChunksAdvanced(id, title, content, chunkingType = 'a
   for (const chunk of chunks) {
     try {
       const hash = createHash(chunk.content);
-      
+
       // Kiểm tra nếu đã tồn tại chunk này
       const [exists] = await pool.execute(
         'SELECT id FROM knowledge_chunks WHERE hash = ? LIMIT 1',
         [hash]
       );
-      
+
       if (exists.length > 0) {
         skippedChunks++;
         console.log(`⏭️  Skipped existing chunk (${chunk.metadata.wordCount} words)`);
@@ -61,7 +61,7 @@ export async function updateChunksAdvanced(id, title, content, chunkingType = 'a
 
       // Tạo embedding
       const embedding = await getEmbedding(chunk.content);
-      
+
       // Lưu chunk với metadata
       await pool.execute(
         `INSERT INTO knowledge_chunks 
@@ -72,7 +72,7 @@ export async function updateChunksAdvanced(id, title, content, chunkingType = 'a
 
       processedChunks++;
       console.log(`✅ Processed chunk ${processedChunks}/${chunks.length} (${chunk.metadata.wordCount} words, ${chunk.metadata.boundary} boundary)`);
-      
+
     } catch (error) {
       errorChunks++;
       console.error(`❌ Error processing chunk:`, error.message);
@@ -98,7 +98,7 @@ export async function updateChunksAdvanced(id, title, content, chunkingType = 'a
  */
 export async function reChunkAllKnowledge() {
   console.log('🚀 Starting re-chunking of all knowledge with advanced algorithm...');
-  
+
   try {
     // Lấy tất cả knowledge base
     const [rows] = await pool.execute(
@@ -119,14 +119,14 @@ export async function reChunkAllKnowledge() {
     for (const row of rows) {
       try {
         console.log(`\n📝 Processing: ${row.title}`);
-        
+
         // Xóa chunks cũ
         await pool.execute('DELETE FROM knowledge_chunks WHERE parent_id = ?', [row.id]);
         console.log(`🗑️  Deleted old chunks for knowledge ${row.id}`);
 
         // Tạo chunks mới
         const result = await updateChunksAdvanced(row.id, row.title, row.content, 'auto');
-        
+
         totalProcessed += result.processed;
         totalSkipped += result.skipped;
         totalErrors += result.errors;
@@ -153,7 +153,7 @@ export async function reChunkAllKnowledge() {
  */
 export async function compareChunkingMethods(knowledgeId) {
   console.log(`🔍 Comparing chunking methods for knowledge ${knowledgeId}...`);
-  
+
   try {
     // Lấy knowledge content
     const [rows] = await pool.execute(
@@ -166,31 +166,31 @@ export async function compareChunkingMethods(knowledgeId) {
     }
 
     const { title, content } = rows[0];
-    
+
     // Test thuật toán cũ
     const { splitIntoSemanticChunks } = await import('../utils/chunking.js');
     const oldChunks = splitIntoSemanticChunks(content, 100);
-    
+
     // Test thuật toán mới
     const newChunks = academicChunking(content);
-    
+
     console.log(`\n📊 Results for "${title}":`);
     console.log(`   - Old method: ${oldChunks.length} chunks`);
     console.log(`   - New method: ${newChunks.length} chunks`);
-    
+
     const oldAvgWords = oldChunks.reduce((sum, chunk) => sum + chunk.split(/\s+/).length, 0) / oldChunks.length;
     const newAvgWords = newChunks.reduce((sum, chunk) => sum + chunk.metadata.wordCount, 0) / newChunks.length;
-    
+
     console.log(`   - Old avg words: ${oldAvgWords.toFixed(1)}`);
     console.log(`   - New avg words: ${newAvgWords.toFixed(1)}`);
-    
-    const oldComplete = oldChunks.filter(chunk => 
+
+    const oldComplete = oldChunks.filter(chunk =>
       chunk.endsWith('.') || chunk.endsWith('!') || chunk.endsWith('?')
     ).length;
     const newComplete = newChunks.filter(chunk => chunk.metadata.isComplete).length;
-    
-    console.log(`   - Old complete: ${oldComplete}/${oldChunks.length} (${(oldComplete/oldChunks.length*100).toFixed(1)}%)`);
-    console.log(`   - New complete: ${newComplete}/${newChunks.length} (${(newComplete/newChunks.length*100).toFixed(1)}%)`);
+
+    console.log(`   - Old complete: ${oldComplete}/${oldChunks.length} (${(oldComplete / oldChunks.length * 100).toFixed(1)}%)`);
+    console.log(`   - New complete: ${newComplete}/${newChunks.length} (${(newComplete / newChunks.length * 100).toFixed(1)}%)`);
 
     return {
       old: {

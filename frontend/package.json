@@ -9,6 +9,7 @@
     "dotenv": "^16.5.0",
     "lucide-react": "^0.563.0",
     "react": "^18.2.0",
+    "react-confetti": "^6.4.0",
     "react-dom": "^18.2.0",
     "react-easy-crop": "^5.5.3",
     "react-icons": "^5.5.0",

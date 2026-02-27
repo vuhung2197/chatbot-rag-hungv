@@ -27,7 +27,7 @@ export async function addBankAccount(req, res) {
             `INSERT INTO bank_accounts 
             (user_id, bank_code, bank_name, account_number, account_holder_name, branch_name, status)
             VALUES (?, ?, ?, ?, ?, ?, 'active') RETURNING id`,
-            [userId, bank_code, bank_name, account_number, account_holder_name, branch_name]
+            [userId, bank_code, bank_name, account_number, account_holder_name, branch_name || null]
         );
 
         res.json({
@@ -94,19 +94,33 @@ export async function deleteBankAccount(req, res) {
 
 export async function calculateWithdrawalFee(req, res) {
     try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
         const amount = parseFloat(req.body.amount);
         if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
 
-        const fee = 0.5; // Default USD fee
+        // Fetch wallet currency to calculate fee properly
+        const [wallets] = await pool.execute('SELECT currency FROM user_wallets WHERE user_id = ?', [userId]);
+        if (wallets.length === 0) return res.status(404).json({ message: 'Wallet not found' });
+
+        const currency = wallets[0].currency;
+
+        // Default USD fee is $0.5
+        let fee = 0.5;
+        if (currency !== 'USD') {
+            fee = currencyService.convertCurrency(0.5, 'USD', currency);
+        }
+
         const netAmount = amount - fee;
 
-        if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small to withdraw' });
+        if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small to withdraw. Must be greater than fee.' });
 
         res.json({
             amount,
             fee,
             net_amount: netAmount,
-            currency: 'USD'
+            currency: currency
         });
     } catch (error) {
         console.error('❌ Error calculating fee:', error);
@@ -120,13 +134,8 @@ export async function withdraw(req, res) {
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
         const { bank_account_id, amount } = req.body;
-        // Amount is expected to be in USD as per calculateWithdrawalFee contract
 
         if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
-
-        const fee = 0.5;
-        const netAmount = amount - fee;
-        if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small' });
 
         const connection = await pool.getConnection();
         await connection.beginTransaction();
@@ -140,12 +149,16 @@ export async function withdraw(req, res) {
             if (wallets.length === 0) throw new Error('Wallet not found');
             const wallet = wallets[0];
 
-            let amountToDeduct = parseFloat(amount);
-
-            // Fix: Convert amount to wallet currency if needed
+            // Default USD fee is $0.5
+            let fee = 0.5;
             if (wallet.currency !== 'USD') {
-                amountToDeduct = currencyService.convertCurrency(parseFloat(amount), 'USD', wallet.currency);
+                fee = currencyService.convertCurrency(0.5, 'USD', wallet.currency);
             }
+
+            const netAmount = amount - fee;
+            if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small. Must be greater than fee.' });
+
+            let amountToDeduct = parseFloat(amount); // Amount is already in wallet currency
 
             if (parseFloat(wallet.balance) < amountToDeduct) {
                 await connection.rollback();
@@ -163,24 +176,25 @@ export async function withdraw(req, res) {
                 [newBalance, wallet.id]
             );
 
-            // Record transaction in USD (as amount is USD)
+            // Convert amount to USD for the withdrawal_requests table if required, 
+            // but the system mostly treats it as raw numbers. Let's keep it in wallet currency.
             const [txRows] = await connection.execute(
                 `INSERT INTO wallet_transactions 
                 (wallet_id, user_id, type, amount, balance_before, balance_after, 
-                 description, status, bank_account_id, withdrawal_fee, net_amount, metadata)
-                VALUES (?, ?, 'withdrawal', ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+                 description, status, metadata)
+                VALUES (?, ?, 'withdrawal', ?, ?, ?, ?, ?, ?) RETURNING id`,
                 [
                     wallet.id,
                     userId,
-                    -amount, // Store negative USD amount
-                    wallet.balance, // Note: storing raw balance (might be VND)
-                    newBalance,     // Note: storing raw balance (might be VND)
+                    -amountToDeduct,
+                    wallet.balance,
+                    newBalance,
                     'Withdrawal to Bank Account',
                     'pending',
-                    bank_account_id,
-                    fee,
-                    netAmount,
                     JSON.stringify({
+                        bank_account_id,
+                        withdrawal_fee: fee,
+                        net_amount: netAmount,
                         deducted_amount: amountToDeduct,
                         deducted_currency: wallet.currency
                     })
@@ -193,7 +207,7 @@ export async function withdraw(req, res) {
                 `INSERT INTO withdrawal_requests
                 (transaction_id, user_id, bank_account_id, amount, fee, net_amount, status)
                 VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-                [transactionId, userId, bank_account_id, amount, fee, netAmount]
+                [transactionId, userId, bank_account_id, amountToDeduct, fee, netAmount]
             );
 
             await connection.commit();
@@ -202,7 +216,7 @@ export async function withdraw(req, res) {
                 message: 'Withdrawal request submitted',
                 withdrawal: {
                     transaction_id: transactionId,
-                    amount,
+                    amount: amountToDeduct,
                     fee,
                     net_amount: netAmount,
                     status: 'pending'

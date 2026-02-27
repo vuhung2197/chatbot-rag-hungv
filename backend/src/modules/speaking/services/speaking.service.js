@@ -42,6 +42,12 @@ export const speakingService = {
         return buffer;
     },
 
+    // ==================== PRONUNCIATION (IPA) ==================== //
+
+    async getIpaPhonemes() {
+        return await speakingRepository.getIpaPhonemes();
+    },
+
     // ==================== SUBMISSIONS & GRADING ==================== //
 
     async submitAudio(userId, { topicId, audioFilePath }) {
@@ -63,6 +69,8 @@ export const speakingService = {
                 evaluation = await speakingAiService.gradeShadowing(topic.level, topic.prompt_text, transcript);
             } else if (topic.type === 'reflex') {
                 evaluation = await speakingAiService.gradeReflex(topic.level, topic.prompt_text, transcript);
+            } else if (topic.type === 'pronunciation') {
+                evaluation = await speakingAiService.gradePronunciation(topic.level, topic.prompt_text, transcript);
             } else { // 'topic'
                 evaluation = await speakingAiService.gradeTopic(topic.level, topic.prompt_text, transcript);
             }

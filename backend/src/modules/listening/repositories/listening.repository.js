@@ -117,7 +117,7 @@ const listeningRepository = {
                 await client.execute(
                     `INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level)
                      VALUES ($1, $2, $3, $4, $5, 'listening', $6, $7)
-                     ON CONFLICT (user_id, word) DO UPDATE SET
+                     ON CONFLICT (user_id, word, item_type) DO UPDATE SET
                        definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
                        translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
                        example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),

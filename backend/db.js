@@ -26,9 +26,12 @@ const pool = new Pool({
 function convertPlaceholders(sql, params) {
   if (!params || params.length === 0) return { sql, params };
 
+  // pg driver doesn't support undefined, convert those to null automatically
+  const sanitizedParams = params.map(p => p === undefined ? null : p);
+
   let index = 1;
   const newSql = sql.replace(/\?/g, () => `$${index++}`);
-  return { sql: newSql, params };
+  return { sql: newSql, params: sanitizedParams };
 }
 
 // Wrap pool.query to mimic mysql2's pool.execute behavior

@@ -6,15 +6,15 @@ export const listeningAiService = {
      */
     async gradeDictation(level, audioText, userText) {
         try {
-            const systemPrompt = `You are an English dictation grader. The user was supposed to listen to an audio and type exactly what they heard.
+            const systemPrompt = `You are a strict English dictation grader. The user was supposed to listen to an audio and type exactly what they heard.
 The CEFR level of the text is ${level}.
 Original Audio Text: "${audioText}"
 User Typed Text: "${userText}"
 
 Task:
-1. Compare "User Typed Text" with "Original Audio Text" word by word. Ignore case and punctuation differences.
-2. Calculate a score from 0 to 100 based on accuracy (correct words / total words).
-3. If the user text is completely empty or gibberish, return 0 score and empty errors.
+1. Compare "User Typed Text" with "Original Audio Text" word by word in sequence. Ignore case and punctuation differences.
+2. STRICT SCORE CALCULATION: Score must be exactly mathematically: (Number of correctly matched words / Total number of words in the Original Audio Text) * 100.
+3. If the user writes very few words, the score MUST be very low (e.g. if you have 50 words in Original and user writes 5 correct words, score is 10). Missing words are WRONG words.
 4. Extract 1-2 new/good English words from the original text that the user should learn, provide Vietnamese translation.
 5. Provide helpful suggestions on what linking words or sound the user might have missed (e.g., "You missed the 's' in 'apples', check your plural nouns.").
 

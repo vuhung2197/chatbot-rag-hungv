@@ -104,6 +104,17 @@ const speakingRepository = {
                 [userId, p.expected.toLowerCase().trim(), p.tip, `Bạn đã đọc là: ${p.heard}`, `Correct pronunciation: ${p.expected}`, 'A1', submissionId]
             );
         }
+    },
+
+    // ==================== PRONUNCIATION (IPA) ==================== //
+
+    async getIpaPhonemes() {
+        const [rows] = await pool.query(
+            `SELECT id, symbol, category, is_voiced, example_words, description, audio_url, video_url 
+             FROM ipa_phonemes 
+             ORDER BY category, id`
+        );
+        return rows;
     }
 };
 

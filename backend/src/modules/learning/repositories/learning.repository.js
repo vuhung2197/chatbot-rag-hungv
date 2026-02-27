@@ -3,13 +3,13 @@ import pool from '#db';
 export const learningRepository = {
     // 1. Lưu lại lịch sử làm quiz của User
     async saveHistory(userId, category, level, title, score) {
-        const result = await pool.query(
+        const [rows] = await pool.query(
             `INSERT INTO learning_history (user_id, category, level, title, score)
              VALUES ($1, $2, $3, $4, $5)
              RETURNING id, created_at`,
             [userId, category, level, title, score]
         );
-        return result.rows[0];
+        return rows[0];
     },
 
     // 2. Thêm vào thẻ Flashcard Ngữ Pháp / Phát Âm / Mẫu câu cho User
@@ -18,7 +18,7 @@ export const learningRepository = {
         if (category === 'pronunciation') itemType = 'pronunciation';
         else if (category === 'pattern') itemType = 'vocabulary';
 
-        const result = await pool.query(
+        const [rows] = await pool.query(
             `INSERT INTO user_vocabulary 
                 (user_id, word, definition, level, source, item_type, grammar_error, grammar_correction)
              VALUES ($1, $2, $3, $4, 'learning_hub', $5, $6, $7)
@@ -38,19 +38,19 @@ export const learningRepository = {
                 flashcardItem.grammar_correction || null
             ]
         );
-        return result.rows[0];
+        return rows[0];
     },
 
     // 3. Đếm số lượng bài user đã học
     async getUserStats(userId) {
-        const result = await pool.query(
+        const [rows] = await pool.query(
             `SELECT category, COUNT(*) as count, AVG(score) as avg_score
              FROM learning_history
              WHERE user_id = $1
              GROUP BY category`,
             [userId]
         );
-        return result.rows;
+        return rows;
     }
 };
 

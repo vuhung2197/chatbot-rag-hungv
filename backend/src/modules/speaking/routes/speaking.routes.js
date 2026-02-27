@@ -28,6 +28,7 @@ const upload = multer({
 });
 
 // APIs
+router.get('/ipa', verifyToken, speakingController.getIpaPhonemes);
 router.get('/topics', verifyToken, speakingController.getTopics);
 router.get('/topics/:id', verifyToken, speakingController.getTopicById);
 router.get('/topics/:id/audio', verifyToken, speakingController.streamTopicAudio);

@@ -91,7 +91,7 @@ const readingRepository = {
             await pool.query(
                 `INSERT INTO user_vocabulary (user_id, word, definition, translation, example, level, source, submission_id)
                  VALUES ($1, $2, $3, $4, $5, $6, 'reading', $7)
-                 ON CONFLICT (user_id, word) DO UPDATE SET 
+                 ON CONFLICT (user_id, word, item_type) DO UPDATE SET 
                     definition = EXCLUDED.definition,
                     translation = EXCLUDED.translation,
                     updated_at = NOW()`,

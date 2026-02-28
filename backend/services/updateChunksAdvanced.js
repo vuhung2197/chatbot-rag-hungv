@@ -75,11 +75,11 @@ export async function updateChunksAdvanced(id, title, content, chunkingType = 'a
 
     } catch (error) {
       errorChunks++;
-      console.error(`❌ Error processing chunk:`, error.message);
+      console.error('❌ Error processing chunk:', error.message);
     }
   }
 
-  console.log(`\n📈 Summary:`);
+  console.log('\n📈 Summary:');
   console.log(`   - Processed: ${processedChunks} chunks`);
   console.log(`   - Skipped: ${skippedChunks} chunks`);
   console.log(`   - Errors: ${errorChunks} chunks`);
@@ -137,7 +137,7 @@ export async function reChunkAllKnowledge() {
       }
     }
 
-    console.log(`\n🎉 Re-chunking completed!`);
+    console.log('\n🎉 Re-chunking completed!');
     console.log(`   - Total processed: ${totalProcessed} chunks`);
     console.log(`   - Total skipped: ${totalSkipped} chunks`);
     console.log(`   - Total errors: ${totalErrors} chunks`);

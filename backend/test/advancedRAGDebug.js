@@ -12,7 +12,7 @@ import {
   rerankContext
 } from '../services/advancedRAGFixed.js';
 
-const TEST_QUESTION = "So sánh NLP và Machine Learning, và giải thích mối quan hệ giữa chúng trong việc xây dựng chatbot";
+const TEST_QUESTION = 'So sánh NLP và Machine Learning, và giải thích mối quan hệ giữa chúng trong việc xây dựng chatbot';
 
 async function debugAdvancedRAG() {
   console.log('🔍 Debugging Advanced RAG...');
@@ -82,7 +82,7 @@ async function debugAdvancedRAG() {
     const fusedContext = fuseContext(rerankedChunks, reasoningChains, TEST_QUESTION);
     console.log('✅ Fused context length:', fusedContext.length);
     console.log('📄 Context preview:');
-    console.log(fusedContext.substring(0, 500) + '...');
+    console.log(`${fusedContext.substring(0, 500)  }...`);
 
     // 8. Test database connection
     console.log('\n8️⃣ Testing database connection...');

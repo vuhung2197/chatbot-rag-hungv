@@ -1,5 +1,6 @@
 import writingRepository from '../repositories/writing.repository.js';
 import writingAiService from './writingAI.service.js';
+import analyticsService from '../../analytics/services/analytics.service.js';
 
 // =============================================================================
 // Writing Service - Business Logic Layer
@@ -68,10 +69,7 @@ const writingService = {
             userId, exerciseId: exerciseId || null, content, wordCount
         });
 
-        // 5. Update streak
-        await this.updateStreakAfterWriting(userId, wordCount);
-
-        // 6. Grade with AI (synchronous MVP flow)
+        // 5. Grade with AI (synchronous MVP flow)
         // If no exercise was given (free writing), create a mock exercise object for the AI
         const exerciseObj = exercise ? exercise : {
             level: 'B1', // Default 
@@ -91,11 +89,32 @@ const writingService = {
                     .catch(e => console.error('Silent fail on add vocab:', e)); // soft fail if it crashes
             }
 
-            return { ...updatedSubmission, level: exerciseObj.level };
+            // Auto-log mistakes to analytics
+            if (feedbackData.errors && feedbackData.errors.length > 0) {
+                feedbackData.errors.forEach(err => {
+                    analyticsService.logMistake({
+                        userId,
+                        sourceModule: 'writing',
+                        errorCategory: 'grammar',
+                        // We map mistake roughly. Depending on AI output it might be full sentences, so we slice it just in case.
+                        errorDetail: err.type || 'grammar_error',
+                        contextText: err.mistake || '',
+                        sessionId: submission.id
+                    }).catch(e => console.error('Silent fail on log mistake:', e));
+                });
+            }
+
+            // 6. Update streak CHỈ KHI điểm tốt (>= 60)
+            let streakInfo = { streakIncremented: false, newStreak: 0, milestoneReached: null };
+            if (feedbackData.scores && feedbackData.scores.total >= 60) {
+                streakInfo = await this.updateStreakAfterWriting(userId, wordCount);
+            }
+
+            return { ...updatedSubmission, level: exerciseObj.level, streakInfo };
         } catch (e) {
             console.error('Grading failed:', e);
             await writingRepository.markSubmissionError(submission.id, e.message);
-            throw new Error('AI system failed to process the text. Please try avoiding nonsensical inputs. Details: ' + e.message);
+            throw new Error(`AI system failed to process the text. Please try avoiding nonsensical inputs. Details: ${  e.message}`);
         }
     },
 
@@ -135,12 +154,12 @@ const writingService = {
         const streak = await writingRepository.getOrCreateStreak(userId);
 
         // Check if streak is broken (missed yesterday without freeze)
-        if (streak.last_writing_date) {
+        if (streak.last_activity_date) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // last_writing_date is typically returned as Date object from PG or string YYYY-MM-DD
-            const lastDate = new Date(streak.last_writing_date);
+            // last_activity_date is typically returned as Date object from PG or string YYYY-MM-DD
+            const lastDate = new Date(streak.last_activity_date);
             lastDate.setHours(0, 0, 0, 0);
 
             const diffTime = today.getTime() - lastDate.getTime();
@@ -152,9 +171,9 @@ const writingService = {
                 await writingRepository.updateStreak(userId, {
                     currentStreak: 0,
                     longestStreak: streak.longest_streak,
-                    lastWritingDate: streak.last_writing_date,
-                    totalWritings: streak.total_writings,
-                    totalWordsWritten: streak.total_words_written,
+                    lastWritingDate: streak.last_activity_date,
+                    totalWritings: streak.total_exercises,
+                    totalWordsWritten: streak.total_words_learned,
                     avgScore: streak.avg_score,
                     badges: streak.badges || []
                 });
@@ -167,24 +186,31 @@ const writingService = {
     async updateStreakAfterWriting(userId, wordCount) {
         const streak = await writingRepository.getOrCreateStreak(userId);
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const oldStreak = streak.current_streak;
 
-        // If already wrote today, just update totals
-        if (streak.last_writing_date === today) {
-            return writingRepository.updateStreak(userId, {
+        // Kiểm tra ngày (so sánh string chính xác)
+        const lastDateStr = streak.last_activity_date
+            ? new Date(streak.last_activity_date).toISOString().split('T')[0]
+            : null;
+
+        // If already active today, just update totals (không tăng streak)
+        if (lastDateStr === today) {
+            await writingRepository.updateStreak(userId, {
                 currentStreak: streak.current_streak,
                 longestStreak: streak.longest_streak,
                 lastWritingDate: today,
-                totalWritings: streak.total_writings + 1,
-                totalWordsWritten: streak.total_words_written + wordCount,
+                totalWritings: streak.total_exercises + 1,
+                totalWordsWritten: (streak.total_words_learned || 0) + wordCount,
                 avgScore: streak.avg_score,
                 badges: streak.badges || []
             });
+            return { streakIncremented: false, newStreak: streak.current_streak, milestoneReached: null };
         }
 
         // Calculate new streak
         let newStreak = 1;
-        if (streak.last_writing_date) {
-            const lastDate = new Date(streak.last_writing_date);
+        if (lastDateStr) {
+            const lastDate = new Date(lastDateStr);
             lastDate.setHours(0, 0, 0, 0);
             const todayDate = new Date(today);
             todayDate.setHours(0, 0, 0, 0);
@@ -197,7 +223,7 @@ const writingService = {
             } else if (diffDays === 0) {
                 newStreak = streak.current_streak;
             }
-            // diffDays > 1 means streak broken, newStreak stays 1 (already set above)
+            // diffDays > 1 means streak broken, newStreak stays 1
         }
 
         const newLongest = Math.max(newStreak, streak.longest_streak);
@@ -211,15 +237,31 @@ const writingService = {
             }
         }
 
-        return writingRepository.updateStreak(userId, {
+        await writingRepository.updateStreak(userId, {
             currentStreak: newStreak,
             longestStreak: newLongest,
             lastWritingDate: today,
-            totalWritings: streak.total_writings + 1,
-            totalWordsWritten: streak.total_words_written + wordCount,
+            totalWritings: streak.total_exercises + 1,
+            totalWordsWritten: (streak.total_words_learned || 0) + wordCount,
             avgScore: streak.avg_score,
             badges: newBadges
         });
+
+        // Xác định mốc (milestone) -- 7 ngày, 30 ngày
+        const MILESTONES = [7, 30, 100, 365];
+        let milestoneReached = null;
+        for (const m of MILESTONES) {
+            if (newStreak === m && oldStreak < m) {
+                milestoneReached = m;
+                break;
+            }
+        }
+
+        return {
+            streakIncremented: newStreak > oldStreak,
+            newStreak,
+            milestoneReached
+        };
     },
 
     async useStreakFreeze(userId) {
@@ -306,8 +348,9 @@ const writingService = {
                 current: streak.current_streak,
                 longest: streak.longest_streak,
                 badges: streak.badges || [],
-                totalWritings: streak.total_writings,
-                totalWords: streak.total_words_written
+                totalExercises: streak.total_exercises,
+                totalWords: streak.total_words_learned,
+                lastActivityDate: streak.last_activity_date
             },
             vocabulary: vocabStats,
             byLevel

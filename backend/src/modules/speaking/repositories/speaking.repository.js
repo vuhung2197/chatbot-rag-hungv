@@ -37,7 +37,7 @@ const speakingRepository = {
 
     async getTopicById(id) {
         const [rows] = await pool.query(
-            `SELECT * FROM speaking_topics WHERE id = $1 AND is_active = true`,
+            'SELECT * FROM speaking_topics WHERE id = $1 AND is_active = true',
             [id]
         );
         return rows[0] || null;
@@ -70,7 +70,7 @@ const speakingRepository = {
 
     async updateTopicAudioUrl(id, audioUrl) {
         await pool.query(
-            `UPDATE speaking_topics SET audio_url = $1 WHERE id = $2`,
+            'UPDATE speaking_topics SET audio_url = $1 WHERE id = $2',
             [audioUrl, id]
         );
     },
@@ -104,6 +104,17 @@ const speakingRepository = {
                 [userId, p.expected.toLowerCase().trim(), p.tip, `Bạn đã đọc là: ${p.heard}`, `Correct pronunciation: ${p.expected}`, 'A1', submissionId]
             );
         }
+    },
+
+    // ==================== PRONUNCIATION (IPA) ==================== //
+
+    async getIpaPhonemes() {
+        const [rows] = await pool.query(
+            `SELECT id, symbol, category, is_voiced, example_words, description, audio_url, video_url 
+             FROM ipa_phonemes 
+             ORDER BY category, id`
+        );
+        return rows;
     }
 };
 

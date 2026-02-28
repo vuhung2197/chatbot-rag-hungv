@@ -25,7 +25,7 @@ export function makeStateCookie(res) {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 10 * 60 * 1000, // 10 phút
   });
-  console.log('🍪 OAuth state cookie set:', { state: state.substring(0, 8) + '...' });
+  console.log('🍪 OAuth state cookie set:', { state: `${state.substring(0, 8)  }...` });
   return state;
 }
 
@@ -57,8 +57,8 @@ export function verifyStateCookie(req, providedState) {
   
   if (!isValid) {
     console.error('❌ CSRF state verification failed', {
-      cookieState: state.substring(0, 8) + '...',
-      providedState: providedState?.substring(0, 8) + '...',
+      cookieState: `${state.substring(0, 8)  }...`,
+      providedState: `${providedState?.substring(0, 8)  }...`,
       statesMatch: state === providedState
     });
   }

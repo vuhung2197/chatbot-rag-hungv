@@ -20,7 +20,7 @@ const optionalAuth = async (req, res, next) => {
 
             // 3. Check DB
             const [sessions] = await pool.execute(
-                `SELECT id, user_id FROM user_sessions WHERE token_hash = ? AND expires_at > NOW()`,
+                'SELECT id, user_id FROM user_sessions WHERE token_hash = ? AND expires_at > NOW()',
                 [tokenHash]
             );
 

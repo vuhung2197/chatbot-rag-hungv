@@ -86,13 +86,13 @@ class VNPayService extends PaymentService {
             vnp_Params['vnp_SecureHash'] = signed;
 
             // Build payment URL - URL must be encoded
-            const paymentUrl = this.vnp_Url + '?' + qs.stringify(vnp_Params, { encode: true, format: 'RFC1738' });
+            const paymentUrl = `${this.vnp_Url  }?${  qs.stringify(vnp_Params, { encode: true, format: 'RFC1738' })}`;
 
             // Detailed logging for debugging
             this.log('info', 'VNPay payment URL created successfully', { orderId });
             console.log('🔍 VNPay Parameters:', {
                 orderId,
-                amount: amount,
+                amount,
                 vnp_Amount: vnp_Params.vnp_Amount,
                 vnp_TmnCode: vnp_Params.vnp_TmnCode,
                 vnp_ReturnUrl: vnp_Params.vnp_ReturnUrl,
@@ -105,7 +105,7 @@ class VNPayService extends PaymentService {
             });
             console.log('📤 Full Parameters:', JSON.stringify(vnp_Params, null, 2));
             console.log('📝 Sign Data:', signData);
-            console.log('🔗 Payment URL:', paymentUrl.substring(0, 150) + '...');
+            console.log('🔗 Payment URL:', `${paymentUrl.substring(0, 150)  }...`);
 
             return paymentUrl;
         } catch (error) {
@@ -263,9 +263,9 @@ class VNPayService extends PaymentService {
                 vnp_TxnRef: orderId,
                 vnp_OrderInfo: `Query transaction ${orderId}`,
                 vnp_TransactionDate: transactionDate,
-                vnp_CreateDate: vnp_CreateDate,
+                vnp_CreateDate,
                 vnp_IpAddr: '127.0.0.1',
-                vnp_RequestId: vnp_RequestId
+                vnp_RequestId
             };
 
             // Sort parameters
@@ -278,7 +278,7 @@ class VNPayService extends PaymentService {
             vnp_Params['vnp_SecureHash'] = signed;
 
             // Build query URL
-            const queryUrl = this.vnp_Url.replace('/vpcpay.html', '/querydr') + '?' + qs.stringify(vnp_Params, { encode: false });
+            const queryUrl = `${this.vnp_Url.replace('/vpcpay.html', '/querydr')  }?${  qs.stringify(vnp_Params, { encode: false })}`;
 
             this.log('info', 'VNPay query URL created', { orderId });
 

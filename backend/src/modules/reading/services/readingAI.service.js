@@ -60,7 +60,7 @@ Return standard JSON format ONLY (no markdown, no explanation):
       return parsed;
     } catch (error) {
       console.error('Reading AI generate failed:', error);
-      throw new Error('AI failed to generate reading passage: ' + error.message);
+      throw new Error(`AI failed to generate reading passage: ${  error.message}`);
     }
   },
 
@@ -97,7 +97,7 @@ Provide a clear, helpful explanation. Return JSON ONLY:
       return JSON.parse(result.replace(/```json\n?|```/g, '').trim());
     } catch (error) {
       console.error('Word lookup failed:', error);
-      throw new Error('Cannot look up word: ' + error.message);
+      throw new Error(`Cannot look up word: ${  error.message}`);
     }
   }
 };

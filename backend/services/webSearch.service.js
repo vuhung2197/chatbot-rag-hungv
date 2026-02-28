@@ -62,7 +62,7 @@ export function getCacheStats() {
         hits: cacheStats.hits,
         misses: cacheStats.misses,
         evictions: cacheStats.evictions,
-        hitRate: total > 0 ? ((cacheStats.hits / total) * 100).toFixed(1) + '%' : 'N/A'
+        hitRate: total > 0 ? `${((cacheStats.hits / total) * 100).toFixed(1)  }%` : 'N/A'
     };
 }
 
@@ -129,7 +129,7 @@ export async function performWebSearch(query, options = {}) {
 
     if (!apiKey) {
         console.warn('⚠️ WEB SEARCH DISABLED: Missing TAVILY_API_KEY in .env');
-        return "Chức năng tìm kiếm web chưa được cấu hình (Thiếu API Key).";
+        return 'Chức năng tìm kiếm web chưa được cấu hình (Thiếu API Key).';
     }
 
     try {
@@ -138,7 +138,7 @@ export async function performWebSearch(query, options = {}) {
 
         const response = await axios.post(TAVILY_API_URL, {
             api_key: apiKey,
-            query: query,
+            query,
             search_depth: searchDepth, // 'basic' (free) hoặc 'advanced' (premium)
             include_answer: true,  // Tavily tự generate câu trả lời ngắn
             include_images: false,
@@ -184,6 +184,6 @@ export async function performWebSearch(query, options = {}) {
 
     } catch (error) {
         console.error('❌ Web Search Error:', error.response?.data || error.message);
-        return "Xin lỗi, tôi gặp lỗi khi cố gắng tìm kiếm trên internet. Vui lòng thử lại sau.";
+        return 'Xin lỗi, tôi gặp lỗi khi cố gắng tìm kiếm trên internet. Vui lòng thử lại sau.';
     }
 }

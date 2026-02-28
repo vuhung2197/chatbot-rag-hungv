@@ -10,9 +10,9 @@ async function run() {
         const sqlPath = path.resolve(__dirname, '../../db/migrations/listening_practice_schema.sql');
         const sql = fs.readFileSync(sqlPath, 'utf-8');
         await pool.query(sql);
-        console.log("Listening schema migration successful!");
+        console.log('Listening schema migration successful!');
     } catch (e) {
-        console.error("Migration failed", e);
+        console.error('Migration failed', e);
     } finally {
         process.exit();
     }

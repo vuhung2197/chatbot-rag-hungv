@@ -12,7 +12,7 @@ class UploadService {
 
         const ext = path.extname(file.originalname).toLowerCase();
         let content = '';
-        let filePath = file.path;
+        const filePath = file.path;
 
         try {
             if (ext === '.docx') {

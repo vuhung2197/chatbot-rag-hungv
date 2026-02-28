@@ -4,7 +4,7 @@ import { getEmbedding } from '../services/embeddingVector.js';
 import { multiStageRetrieval, rerankContext } from '../services/advancedRAGFixed.js';
 import { classifyIntent } from '../services/intentRouter.js';
 
-const COMPLEX_QUERY = "So sánh ứng dụng của NLP và Computer Vision trong y tế và chẩn đoán bệnh";
+const COMPLEX_QUERY = 'So sánh ứng dụng của NLP và Computer Vision trong y tế và chẩn đoán bệnh';
 const MOCK_MODEL = { url: 'https://api.openai.com/v1', name: 'gpt-4o-mini' };
 
 async function runFullSystemTest() {

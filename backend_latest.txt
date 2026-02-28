@@ -1,0 +1,3424 @@
+npm warn exec The following package was not found and will be installed: nodemon@3.1.14
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-26T10:29:42.786Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🍪 OAuth state cookie set: { state: 'b1411788...' }
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.7,
+  max_tokens: 1500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+Lỗi [POST] /learning/submit: TypeError: Cannot read properties of undefined (reading '0')
+    at Object.saveHistory (file:///app/src/modules/learning/repositories/learning.repository.js:12:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.submitQuiz (file:///app/src/modules/learning/services/learning.service.js:16:31)
+    at async submitQuiz (file:///app/src/modules/learning/controllers/learning.controller.js:26:29)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.7,
+  max_tokens: 1500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-26T10_29_39_050Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-26T10:46:11.898Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 2521,
+    secretKey: 461098475,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 135674,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 1561,
+      [Symbol(triggerId)]: 1449
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 3,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-26T10_46_09_027Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-26T10:48:50.834Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.7,
+  max_tokens: 1500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-26T10_48_48_230Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T01:15:46.092Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.7,
+  max_tokens: 1500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 1803,
+    secretKey: 1062555588,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 2076117,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 1553,
+      [Symbol(triggerId)]: 1538
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T01_15_42_327Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T01:50:37.074Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.7,
+  max_tokens: 1500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 4855,
+    secretKey: -953395439,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 5583972,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 8558,
+      [Symbol(triggerId)]: 8543
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 8,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T01_50_33_898Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T03:24:43.167Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.7,
+  max_tokens: 1500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+🎙️ Sinh TTS audio cho topic ID: 3
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.8,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.3,
+  max_tokens: 500,
+  messages_count: 2
+}
+✅ LLM response received successfully
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T03_24_39_325Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T04:04:59.797Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Listening Grading - Bắt đầu chấm
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 1000,
+  messages_count: 1
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE (DICTATION) ---
+{
+  "scores": {
+    "total": 0
+  },
+  "errors": [],
+  "suggestions": [
+    "Make sure to listen carefully for linking words like 'although' which can change the meaning of the sentence.",
+    "Practice listening to phrases in context to improve your understanding of sentence structure."
+  ],
+  "newWords": [
+    {
+      "word": "managed",
+      "definition": "to succeed in doing something, especially after a lot of effort",
+      "translation": "quản lý",
+      "example": "We still managed to enjoy our hiking trip.",
+      "level": "B1"
+    },
+    {
+      "word": "terrible",
+      "definition": "very bad or unpleasant",
+      "translation": "khủng khiếp",
+      "example": "The weather was terrible on Saturday.",
+      "level": "B1"
+    }
+  ]
+}
+-----------------------
+
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 472,
+    secretKey: 1206570859,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 504668,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 5092,
+      [Symbol(triggerId)]: 5077
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T04_04_56_392Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T04:13:36.085Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Listening Grading - Bắt đầu chấm
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 1000,
+  messages_count: 1
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE (DICTATION) ---
+{
+  "scores": {
+    "total": 20
+  },
+  "errors": [
+    {
+      "original": "hello, my name is john",
+      "correction": "Hello, my name is John. I am from the United States.",
+      "explanation": "You missed the capitalization of 'Hello' and 'John', and you did not include the rest of the sentence."
+    }
+  ],
+  "suggestions": [
+    "Make sure to listen for all parts of the sentence, including 'I am from the United States.'",
+    "Practice writing complete sentences to improve your dictation skills."
+  ],
+  "newWords": [
+    {
+      "word": "name",
+      "definition": "a word by which a person or thing is known.",
+      "translation": "tên",
+      "example": "Hello, my name is John.",
+      "level": "A1"
+    },
+    {
+      "word": "from",
+      "definition": "indicating the point in space at which a journey, motion, or action starts.",
+      "translation": "từ",
+      "example": "I am from the United States.",
+      "level": "A1"
+    }
+  ]
+}
+-----------------------
+
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 503,
+    secretKey: 744384173,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 528333,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 6464,
+      [Symbol(triggerId)]: 6449
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T04_13_32_838Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T04:22:50.114Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A1)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 80,
+    "grammar": 90,
+    "vocabulary": 80,
+    "coherence": 70,
+    "task": 80
+  },
+  "errors": [],
+  "suggestions": [
+    "Try to add more details about the weather.",
+    "Use linking words to connect your ideas better."
+  ],
+  "modelAnswer": "Today the weather is sunny. It is hot. The sun is bright. I feel happy.",
+  "newWords": [
+    {
+      "word": "bright",
+      "definition": "giving out or reflecting a lot of light; shining.",
+      "translation": "sáng",
+      "example": "The sun is bright today.",
+      "level": "A1"
+    }
+  ],
+  "grammarItems": []
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:90:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'bright',
+  'giving out or reflecting a lot of light; shining.',
+  'sáng',
+  'The sun is bright today.',
+  'writing_feedback',
+  19,
+  'A1',
+  'vocabulary',
+  undefined,
+  undefined
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:90:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 1050,
+    secretKey: 258053816,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 1173167,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 4820,
+      [Symbol(triggerId)]: 4805
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T04_22_46_948Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T04:42:54.984Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A1)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 100,
+    "grammar": 100,
+    "vocabulary": 100,
+    "coherence": 100,
+    "task": 100
+  },
+  "errors": [],
+  "suggestions": [],
+  "modelAnswer": "My name is John. I am 25 years old. I live in London. I like to read and play football.",
+  "newWords": [
+    {
+      "word": "introduce",
+      "definition": "to make someone known by name",
+      "translation": "giới thiệu",
+      "example": "I want to introduce my friend.",
+      "level": "A1"
+    }
+  ],
+  "grammarItems": []
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'introduce',
+  'to make someone known by name',
+  'giới thiệu',
+  'I want to introduce my friend.',
+  'writing_feedback',
+  20,
+  'A1',
+  'vocabulary',
+  undefined,
+  undefined
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A1)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 100,
+    "grammar": 100,
+    "vocabulary": 100,
+    "coherence": 100,
+    "task": 100
+  },
+  "errors": [],
+  "suggestions": [
+    "Try to add more details about your family members.",
+    "You can use linking words to connect your sentences."
+  ],
+  "modelAnswer": "There are four people in my family. My father is a doctor. My mother is a teacher. I have one sister. She is in high school.",
+  "newWords": [
+    {
+      "word": "doctor",
+      "definition": "a person who is trained to treat people who are ill.",
+      "translation": "bác sĩ",
+      "example": "My father is a doctor.",
+      "level": "A1"
+    },
+    {
+      "word": "teacher",
+      "definition": "a person who teaches, especially in a school.",
+      "translation": "giáo viên",
+      "example": "My mother is a teacher.",
+      "level": "A1"
+    }
+  ],
+  "grammarItems": []
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'doctor',
+  'a person who is trained to treat people who are ill.',
+  'bác sĩ',
+  'My father is a doctor.',
+  'writing_feedback',
+  21,
+  'A1',
+  'vocabulary',
+  undefined,
+  undefined
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T04_42_51_784Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T07:34:13.785Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+[2026-02-27T07:36:36.036Z] [VNPayService] [INFO] Creating VNPay payment URL { orderId: 'DEPOSIT_13_1772177796035', amount: 10000 }
+🔐 Sign Data (before hash): vnp_Amount=1000000&vnp_Command=pay&vnp_CreateDate=20260227143636&vnp_CurrCode=VND&vnp_ExpireDate=20260227145136&vnp_IpAddr=172.18.0.1&vnp_Locale=vn&vnp_OrderInfo=Nap+tien+vao+vi+-+Transaction+13&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A3001%2Fwallet%2Fvnpay%2Freturn&vnp_TmnCode=6ZY4FNRE&vnp_TxnRef=DEPOSIT_13_1772177796035&vnp_Version=2.1.0
+[2026-02-27T07:36:36.039Z] [VNPayService] [INFO] VNPay payment URL created successfully { orderId: 'DEPOSIT_13_1772177796035' }
+🔍 VNPay Parameters: {
+  orderId: 'DEPOSIT_13_1772177796035',
+  amount: 10000,
+  vnp_Amount: 1000000,
+  vnp_TmnCode: '6ZY4FNRE',
+  vnp_ReturnUrl: 'http://localhost:3001/wallet/vnpay/return',
+  vnp_IpAddr: '172.18.0.1',
+  vnp_CreateDate: '20260227143636',
+  vnp_ExpireDate: '20260227145136',
+  vnp_Locale: 'vn',
+  signDataLength: 359,
+  hasSecureHash: true
+}
+📤 Full Parameters: {
+  "vnp_Amount": 1000000,
+  "vnp_Command": "pay",
+  "vnp_CreateDate": "20260227143636",
+  "vnp_CurrCode": "VND",
+  "vnp_ExpireDate": "20260227145136",
+  "vnp_IpAddr": "172.18.0.1",
+  "vnp_Locale": "vn",
+  "vnp_OrderInfo": "Nap tien vao vi - Transaction 13",
+  "vnp_OrderType": "other",
+  "vnp_ReturnUrl": "http://localhost:3001/wallet/vnpay/return",
+  "vnp_TmnCode": "6ZY4FNRE",
+  "vnp_TxnRef": "DEPOSIT_13_1772177796035",
+  "vnp_Version": "2.1.0",
+  "vnp_SecureHash": "5d5e2e42dd552de27ac32b1ed40b4349bc7f89f7803846714108a0648db49a6791223b1c649409eeaec7bc12b31c4248825670ca3a02807e61ec676d4a51517a"
+}
+📝 Sign Data: vnp_Amount=1000000&vnp_Command=pay&vnp_CreateDate=20260227143636&vnp_CurrCode=VND&vnp_ExpireDate=20260227145136&vnp_IpAddr=172.18.0.1&vnp_Locale=vn&vnp_OrderInfo=Nap+tien+vao+vi+-+Transaction+13&vnp_OrderType=other&vnp_ReturnUrl=http%3A%2F%2Flocalhost%3A3001%2Fwallet%2Fvnpay%2Freturn&vnp_TmnCode=6ZY4FNRE&vnp_TxnRef=DEPOSIT_13_1772177796035&vnp_Version=2.1.0
+🔗 Payment URL: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=1000000&vnp_Command=pay&vnp_CreateDate=20260227143636&vnp_CurrCode=VND&vnp_ExpireDate=20...
+🔔 VNPay return callback received
+Query params: {
+  vnp_Amount: '1000000',
+  vnp_BankCode: 'NCB',
+  vnp_BankTranNo: 'VNP15433212',
+  vnp_CardType: 'ATM',
+  vnp_OrderInfo: 'Nap tien vao vi - Transaction 13',
+  vnp_PayDate: '20260227143700',
+  vnp_ResponseCode: '00',
+  vnp_TmnCode: '6ZY4FNRE',
+  vnp_TransactionNo: '15433212',
+  vnp_TransactionStatus: '00',
+  vnp_TxnRef: 'DEPOSIT_13_1772177796035',
+  vnp_SecureHash: '482d7199e31ba67405001c86a647b1a0aedda6d12da763320c13eea0111966669339969b30dfd517440729ea46b42f6b7c760c8867dd241895fb3184f10f0fee'
+}
+[2026-02-27T07:37:11.351Z] [VNPayService] [INFO] Processing VNPay callback { txnRef: 'DEPOSIT_13_1772177796035' }
+[2026-02-27T07:37:11.352Z] [VNPayService] [INFO] VNPay callback processed {
+  success: true,
+  orderId: 'DEPOSIT_13_1772177796035',
+  transactionNo: '15433212',
+  amount: 10000,
+  bankCode: 'NCB',
+  payDate: '20260227143700',
+  responseCode: '00',
+  message: 'Giao dịch thành công'
+}
+✅ Payment completed successfully for transaction 13
+Redirecting to frontend: http://localhost:3000
+Database query error: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async getBankAccounts (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:56:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+SQL: SELECT * FROM bank_accounts WHERE user_id = $1 AND status != $2
+Params: [ 1, 'deleted' ]
+❌ Error getting bank accounts: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async getBankAccounts (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:56:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+Database query error: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async getBankAccounts (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:56:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+SQL: SELECT * FROM bank_accounts WHERE user_id = $1 AND status != $2
+Params: [ 1, 'deleted' ]
+❌ Error getting bank accounts: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async getBankAccounts (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:56:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+Database query error: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async addBankAccount (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:19:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '16',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+SQL: SELECT id FROM bank_accounts WHERE user_id = $1 AND bank_code = $2 AND account_number = $3
+Params: [ 1, 'TCB', '2197886868' ]
+❌ Error adding bank account: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:41:20)
+    at async addBankAccount (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:19:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '16',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 9642,
+    secretKey: 999397248,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 847536,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 5586,
+      [Symbol(triggerId)]: 5571
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T07_34_10_610Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T07:48:48.507Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+Database query error: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async getBankAccounts (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:56:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+SQL: SELECT * FROM bank_accounts WHERE user_id = $1 AND status != $2
+Params: [ 1, 'deleted' ]
+❌ Error getting bank accounts: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async getBankAccounts (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:56:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '15',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+Database query error: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async addBankAccount (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:19:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '16',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+SQL: SELECT id FROM bank_accounts WHERE user_id = $1 AND bank_code = $2 AND account_number = $3
+Params: [ 1, 'TCB', '2197886868' ]
+❌ Error adding bank account: error: relation "bank_accounts" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async addBankAccount (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:19:28) {
+  length: 112,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '16',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T07_48_45_745Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T07:54:00.566Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T07_53_57_406Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T08:02:05.907Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+Client query error: error: column "bank_account_id" of relation "wallet_transactions" does not exist
+    at /app/node_modules/pg/lib/client.js:588:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.execute (file:///app/db.js:95:24)
+    at async withdraw (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:181:30) {
+  length: 148,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '155',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+❌ Error processing withdrawal: error: column "bank_account_id" of relation "wallet_transactions" does not exist
+    at /app/node_modules/pg/lib/client.js:588:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.execute (file:///app/db.js:95:24)
+    at async withdraw (file:///app/src/modules/wallet/controllers/withdrawal.controller.js:181:30) {
+  length: 148,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '155',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 303,
+    secretKey: 1018649369,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 317560,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 2553,
+      [Symbol(triggerId)]: 2538
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T08_02_02_999Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T08:07:47.058Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A2)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 55,
+    "grammar": 60,
+    "vocabulary": 50,
+    "coherence": 60,
+    "task": 50
+  },
+  "errors": [
+    {
+      "original": "I plan to beach.",
+      "correction": "I plan to go to the beach.",
+      "explanation": "The verb 'beach' is incorrect; it should be 'go to the beach' to indicate the action."
+    },
+    {
+      "original": "Would you like to go to the beach.",
+      "correction": "Would you like to go to the beach?",
+      "explanation": "This is a question and should end with a question mark."
+    },
+    {
+      "original": "I very like swim.",
+      "correction": "I really like to swim.",
+      "explanation": "The phrase 'I very like' is incorrect; it should be 'I really like' and 'to swim' is needed for clarity."
+    }
+  ],
+  "suggestions": [
+    "Use complete sentences and correct verb forms.",
+    "Make sure to use question marks for questions."
+  ],
+  "modelAnswer": "Dear Peter,\n\nLong time no see! This weekend, I plan to go to the beach. I will swim and relax. Would you like to join me? It will be fun! \n\nSee you soon!\n\nBest regards,\nVu Hung",
+  "newWords": [
+    {
+      "word": "relax",
+      "definition": "to rest and not be active",
+      "translation": "thư giãn",
+      "example": "I like to relax at the beach.",
+      "level": "A2"
+    }
+  ],
+  "grammarItems": [
+    {
+      "word": "verb forms",
+      "grammar_error": "I plan to beach.",
+      "grammar_correction": "I plan to go to the beach.",
+      "definition": "Use the correct verb form to indicate actions.",
+      "level": "A2"
+    },
+    {
+      "word": "punctuation",
+      "grammar_error": "Would you like to go to the beach.",
+      "grammar_correction": "Would you like to go to the beach?",
+      "definition": "Questions must end with a question mark.",
+      "level": "A2"
+    },
+    {
+      "word": "adverbs",
+      "grammar_error": "I very like swim.",
+      "grammar_correction": "I really like to swim.",
+      "definition": "Use adverbs correctly to modify verbs.",
+      "level": "A2"
+    }
+  ]
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'relax',
+  'to rest and not be active',
+  'thư giãn',
+  'I like to relax at the beach.',
+  'writing_feedback',
+  22,
+  'A2',
+  'vocabulary',
+  null,
+  null
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T08_07_44_004Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T08:38:37.863Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A2)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 70,
+    "grammar": 60,
+    "vocabulary": 70,
+    "coherence": 80,
+    "task": 80
+  },
+  "errors": [
+    {
+      "original": "Thank you for gift.",
+      "correction": "Thank you for the gift.",
+      "explanation": "The article 'the' is needed before 'gift' to make the sentence grammatically correct."
+    },
+    {
+      "original": "very beautiful.",
+      "correction": "it is very beautiful.",
+      "explanation": "The sentence is missing a subject and verb to be complete."
+    },
+    {
+      "original": "Best Regard,",
+      "correction": "Best Regards,",
+      "explanation": "The correct phrase is 'Best Regards' with an 's' at the end."
+    }
+  ],
+  "suggestions": [
+    "Use complete sentences with subjects and verbs for clarity.",
+    "Add more details about why you like the gift to enhance your response."
+  ],
+  "modelAnswer": "Dear Peter,\n\nThank you for the wonderful gift. I really like the book you gave me because it is very interesting and I love to read. It was very kind of you to think of me. I will take good care of it. See you soon.\n\nBest Regards,\nVu Hung",
+  "newWords": [
+    {
+      "word": "wonderful",
+      "definition": "extremely good or impressive",
+      "translation": "tuyệt vời",
+      "example": "I had a wonderful time at the party.",
+      "level": "A2"
+    }
+  ],
+  "grammarItems": [
+    {
+      "word": "article usage",
+      "grammar_error": "Thank you for gift.",
+      "grammar_correction": "Thank you for the gift.",
+      "definition": "In English, we use articles like 'the' to specify nouns.",
+      "level": "A2"
+    },
+    {
+      "word": "sentence structure",
+      "grammar_error": "very beautiful.",
+      "grammar_correction": "it is very beautiful.",
+      "definition": "A complete sentence needs a subject and a verb.",
+      "level": "A2"
+    },
+    {
+      "word": "plural nouns",
+      "grammar_error": "Best Regard,",
+      "grammar_correction": "Best Regards,",
+      "definition": "The phrase 'Best Regards' is commonly used in letters and should be plural.",
+      "level": "A2"
+    }
+  ]
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'wonderful',
+  'extremely good or impressive',
+  'tuyệt vời',
+  'I had a wonderful time at the party.',
+  'writing_feedback',
+  23,
+  'A2',
+  'vocabulary',
+  null,
+  null
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A2)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 25,
+    "grammar": 20,
+    "vocabulary": 30,
+    "coherence": 20,
+    "task": 30
+  },
+  "errors": [
+    {
+      "original": "it's help me alot",
+      "correction": "it helps me a lot",
+      "explanation": "The correct form is 'it helps' for present tense, and 'a lot' should be two words."
+    },
+    {
+      "original": "off money",
+      "correction": "of money",
+      "explanation": "The correct preposition is 'of' not 'off'."
+    },
+    {
+      "original": "i appriciate it.",
+      "correction": "I appreciate it.",
+      "explanation": "The word 'appreciate' is misspelled and the sentence should start with a capital letter."
+    }
+  ],
+  "suggestions": [
+    "Try to use complete sentences and include more details about the gift.",
+    "Check your spelling and grammar to improve clarity."
+  ],
+  "modelAnswer": "Dear [Name],\n\nThank you very much for the birthday gift! I really like the book you gave me because it is very interesting and I love to read. It helps me learn new things. I appreciate your thoughtfulness.\n\nBest wishes,\n[Your Name]",
+  "newWords": [
+    {
+      "word": "appreciate",
+      "definition": "to recognize the value of something",
+      "translation": "đánh giá cao",
+      "example": "I appreciate your help with my homework.",
+      "level": "A2"
+    }
+  ],
+  "grammarItems": [
+    {
+      "word": "present simple tense",
+      "grammar_error": "it's help me alot",
+      "grammar_correction": "it helps me a lot",
+      "definition": "The present simple tense is used to describe habits, unchanging situations, and general truths.",
+      "level": "A2"
+    }
+  ]
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'appreciate',
+  'to recognize the value of something',
+  'đánh giá cao',
+  'I appreciate your help with my homework.',
+  'writing_feedback',
+  24,
+  'A2',
+  'vocabulary',
+  null,
+  null
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 4782,
+    secretKey: -961592796,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 3596826,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 9438,
+      [Symbol(triggerId)]: 9423
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 5,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T08_38_35_054Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T09:39:36.952Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T09_39_34_091Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-27T09:44:07.036Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+Database query error: error: invalid input syntax for type integer: "ipa-14"
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.getTopicById (file:///app/src/modules/speaking/repositories/speaking.repository.js:39:24)
+    at async Object.getTopicById (file:///app/src/modules/speaking/services/speaking.service.js:22:23)
+    at async Object.ensureTopicAudio (file:///app/src/modules/speaking/services/speaking.service.js:29:23)
+    at async streamTopicAudio (file:///app/src/modules/speaking/controllers/speaking.controller.js:36:28) {
+  length: 144,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '232',
+  routine: 'pg_strtoint32'
+}
+SQL: SELECT * FROM speaking_topics WHERE id = $1 AND is_active = true
+Params: [ 'ipa-14' ]
+Lỗi tạo audio mẫu: error: invalid input syntax for type integer: "ipa-14"
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.getTopicById (file:///app/src/modules/speaking/repositories/speaking.repository.js:39:24)
+    at async Object.getTopicById (file:///app/src/modules/speaking/services/speaking.service.js:22:23)
+    at async Object.ensureTopicAudio (file:///app/src/modules/speaking/services/speaking.service.js:29:23)
+    at async streamTopicAudio (file:///app/src/modules/speaking/controllers/speaking.controller.js:36:28) {
+  length: 144,
+  severity: 'ERROR',
+  code: '22P02',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: "unnamed portal parameter $1 = '...'",
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'numutils.c',
+  line: '232',
+  routine: 'pg_strtoint32'
+}
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-27T09_44_03_871Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-28T01:25:23.633Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A1)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 60,
+    "grammar": 80,
+    "vocabulary": 60,
+    "coherence": 50,
+    "task": 50
+  },
+  "errors": [],
+  "suggestions": [
+    "Add more details about why you like bread.",
+    "Describe the taste of bread."
+  ],
+  "modelAnswer": "My favorite food is bread. I like it because it is cheap and tasty. It is soft and warm. I eat it with butter.",
+  "newWords": [
+    {
+      "word": "tasty",
+      "definition": "having a pleasant flavor",
+      "translation": "ngon",
+      "example": "The bread is very tasty.",
+      "level": "A1"
+    },
+    {
+      "word": "soft",
+      "definition": "easy to press or cut; not hard",
+      "translation": "mềm",
+      "example": "The bread is soft.",
+      "level": "A1"
+    }
+  ],
+  "grammarItems": []
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'tasty',
+  'having a pleasant flavor',
+  'ngon',
+  'The bread is very tasty.',
+  'writing_feedback',
+  25,
+  'A1',
+  'vocabulary',
+  null,
+  null
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+🧠 AI Grading Tool - Bắt đầu chấm bài (Level: A1)
+🔗 Calling LLM: {
+  url: 'https://api.openai.com/v1/chat/completions',
+  model: 'gpt-4o-mini',
+  temperature: 0.2,
+  max_tokens: 2000,
+  messages_count: 2
+}
+✅ LLM response received successfully
+
+--- RAW AI RESPONSE ---
+{
+  "scores": {
+    "total": 100,
+    "grammar": 100,
+    "vocabulary": 100,
+    "coherence": 100,
+    "task": 100
+  },
+  "errors": [],
+  "suggestions": [
+    "Try to add more details about the taste of the bread.",
+    "You can mention different types of bread you like."
+  ],
+  "modelAnswer": "My favorite food is bread. I like it because it is cheap and tasty. It is soft and warm. It tastes good with butter.",
+  "newWords": [
+    {
+      "word": "tasty",
+      "definition": "having a pleasant flavor",
+      "translation": "ngon",
+      "example": "The bread is very tasty.",
+      "level": "A1"
+    }
+  ],
+  "grammarItems": []
+}
+-----------------------
+
+✅ AI Grading Tool - Chấm bài thành công
+Database query error: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+SQL: INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level, item_type, grammar_error, grammar_correction)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
+         definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
+         translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
+         example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
+         grammar_error = COALESCE(EXCLUDED.grammar_error, user_vocabulary.grammar_error),
+         grammar_correction = COALESCE(EXCLUDED.grammar_correction, user_vocabulary.grammar_correction),
+         updated_at = NOW()
+       RETURNING *
+Params: [
+  1,
+  'tasty',
+  'having a pleasant flavor',
+  'ngon',
+  'The bread is very tasty.',
+  'writing_feedback',
+  26,
+  'A1',
+  'vocabulary',
+  null,
+  null
+]
+Silent fail on add vocab: error: column "source_id" of relation "user_vocabulary" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async pool.execute (file:///app/db.js:44:20)
+    at async Object.addKnowledgeItem (file:///app/src/modules/writing/repositories/writing.repository.js:228:24)
+    at async Object.addKnowledgeBatch (file:///app/src/modules/writing/repositories/writing.repository.js:250:28)
+    at async Object.submitWriting (file:///app/src/modules/writing/services/writing.service.js:87:17)
+    at async submitWriting (file:///app/src/modules/writing/controllers/writing.controller.js:50:28) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '96',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1075',
+  routine: 'checkInsertTargets'
+}
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 6420,
+    secretKey: 1724717655,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 7367128,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 11805,
+      [Symbol(triggerId)]: 11790
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T01_25_19_401Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/src/middleware/auth.js' imported from /app/src/modules/analytics/routes/analytics.routes.js
+    at new NodeError (node:internal/errors:405:5)
+    at finalizeResolution (node:internal/modules/esm/resolve:327:11)
+    at moduleResolve (node:internal/modules/esm/resolve:980:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  url: 'file:///app/src/middleware/auth.js',
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/src/middleware/auth.js' imported from /app/src/modules/analytics/routes/analytics.routes.js
+    at new NodeError (node:internal/errors:405:5)
+    at finalizeResolution (node:internal/modules/esm/resolve:327:11)
+    at moduleResolve (node:internal/modules/esm/resolve:980:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  url: 'file:///app/src/middleware/auth.js',
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T03_31_18_045Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/src/middleware/auth.js' imported from /app/src/modules/analytics/routes/analytics.routes.js
+    at new NodeError (node:internal/errors:405:5)
+    at finalizeResolution (node:internal/modules/esm/resolve:327:11)
+    at moduleResolve (node:internal/modules/esm/resolve:980:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  url: 'file:///app/src/middleware/auth.js',
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T03_33_47_082Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/src/db.js' imported from /app/src/modules/analytics/services/analytics.service.js
+    at new NodeError (node:internal/errors:405:5)
+    at finalizeResolution (node:internal/modules/esm/resolve:327:11)
+    at moduleResolve (node:internal/modules/esm/resolve:980:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  url: 'file:///app/src/db.js',
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T03_45_22_427Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/app/src/db.js' imported from /app/src/modules/analytics/services/analytics.service.js
+    at new NodeError (node:internal/errors:405:5)
+    at finalizeResolution (node:internal/modules/esm/resolve:327:11)
+    at moduleResolve (node:internal/modules/esm/resolve:980:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  url: 'file:///app/src/db.js',
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T03_48_44_705Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+file:///app/src/modules/speaking/services/azureSpeech.service.js:144
+                    explanation: \`Phát âm chưa chuẩn (\${word.AccuracyScore}/100).\${worstPhoneme ? \` Có lẽ bạn đã đọc sai âm /\${worstPhoneme.Phoneme}/\` : ''}\`
+                                 ^
+
+SyntaxError: Invalid or unexpected token
+    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:152:18)
+    at ModuleLoader.moduleProvider (node:internal/modules/esm/loader:299:14)
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T03_52_34_950Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'microsoft-cognitiveservices-speech-sdk' imported from /app/src/modules/speaking/services/azureSpeech.service.js
+    at new NodeError (node:internal/errors:405:5)
+    at packageResolve (node:internal/modules/esm/resolve:916:9)
+    at moduleResolve (node:internal/modules/esm/resolve:973:20)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T04_05_56_634Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+node:internal/errors:496
+    ErrorCaptureStackTrace(err);
+    ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'microsoft-cognitiveservices-speech-sdk' imported from /app/src/modules/speaking/services/azureSpeech.service.js
+    at new NodeError (node:internal/errors:405:5)
+    at packageResolve (node:internal/modules/esm/resolve:916:9)
+    at moduleResolve (node:internal/modules/esm/resolve:973:20)
+    at defaultResolve (node:internal/modules/esm/resolve:1206:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:404:12)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:373:25)
+    at ModuleLoader.getModuleJob (node:internal/modules/esm/loader:250:38)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/module_job:76:39)
+    at link (node:internal/modules/esm/module_job:75:36) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v18.20.8
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T04_11_24_162Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-28T04:22:46.446Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-28T04:24:08.420Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T04_22_08_801Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-28T04:25:02.429Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+🔄 [SubscriptionWorker] Starting renewal process...
+[SubscriptionWorker] Found 0 subscriptions to renew
+Unexpected error on idle client error: terminating connection due to administrator command
+    at parseErrorMessage (/app/node_modules/pg-protocol/dist/parser.js:305:11)
+    at Parser.handlePacket (/app/node_modules/pg-protocol/dist/parser.js:143:27)
+    at Parser.parse (/app/node_modules/pg-protocol/dist/parser.js:37:38)
+    at Socket.<anonymous> (/app/node_modules/pg-protocol/dist/index.js:11:42)
+    at Socket.emit (node:events:517:28)
+    at addChunk (node:internal/streams/readable:368:12)
+    at readableAddChunk (node:internal/streams/readable:341:9)
+    at Readable.push (node:internal/streams/readable:278:10)
+    at TCP.onStreamRead (node:internal/stream_base_commons:190:23) {
+  length: 116,
+  severity: 'FATAL',
+  code: '57P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3211',
+  routine: 'ProcessInterrupts',
+  client: Client {
+    _events: [Object: null prototype] { error: [Function (anonymous)] },
+    _eventsCount: 1,
+    _maxListeners: undefined,
+    connectionParameters: ConnectionParameters {
+      user: 'postgres',
+      database: 'chatbot',
+      port: 5432,
+      host: 'postgres',
+      binary: false,
+      options: undefined,
+      ssl: false,
+      client_encoding: '',
+      replication: undefined,
+      isDomainSocket: false,
+      application_name: undefined,
+      fallback_application_name: undefined,
+      statement_timeout: false,
+      lock_timeout: false,
+      idle_in_transaction_session_timeout: false,
+      query_timeout: false,
+      connect_timeout: 2
+    },
+    user: 'postgres',
+    database: 'chatbot',
+    port: 5432,
+    host: 'postgres',
+    replication: undefined,
+    _Promise: [Function: Promise],
+    _types: TypeOverrides { _types: [Object], text: {}, binary: {} },
+    _ending: true,
+    _ended: false,
+    _connecting: false,
+    _connected: true,
+    _connectionError: false,
+    _queryable: false,
+    _activeQuery: null,
+    enableChannelBinding: false,
+    connection: Connection {
+      _events: [Object: null prototype],
+      _eventsCount: 23,
+      _maxListeners: undefined,
+      stream: [Socket],
+      _keepAlive: false,
+      _keepAliveInitialDelayMillis: 0,
+      parsedStatements: {},
+      ssl: false,
+      _ending: true,
+      _emitMessage: false,
+      _connecting: true,
+      [Symbol(kCapture)]: false
+    },
+    _queryQueue: [],
+    binary: false,
+    processID: 10956,
+    secretKey: 983564395,
+    ssl: false,
+    _connectionTimeoutMillis: 2000,
+    _connectionCallback: null,
+    connectionTimeoutHandle: Timeout {
+      _idleTimeout: -1,
+      _idlePrev: null,
+      _idleNext: null,
+      _idleStart: 11930827,
+      _onTimeout: null,
+      _timerArgs: undefined,
+      _repeat: null,
+      _destroyed: true,
+      [Symbol(refed)]: false,
+      [Symbol(kHasPrimitive)]: false,
+      [Symbol(asyncId)]: 17434,
+      [Symbol(triggerId)]: 17419
+    },
+    saslSession: null,
+    release: [Function (anonymous)],
+    readyForQuery: true,
+    hasExecuted: true,
+    _poolUseCount: 4,
+    [Symbol(kCapture)]: false
+  }
+}
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+npm error path /app
+npm error command failed
+npm error signal SIGTERM
+npm error command sh -c nodemon index.js
+npm error A complete log of this run can be found in: /root/.npm/_logs/2026-02-28T04_24_42_421Z-debug-0.log
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node index.js`[39m
+Loading .env from: /.env
+PostgreSQL pool created successfully
+Connected to: postgres:5432/chatbot
+[2026-02-28T07:40:41.966Z] [MoMoService] [WARN] MoMo credentials not configured. Payment will not work. {}
+Backend running at http://localhost:3001
+🔄 [SubscriptionWorker] Starting renewal process...
+🚀 [SubscriptionWorker] Registered to run every 60 minutes
+[SubscriptionWorker] Found 0 subscriptions to renew

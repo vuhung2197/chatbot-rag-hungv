@@ -242,7 +242,7 @@ export const advancedChat = chat;
 export async function getAdvancedRAGStats(req, res) {
     try {
         const stats = await chatService.getAdvancedRAGStats();
-        res.json({ success: true, stats: stats });
+        res.json({ success: true, stats });
     } catch (err) {
         console.error('❌ Lỗi get stats:', err);
         res.status(500).json({ success: false, error: err.message });

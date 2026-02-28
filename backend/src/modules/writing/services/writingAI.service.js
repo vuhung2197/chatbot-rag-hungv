@@ -34,7 +34,7 @@ const writingAiService = {
             const cleanJson = this._cleanJsonResponse(responseText);
             const parsed = JSON.parse(cleanJson);
 
-            console.log(`✅ AI Grading Tool - Chấm bài thành công`);
+            console.log('✅ AI Grading Tool - Chấm bài thành công');
             return {
                 scores: parsed.scores || { total: 0, grammar: 0, vocabulary: 0, coherence: 0, task: 0 },
                 errors: parsed.errors || [],
@@ -46,7 +46,7 @@ const writingAiService = {
 
         } catch (error) {
             console.error('❌ Lỗi chấm bài AI:', error);
-            throw new Error('AI Grading Failed: ' + error.message);
+            throw new Error(`AI Grading Failed: ${  error.message}`);
         }
     },
 

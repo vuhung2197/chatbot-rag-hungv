@@ -13,9 +13,9 @@ import {
 } from '../services/advancedRAGFixed.js';
 
 const TEST_QUESTIONS = [
-  "NLP là gì?", // Simple question
-  "So sánh NLP và Machine Learning", // Complex question
-  "Giải thích mối quan hệ giữa NLP, Machine Learning và Chatbot trong việc xây dựng hệ thống AI" // Very complex question
+  'NLP là gì?', // Simple question
+  'So sánh NLP và Machine Learning', // Complex question
+  'Giải thích mối quan hệ giữa NLP, Machine Learning và Chatbot trong việc xây dựng hệ thống AI' // Very complex question
 ];
 
 async function testStepByStep() {
@@ -74,7 +74,7 @@ async function testSingleQuestion(question) {
     const adaptiveStart = Date.now();
     retrievalParams = await adaptiveRetrieval(question, questionEmbedding);
     const adaptiveEnd = Date.now();
-    console.log(`✅ Retrieval params:`, retrievalParams);
+    console.log('✅ Retrieval params:', retrievalParams);
     console.log(`⏱️ Adaptive retrieval time: ${adaptiveEnd - adaptiveStart}ms`);
   } catch (error) {
     console.error('❌ Adaptive retrieval failed:', error.message);
@@ -170,7 +170,7 @@ async function testSingleQuestion(question) {
 
     // Show context preview
     console.log('📄 Context preview:');
-    console.log(fusedContext.substring(0, 300) + '...');
+    console.log(`${fusedContext.substring(0, 300)  }...`);
   } catch (error) {
     console.error('❌ Context fusion failed:', error.message);
     fusedContext = rerankedChunks.map(c => `**${c.title}**: ${c.content}`).join('\n\n');

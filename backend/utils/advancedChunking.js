@@ -90,7 +90,7 @@ function analyzeDocumentStructure(content) {
     }
     // Đoạn văn thường
     else if (line.length > 0) {
-      currentParagraph += line + '\n';
+      currentParagraph += `${line  }\n`;
     }
     // Dòng trống - kết thúc đoạn
     else if (currentParagraph.trim()) {
@@ -140,7 +140,7 @@ function findSemanticBoundaries(content, structure) {
         type: 'paragraph',
         line: paragraph.endLine,
         priority: 'medium',
-        content: paragraph.content.substring(0, 100) + '...'
+        content: `${paragraph.content.substring(0, 100)  }...`
       });
     }
   });
@@ -183,7 +183,7 @@ function createSemanticChunks(content, boundaries, options) {
       if (currentChunk.trim() && wordCount >= minChunkSize) {
         chunks.push(createChunkMetadata(currentChunk.trim(), currentStartLine, i - 1, lastBoundary));
       }
-      currentChunk = line + '\n';
+      currentChunk = `${line  }\n`;
       currentStartLine = i;
       lastBoundary = boundary;
     }
@@ -193,11 +193,11 @@ function createSemanticChunks(content, boundaries, options) {
       
       // Tạo overlap
       const overlapText = createOverlap(currentChunk, overlapRatio);
-      currentChunk = overlapText + line + '\n';
+      currentChunk = `${overlapText + line  }\n`;
       currentStartLine = i - overlapText.split('\n').length;
     }
     else {
-      currentChunk += line + '\n';
+      currentChunk += `${line  }\n`;
     }
   }
 
@@ -217,7 +217,7 @@ function createChunkMetadata(content, startLine, endLine, boundary) {
   const sentenceCount = (content.match(/[.!?]+/g) || []).length;
   
   return {
-    content: content,
+    content,
     metadata: {
       wordCount,
       sentenceCount,

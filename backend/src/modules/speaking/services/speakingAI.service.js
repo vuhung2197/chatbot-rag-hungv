@@ -22,7 +22,7 @@ export const speakingAiService = {
             return transcription.text;
         } catch (error) {
             console.error('Whisper API failed:', error.message);
-            throw new Error('AI không nghe được bạn nói, vui lòng thử lại: ' + error.message);
+            throw new Error(`AI không nghe được bạn nói, vui lòng thử lại: ${  error.message}`);
         }
     },
 
@@ -96,6 +96,31 @@ Return JSON ONLY:
 }`;
 
         return await this._callGPT(systemPrompt, `Vietnamese: ${vietnamesePrompt} | User spoke: ${transcript}`);
+    },
+
+    // 5. Chấm điểm Luyện Phát Âm (IPA Pronunciation)
+    async gradePronunciation(level, originalText, transcript) {
+        const systemPrompt = `You are an expert English Phonetics Coach evaluating a user's pronunciation practice.
+Student Level: ${level}
+Target word/phrase or minimal pairs to pronounce: "${originalText}"
+What the user actually said (per Whisper AI): "${transcript}"
+
+Task:
+1. Examine if the transcript matches the expected words, paying special attention to common phonetic mistakes (like /θ/ vs /s/, /i:/ vs /ɪ/).
+2. Give a score from 0 to 100 based on phonetic accuracy.
+3. Identify specific pronunciation mistakes.
+4. Provide actionable tips on how to position the mouth, tongue, or lips to fix the mistake.
+
+Return JSON ONLY:
+{
+  "score": 85,
+  "mistakes": [
+    { "expected": "think", "heard": "sink", "tip": "Place the tip of your tongue between your upper and lower teeth to make the /θ/ sound, don't keep it behind your teeth." }
+  ],
+  "overall_comment": "You're getting closer! Make sure to extend your tongue for the TH sound."
+}`;
+
+        return await this._callGPT(systemPrompt, `Original: ${originalText} | Heard: ${transcript}`);
     },
 
     async _callGPT(systemPrompt, userText) {

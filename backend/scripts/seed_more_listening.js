@@ -16,9 +16,9 @@ async function run() {
             ON CONFLICT DO NOTHING;
         `;
         await pool.query(sql);
-        console.log("Successfully seeded B2, C1, C2 listening exercises!");
+        console.log('Successfully seeded B2, C1, C2 listening exercises!');
     } catch (e) {
-        console.error("Seeding failed", e);
+        console.error('Seeding failed', e);
     } finally {
         process.exit();
     }

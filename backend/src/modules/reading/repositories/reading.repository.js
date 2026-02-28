@@ -37,7 +37,7 @@ const readingRepository = {
 
     async getPassageById(id) {
         const [rows] = await pool.query(
-            `SELECT * FROM reading_passages WHERE id = $1 AND is_active = true`,
+            'SELECT * FROM reading_passages WHERE id = $1 AND is_active = true',
             [id]
         );
         return rows[0] || null;
@@ -79,7 +79,7 @@ const readingRepository = {
 
     async markSubmissionError(submissionId, errorMsg) {
         await pool.query(
-            `UPDATE reading_submissions SET status = 'error', feedback = $1 WHERE id = $2`,
+            'UPDATE reading_submissions SET status = \'error\', feedback = $1 WHERE id = $2',
             [JSON.stringify({ error: errorMsg }), submissionId]
         );
     },
@@ -91,7 +91,7 @@ const readingRepository = {
             await pool.query(
                 `INSERT INTO user_vocabulary (user_id, word, definition, translation, example, level, source, submission_id)
                  VALUES ($1, $2, $3, $4, $5, $6, 'reading', $7)
-                 ON CONFLICT (user_id, word) DO UPDATE SET 
+                 ON CONFLICT (user_id, word, item_type) DO UPDATE SET 
                     definition = EXCLUDED.definition,
                     translation = EXCLUDED.translation,
                     updated_at = NOW()`,

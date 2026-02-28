@@ -169,7 +169,7 @@ class ChatService {
         // Handle OFF_TOPIC
         if (intent === INTENTS.OFF_TOPIC) {
             return {
-                reply: "Xin lỗi, tôi không thể thảo luận về chủ đề này do các quy định về an toàn nội dung.",
+                reply: 'Xin lỗi, tôi không thể thảo luận về chủ đề này do các quy định về an toàn nội dung.',
                 reasoning_steps: [`Intent: OFF_TOPIC (${reasoning})`, 'Action: Refusal'],
                 chunks_used: []
             };
@@ -177,7 +177,7 @@ class ChatService {
 
         // Handle GREETING
         if (intent === INTENTS.GREETING) {
-            const directSystemPrompt = "Bạn là trợ lý AI thân thiện. Hãy trả lời người dùng một cách tự nhiên, lịch sự và ngắn gọn.";
+            const directSystemPrompt = 'Bạn là trợ lý AI thân thiện. Hãy trả lời người dùng một cách tự nhiên, lịch sự và ngắn gọn.';
             const messages = [
                 { role: 'system', content: directSystemPrompt },
                 ...history.slice(-4),
@@ -209,14 +209,14 @@ class ChatService {
             const processTime = Date.now() - t0;
             const reasoningSteps = [
                 `Intent: LIVE_SEARCH (${reasoning})`,
-                `Performed Web Search via Tavily AI`,
+                'Performed Web Search via Tavily AI',
                 `Synthesized answer from ${webSources.length} web results`,
                 `Processing time: ${processTime}ms`
             ];
 
             if (userId) {
                 const finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
-                await this.saveChat(userId, finalConversationId, message, reply, { processing_time: processTime, model: modelConfig.name, intent: intent, source: 'web_search' });
+                await this.saveChat(userId, finalConversationId, message, reply, { processing_time: processTime, model: modelConfig.name, intent, source: 'web_search' });
                 await usageService.trackUsage(userId, 'web_search', { tokens: searchContext.length });
                 // Gap 4: Include web_sources + source_type in response
                 return { reply, conversationId: finalConversationId, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'web_search', web_sources: webSources };
@@ -273,8 +273,8 @@ Yêu cầu:
                         const processTime = Date.now() - t0;
                         const reasoningSteps = [
                             `Intent: KNOWLEDGE (${reasoning})`,
-                            `Retrieval returned 0 relevant chunks from KB`,
-                            `Fallback: Performed Web Search via Tavily AI`,
+                            'Retrieval returned 0 relevant chunks from KB',
+                            'Fallback: Performed Web Search via Tavily AI',
                             `Synthesized answer from ${webSources.length} web results`,
                             `Processing time: ${processTime}ms`
                         ];
@@ -329,7 +329,7 @@ Yêu cầu:
             reply = toAdvancedMarkdown(replyRaw);
         } catch (error) {
             console.error('❌ LLM Generation Error:', error);
-            reply = "Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời.";
+            reply = 'Xin lỗi, đã xảy ra lỗi khi tạo câu trả lời.';
         }
 
         const processTime = Date.now() - t0;
@@ -354,7 +354,7 @@ Yêu cầu:
                 processing_time: processTime,
                 model: modelConfig.name,
                 total_chunks: finalChunks.length,
-                intent: intent
+                intent
             };
             await this.saveChat(userId, finalConversationId, message, reply, metadata);
             await usageService.trackUsage(userId, 'advanced_rag', { tokens: fusedContext.length });
@@ -403,7 +403,7 @@ Yêu cầu:
         sendEvent('status', { content: `🔍 Intent detected: ${intent}` });
 
         let reply = '';
-        let reasoningDetail = [`Intent: ${intent}`];
+        const reasoningDetail = [`Intent: ${intent}`];
         let chunksUsed = [];
         let webSources = [];
         let sourceType = 'stream';
@@ -415,7 +415,7 @@ Yêu cầu:
             if (intent === INTENTS.GREETING) {
                 sendEvent('status', { content: '👋 Đang soạn câu trả lời...' });
                 const directReply = await callLLM(modelConfig, [
-                    { role: 'system', content: "Bạn là trợ lý AI thân thiện. Hãy trả lời ngắn gọn." },
+                    { role: 'system', content: 'Bạn là trợ lý AI thân thiện. Hãy trả lời ngắn gọn.' },
                     ...history.slice(-4),
                     { role: 'user', content: message }
                 ]);
@@ -440,7 +440,7 @@ Yêu cầu:
                 ], 0.4, 800);
                 reply = toAdvancedMarkdown(replyRaw);
                 reasoningDetail.push(
-                    `Performed Web Search via Tavily AI`,
+                    'Performed Web Search via Tavily AI',
                     `Synthesized answer from ${webSources.length} web results`
                 );
                 sendEvent('text', { content: reply });
@@ -478,22 +478,22 @@ Yêu cầu:
                             webSources = sources;
                             sourceType = 'kb_fallback_web';
                             reasoningDetail.push(
-                                `Retrieval returned 0 relevant chunks from KB`,
-                                `Fallback: Performed Web Search via Tavily AI`,
+                                'Retrieval returned 0 relevant chunks from KB',
+                                'Fallback: Performed Web Search via Tavily AI',
                                 `Synthesized answer from ${sources.length} web results`
                             );
                         } else {
-                            reply = "Xin lỗi, tôi không tìm thấy thông tin trong tài liệu nội bộ và cũng không thể tìm trên web.";
+                            reply = 'Xin lỗi, tôi không tìm thấy thông tin trong tài liệu nội bộ và cũng không thể tìm trên web.';
                         }
                     } catch (fallbackError) {
                         console.warn('⚠️ Stream Web Search fallback failed:', fallbackError.message);
-                        reply = "Xin lỗi, tôi không tìm thấy thông tin trong tài liệu.";
+                        reply = 'Xin lỗi, tôi không tìm thấy thông tin trong tài liệu.';
                     }
                 } else {
                     sendEvent('status', { content: '💡 Đang suy luận...' });
                     const fusedContext = fuseContext(rawChunks, [], processingMessage);
                     reply = await callLLM(modelConfig, [
-                        { role: 'system', content: "Trả lời câu hỏi dựa trên context sau:\n" + fusedContext },
+                        { role: 'system', content: `Trả lời câu hỏi dựa trên context sau:\n${  fusedContext}` },
                         ...history.slice(-6),
                         { role: 'user', content: message }
                     ]);
@@ -502,7 +502,7 @@ Yêu cầu:
             }
             // Case 4: Off Topic
             else {
-                reply = "Xin lỗi, tôi không thể trả lời câu hỏi này.";
+                reply = 'Xin lỗi, tôi không thể trả lời câu hỏi này.';
                 sendEvent('text', { content: reply });
             }
 
@@ -515,7 +515,7 @@ Yêu cầu:
                     processing_time: processTime,
                     model: modelConfig.name,
                     total_chunks: chunksUsed.length,
-                    intent: intent,
+                    intent,
                     source: sourceType
                 };
                 reasoningDetail.push(`Processing time: ${processTime}ms`);

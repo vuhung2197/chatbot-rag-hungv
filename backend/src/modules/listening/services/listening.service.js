@@ -67,7 +67,7 @@ export const listeningService = {
         } catch (e) {
             console.error('Dictation grading failed:', e);
             await listeningRepository.markSubmissionError(submission.id, e.message);
-            throw new Error('AI system failed to process the dictation text. Details: ' + e.message);
+            throw new Error(`AI system failed to process the dictation text. Details: ${  e.message}`);
         }
     },
 
@@ -75,8 +75,8 @@ export const listeningService = {
     async generateAudioStream(text) {
         // We will return a readable stream directly from OpenAI API
         const mp3 = await openai.audio.speech.create({
-            model: "tts-1",
-            voice: "alloy",
+            model: 'tts-1',
+            voice: 'alloy',
             input: text,
         });
         // We convert the ArrayBuffer to Buffer

@@ -4,6 +4,7 @@ import WritingEditor from './components/WritingEditor';
 import FeedbackPanel from './components/FeedbackPanel';
 import VocabularyList from './components/VocabularyList';
 import VocabularyReview from './components/VocabularyReview';
+import Confetti from 'react-confetti';
 
 // Bọc thử CSS nội tuyến cho nhanh (Có thể mang sang index.css sau)
 const styles = {
@@ -58,6 +59,8 @@ export default function WritingTab({ darkMode }) {
     const [exercises, setExercises] = useState([]);
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showConfetti, setShowConfetti] = useState(false);
+    const [streakMessage, setStreakMessage] = useState(null);
 
     // Giao diện con: 'list', 'editor', 'feedback'
     const [currentView, setCurrentView] = useState('list');
@@ -154,7 +157,7 @@ export default function WritingTab({ darkMode }) {
 
                 {/* STREAK WIDGET MOCKUP */}
                 <div style={styles.card}>
-                    <div style={styles.streakTitle}>Chuỗi ngày luyện viết</div>
+                    <div style={styles.streakTitle}>Chuỗi ngày học tập</div>
                     <div style={styles.streakNumber}>
                         🔥 {stats?.streak?.current || 0}
                         <span style={{ fontSize: '1rem', color: '#64748b', fontWeight: 'normal' }}>ngày liên tục</span>
@@ -206,7 +209,7 @@ export default function WritingTab({ darkMode }) {
         </div>
     );
 
-    return currentView === 'list' ? renderDashboard() :
+    const content = currentView === 'list' ? renderDashboard() :
         currentView === 'editor' ? (
             <WritingEditor
                 exercise={selectedExercise}
@@ -215,17 +218,45 @@ export default function WritingTab({ darkMode }) {
                 onSubmitSuccess={(submission) => {
                     setCompletedSubmission(submission);
                     setCurrentView('feedback');
+
+                    // Kiểm tra streakInfo từ backend
+                    const si = submission?.streakInfo;
+                    if (si && si.streakIncremented) {
+                        setShowConfetti(true);
+                        setTimeout(() => setShowConfetti(false), 6000);
+
+                        if (si.milestoneReached) {
+                            setStreakMessage(`🌟 Wow! Bạn đã đạt mốc ${si.milestoneReached} ngày học liên tục! Tuyệt vời!`);
+                        } else {
+                            setStreakMessage(`🔥 Chuỗi học tập: ${si.newStreak} ngày liên tục!`);
+                        }
+                    } else {
+                        setStreakMessage(null);
+                    }
+
                     // Refresh list sau khi nộp để update streak
                     loadDashboard();
                 }}
             />
         ) : currentView === 'feedback' ? (
-            <FeedbackPanel
-                submission={completedSubmission}
-                darkMode={darkMode}
-                onBack={() => setCurrentView('list')}
-                onRetry={() => setCurrentView('editor')}
-            />
+            <React.Fragment>
+                {streakMessage && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                        padding: '16px 24px', borderRadius: '12px', margin: '16px auto',
+                        maxWidth: '600px', fontWeight: 'bold', fontSize: '1.1rem',
+                        color: '#92400e', border: '2px solid #f59e0b', textAlign: 'center'
+                    }}>
+                        {streakMessage}
+                    </div>
+                )}
+                <FeedbackPanel
+                    submission={completedSubmission}
+                    darkMode={darkMode}
+                    onBack={() => { setStreakMessage(null); setCurrentView('list'); }}
+                    onRetry={() => { setStreakMessage(null); setCurrentView('editor'); }}
+                />
+            </React.Fragment>
         ) : currentView === 'vocabList' ? (
             <React.Fragment>
                 <div style={{ marginBottom: '16px', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
@@ -241,4 +272,20 @@ export default function WritingTab({ darkMode }) {
                 <VocabularyReview darkMode={darkMode} onBack={() => { setCurrentView('list'); loadDashboard(); }} />
             </React.Fragment>
         ) : null;
+
+    return (
+        <>
+            {showConfetti && (
+                <Confetti
+                    width={typeof window !== 'undefined' ? window.innerWidth : 800}
+                    height={typeof window !== 'undefined' ? window.innerHeight : 600}
+                    numberOfPieces={300}
+                    recycle={false}
+                    colors={['#7137ea', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444']}
+                    style={{ position: 'fixed', top: 0, left: 0, zIndex: 9999 }}
+                />
+            )}
+            {content}
+        </>
+    );
 }

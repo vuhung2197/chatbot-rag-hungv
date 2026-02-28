@@ -43,6 +43,17 @@ export const speakingController = {
         }
     },
 
+    // GET /speaking/ipa
+    async getIpaPhonemes(req, res) {
+        try {
+            const phonemes = await speakingService.getIpaPhonemes();
+            res.status(200).json({ success: true, phonemes });
+        } catch (error) {
+            console.error('Lỗi tải bảng IPA:', error);
+            res.status(500).json({ success: false, error: 'Không thể tải bảng IPA' });
+        }
+    },
+
     // POST /speaking/submit
     async submitAudio(req, res) {
         try {

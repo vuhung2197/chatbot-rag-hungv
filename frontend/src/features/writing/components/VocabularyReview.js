@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { writingService } from '../writingService';
+import VocabMatchGame from './VocabMatchGame';
 
 const styles = {
     container: {
@@ -50,7 +51,13 @@ const styles = {
         flex: 1, padding: '12px', borderRadius: '8px', border: 'none',
         color: 'white', backgroundColor: color, fontWeight: 'bold', fontSize: '1rem',
         cursor: 'pointer', transition: 'alpha 0.2s'
-    })
+    }),
+    modeCard: {
+        width: '100%', maxWidth: '300px', padding: '24px',
+        borderRadius: '12px', border: '2px solid #e2e8f0',
+        cursor: 'pointer', textAlign: 'center',
+        transition: 'all 0.2s', backgroundColor: 'var(--card-bg, #ffffff)'
+    }
 };
 
 export default function VocabularyReview({ darkMode, onBack }) {
@@ -58,6 +65,7 @@ export default function VocabularyReview({ darkMode, onBack }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [mode, setMode] = useState(null); // null, 'flashcard', 'match'
 
     const themeVars = darkMode ? {
         '--card-bg': '#1e293b',
@@ -76,6 +84,7 @@ export default function VocabularyReview({ darkMode, onBack }) {
             setReviewList(words || []);
             setCurrentIndex(0);
             setIsFlipped(false);
+            setMode(null);
         } catch (e) {
             console.error('Lỗi lấy từ ôn', e);
         } finally {
@@ -95,14 +104,19 @@ export default function VocabularyReview({ darkMode, onBack }) {
         }, 200);
     };
 
-    if (loading) return <div style={styles.container}>Đang tải thẻ Flashcard...</div>;
+    const handleMatchComplete = (score) => {
+        // Advance 6 words
+        setCurrentIndex(prev => prev + 6);
+    };
 
-    if (currentIndex >= reviewList.length) {
+    if (loading) return <div style={{ ...styles.container, ...themeVars }}>Đang tải thẻ Flashcard...</div>;
+
+    if (currentIndex >= reviewList.length && reviewList.length > 0) {
         return (
             <div style={{ ...styles.container, ...themeVars, justifyContent: 'center' }}>
                 <div style={{ fontSize: '4rem' }}>🏆</div>
                 <h2 style={{ color: '#10b981' }}>Tuyệt Vời!</h2>
-                <p style={{ color: 'var(--text-primary)' }}>Bạn đã hoàn thành phiên ôn tập thẻ từ hôm nay.</p>
+                <p style={{ color: 'var(--text-primary)' }}>Bạn đã hoàn thành phiên ôn tập hôm nay.</p>
                 <button onClick={onBack} style={{ ...styles.btnAction('#7137ea'), maxWidth: '200px' }}>
                     Tuyệt vời
                 </button>
@@ -110,11 +124,74 @@ export default function VocabularyReview({ darkMode, onBack }) {
         );
     }
 
+    if (reviewList.length === 0) {
+        return (
+            <div style={{ ...styles.container, ...themeVars, justifyContent: 'center' }}>
+                <div style={{ fontSize: '4rem' }}>🎉</div>
+                <h2 style={{ color: '#10b981', textAlign: 'center' }}>Tuyệt Vời, Không có từ nào cần ôn!</h2>
+                <p style={{ color: 'var(--text-primary)', textAlign: 'center' }}>Bạn đã ôn tập xong tất cả từ vựng cần nhớ cho ngày hôm nay.</p>
+                <button onClick={onBack} style={{ ...styles.btnAction('#7137ea'), maxWidth: '200px' }}>
+                    Quay Lại
+                </button>
+            </div>
+        )
+    }
+
+    if (mode === null) {
+        return (
+            <div style={{ ...styles.container, ...themeVars }}>
+                <h2 style={styles.header}>Chọn Chế Độ Ôn Tập</h2>
+                <p style={{ color: 'var(--text-primary)' }}>Bạn có {reviewList.length} kiến thức cần ôn tập hôm nay.</p>
+
+                <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '20px' }}>
+                    <div
+                        style={{ ...styles.modeCard, borderColor: '#7137ea' }}
+                        onClick={() => setMode('flashcard')}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🗂️</div>
+                        <h3 style={{ color: '#7137ea' }}>Flashcard</h3>
+                        <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>Lật thẻ truyền thống, tự chấm điểm nhớ từ.</p>
+                    </div>
+
+                    <div
+                        style={{ ...styles.modeCard, borderColor: '#10b981' }}
+                        onClick={() => setMode('match')}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎮</div>
+                        <h3 style={{ color: '#10b981' }}>Nối Từ Siêu Tốc</h3>
+                        <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>Luyện phản xạ nối cặp từ - nghĩa trong 60 giây.</p>
+                    </div>
+                </div>
+
+                <button onClick={onBack} style={{ ...styles.btnAction('#64748b'), maxWidth: '200px', marginTop: 'auto' }}>
+                    Quay Lại
+                </button>
+            </div>
+        );
+    }
+
+    if (mode === 'match') {
+        // Send a chunk of 6 words to the match game
+        const currentBatch = reviewList.slice(currentIndex, currentIndex + 6);
+        return <VocabMatchGame words={currentBatch} darkMode={darkMode} onComplete={handleMatchComplete} />;
+    }
+
+    // FLASHCARD MODE
     const currentWord = reviewList[currentIndex];
 
     return (
         <div style={{ ...styles.container, ...themeVars }}>
-            <h2 style={styles.header}>Thẻ Kiến Thức Ôn Tập ({currentIndex + 1} / {reviewList.length})</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <button onClick={() => setMode(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold' }}>
+                    ← Đổi chế độ
+                </button>
+                <h2 style={styles.header}>Thẻ Kiến Thức Ôn Tập ({currentIndex + 1} / {reviewList.length})</h2>
+                <div style={{ width: '80px' }}></div> {/* Spacer */}
+            </div>
 
             {/* FLASHCARD */}
             <div style={styles.flashcard} onClick={() => setIsFlipped(!isFlipped)}>

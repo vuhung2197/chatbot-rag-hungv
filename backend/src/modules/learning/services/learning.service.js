@@ -20,7 +20,18 @@ export const learningService = {
             await learningRepository.saveToKnowledgeHub(userId, flashcard_item, category, level);
         }
 
-        return historyRecord;
+        // Cập nhật chuỗi ngày học tập CHỈ KHI điểm quiz >= 50%
+        let streakInfo = { streakIncremented: false, newStreak: 0, milestoneReached: null };
+        if (score >= 50) {
+            try {
+                const writingService = (await import('../../writing/services/writing.service.js')).default;
+                streakInfo = await writingService.updateStreakAfterWriting(userId, 50);
+            } catch (e) {
+                console.error('Lỗi khi cập nhật streak bên Learning:', e);
+            }
+        }
+
+        return { ...historyRecord, streakInfo };
     },
 
     // 3. (Tuỳ chọn) Lịch sử

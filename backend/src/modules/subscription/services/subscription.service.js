@@ -340,7 +340,7 @@ class SubscriptionService {
                     tier: {
                         name: tier.name,
                         display_name: tier.display_name,
-                        features: features
+                        features
                     },
                     payment: {
                         amount: purchaseAmount,

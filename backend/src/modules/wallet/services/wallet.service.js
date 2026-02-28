@@ -188,8 +188,8 @@ class WalletService {
             wallet: {
                 balance: newBalance,
                 currency: newCurrency,
-                oldBalance: oldBalance,
-                oldCurrency: oldCurrency
+                oldBalance,
+                oldCurrency
             }
         };
     }

@@ -57,19 +57,19 @@ Sau đó copy hash và dùng trong SQL:
     console.log('📋 Hash:');
     console.log(hash);
     console.log('\n📝 SQL Query mẫu:\n');
-    console.log(`INSERT INTO users (name, email, password_hash, role, email_verified, account_status)`);
-    console.log(`VALUES (`);
-    console.log(`  'Administrator',`);
-    console.log(`  'admin@example.com',  -- ← THAY EMAIL TẠI ĐÂY`);
+    console.log('INSERT INTO users (name, email, password_hash, role, email_verified, account_status)');
+    console.log('VALUES (');
+    console.log('  \'Administrator\',');
+    console.log('  \'admin@example.com\',  -- ← THAY EMAIL TẠI ĐÂY');
     console.log(`  '${hash}',`);
-    console.log(`  'admin',`);
-    console.log(`  TRUE,`);
-    console.log(`  'active'`);
-    console.log(`);\n`);
+    console.log('  \'admin\',');
+    console.log('  TRUE,');
+    console.log('  \'active\'');
+    console.log(');\n');
 
     console.log('⚠️  LƯU Ý: Đừng quên tạo wallet cho admin sau khi insert:\n');
-    console.log(`INSERT INTO user_wallets (user_id, balance, currency, status)`);
-    console.log(`SELECT id, 0.00, 'USD', 'active' FROM users WHERE email = 'admin@example.com';\n`);
+    console.log('INSERT INTO user_wallets (user_id, balance, currency, status)');
+    console.log('SELECT id, 0.00, \'USD\', \'active\' FROM users WHERE email = \'admin@example.com\';\n');
 }
 
 main().catch(console.error);

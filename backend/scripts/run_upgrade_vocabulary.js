@@ -10,9 +10,9 @@ async function run() {
         const sqlPath = path.resolve(__dirname, '../../db/migrations/upgrade_vocabulary_schema.sql');
         const sql = fs.readFileSync(sqlPath, 'utf-8');
         await pool.query(sql);
-        console.log("✅ Vocabulary schema (for Grammar/Pronunciation) upgraded successfully!");
+        console.log('✅ Vocabulary schema (for Grammar/Pronunciation) upgraded successfully!');
     } catch (e) {
-        console.error("❌ Migration failed:", e);
+        console.error('❌ Migration failed:', e);
     } finally {
         process.exit();
     }

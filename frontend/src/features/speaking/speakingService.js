@@ -22,6 +22,11 @@ export const speakingService = {
         return response.data.topic;
     },
 
+    getIpaPhonemes: async () => {
+        const response = await axios.get(`${API_URL}/speaking/ipa`, getConfig());
+        return response.data.phonemes;
+    },
+
     getTopicAudioUrl: (id) => {
         return `${API_URL}/speaking/topics/${id}/audio`;
     },

@@ -61,13 +61,13 @@ export async function upgradeSubscription(req, res) {
         if (error.message === 'Insufficient balance' && error.details) {
             const { required, available, currency } = error.details;
             const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
-            const formattedRequired = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).format(required);
-            const formattedAvailable = new Intl.NumberFormat(locale, { style: 'currency', currency: currency }).format(available);
+            const formattedRequired = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(required);
+            const formattedAvailable = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(available);
 
             return res.status(400).json({
                 message: `Insufficient balance. Required: ${formattedRequired}, Available: ${formattedAvailable}`,
-                required: required,
-                available: available
+                required,
+                available
             });
         }
 

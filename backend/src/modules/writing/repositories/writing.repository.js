@@ -49,7 +49,7 @@ const writingRepository = {
      * Đếm tổng exercises (for pagination)
      */
     async countExercises({ level, type }) {
-        let sql = `SELECT COUNT(*)::int as total FROM writing_exercises WHERE is_active = true`;
+        let sql = 'SELECT COUNT(*)::int as total FROM writing_exercises WHERE is_active = true';
         const params = [];
         let paramIndex = 1;
 
@@ -102,7 +102,7 @@ const writingRepository = {
      */
     async markSubmissionError(id, errorMsg) {
         await pool.execute(
-            `UPDATE writing_submissions SET status = 'error', feedback = $1 WHERE id = $2`,
+            'UPDATE writing_submissions SET status = \'error\', feedback = $1 WHERE id = $2',
             [JSON.stringify({ error: errorMsg }), id]
         );
     },
@@ -160,7 +160,7 @@ const writingRepository = {
     async getOrCreateStreak(userId) {
         // Upsert: insert if not exists, return existing if exists
         const [rows] = await pool.execute(
-            `INSERT INTO writing_streaks (user_id)
+            `INSERT INTO learning_streaks (user_id)
        VALUES ($1)
        ON CONFLICT (user_id) DO UPDATE SET updated_at = NOW()
        RETURNING *`,
@@ -170,13 +170,13 @@ const writingRepository = {
     },
 
     /**
-     * Cập nhật streak sau khi viết bài
+     * Cập nhật streak sau khi học/viết
      */
     async updateStreak(userId, { currentStreak, longestStreak, lastWritingDate, totalWritings, totalWordsWritten, avgScore, badges }) {
         const [rows] = await pool.execute(
-            `UPDATE writing_streaks 
-       SET current_streak = $1, longest_streak = $2, last_writing_date = $3,
-           total_writings = $4, total_words_written = $5, avg_score = $6, badges = $7
+            `UPDATE learning_streaks 
+       SET current_streak = $1, longest_streak = $2, last_activity_date = $3,
+           total_exercises = $4, total_words_learned = $5, avg_score = $6, badges = $7
        WHERE user_id = $8
        RETURNING *`,
             [currentStreak, longestStreak, lastWritingDate, totalWritings, totalWordsWritten,
@@ -190,10 +190,10 @@ const writingRepository = {
      */
     async useStreakFreeze(userId) {
         const [rows] = await pool.execute(
-            `UPDATE writing_streaks 
+            `UPDATE learning_streaks 
        SET streak_freezes_remaining = streak_freezes_remaining - 1,
            streak_freezes_used = streak_freezes_used + 1,
-           last_writing_date = CURRENT_DATE
+           last_activity_date = CURRENT_DATE
        WHERE user_id = $1 AND streak_freezes_remaining > 0
        RETURNING *`,
             [userId]
@@ -210,7 +210,7 @@ const writingRepository = {
         const [rows] = await pool.execute(
             `INSERT INTO user_vocabulary (user_id, word, definition, translation, example_sentence, source, source_id, level)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       ON CONFLICT (user_id, word) DO UPDATE SET
+       ON CONFLICT (user_id, word, item_type) DO UPDATE SET
          definition = COALESCE(EXCLUDED.definition, user_vocabulary.definition),
          translation = COALESCE(EXCLUDED.translation, user_vocabulary.translation),
          example_sentence = COALESCE(EXCLUDED.example_sentence, user_vocabulary.example_sentence),
@@ -331,7 +331,7 @@ const writingRepository = {
      */
     async deleteVocabulary(id, userId) {
         const [result] = await pool.execute(
-            `DELETE FROM user_vocabulary WHERE id = $1 AND user_id = $2`,
+            'DELETE FROM user_vocabulary WHERE id = $1 AND user_id = $2',
             [id, userId]
         );
         return result.affectedRows > 0;

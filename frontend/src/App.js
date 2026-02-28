@@ -8,6 +8,7 @@ import ListeningTab from './features/listening/ListeningTab';
 import ReadingTab from './features/reading/ReadingTab';
 import SpeakingTab from './features/speaking/SpeakingTab';
 import LearningTab from './features/learning/LearningTab';
+import VocabularyHub from './features/vocabulary/VocabularyHub';
 import AnalyticsDashboard from './features/analytics/AnalyticsDashboard';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
@@ -423,6 +424,19 @@ export default function App() {
         >
           📊 Analytics
         </button>
+        <button
+          onClick={() => setView('vocabulary')}
+          style={{
+            background: view === 'vocabulary' ? '#10b981' : '#f6f9fc',
+            color: view === 'vocabulary' ? '#fff' : '#333',
+            border: '1px solid #10b981',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          📓 Sổ Từ Vựng
+        </button>
         {role === 'admin' && (
           <button
             onClick={() => setView('knowledgeadmin')}
@@ -481,6 +495,7 @@ export default function App() {
           {view === 'speaking' && <SpeakingTab darkMode={darkMode} />}
           {view === 'learning' && <LearningTab darkMode={darkMode} />}
           {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} />}
+          {view === 'vocabulary' && <VocabularyHub darkMode={darkMode} />}
         </>
       )}
     </>

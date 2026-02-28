@@ -22,7 +22,7 @@ export const speakingAiService = {
             return transcription.text;
         } catch (error) {
             console.error('Whisper API failed:', error.message);
-            throw new Error('AI không nghe được bạn nói, vui lòng thử lại: ' + error.message);
+            throw new Error(`AI không nghe được bạn nói, vui lòng thử lại: ${  error.message}`);
         }
     },
 

@@ -10,9 +10,9 @@ async function run() {
         const sqlPath = path.resolve(__dirname, '../../db/migrations/learning_hub_schema.sql');
         const sql = fs.readFileSync(sqlPath, 'utf-8');
         await pool.query(sql);
-        console.log("✅ Custom Schema: Learning Hub created successfully!");
+        console.log('✅ Custom Schema: Learning Hub created successfully!');
     } catch (e) {
-        console.error("❌ Migration failed:", e);
+        console.error('❌ Migration failed:', e);
     } finally {
         process.exit();
     }

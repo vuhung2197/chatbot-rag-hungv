@@ -49,7 +49,7 @@ const writingRepository = {
      * Đếm tổng exercises (for pagination)
      */
     async countExercises({ level, type }) {
-        let sql = `SELECT COUNT(*)::int as total FROM writing_exercises WHERE is_active = true`;
+        let sql = 'SELECT COUNT(*)::int as total FROM writing_exercises WHERE is_active = true';
         const params = [];
         let paramIndex = 1;
 
@@ -102,7 +102,7 @@ const writingRepository = {
      */
     async markSubmissionError(id, errorMsg) {
         await pool.execute(
-            `UPDATE writing_submissions SET status = 'error', feedback = $1 WHERE id = $2`,
+            'UPDATE writing_submissions SET status = \'error\', feedback = $1 WHERE id = $2',
             [JSON.stringify({ error: errorMsg }), id]
         );
     },
@@ -331,7 +331,7 @@ const writingRepository = {
      */
     async deleteVocabulary(id, userId) {
         const [result] = await pool.execute(
-            `DELETE FROM user_vocabulary WHERE id = $1 AND user_id = $2`,
+            'DELETE FROM user_vocabulary WHERE id = $1 AND user_id = $2',
             [id, userId]
         );
         return result.affectedRows > 0;

@@ -27,6 +27,7 @@ import listeningRoutes from '#modules/listening/routes/listening.routes.js';
 import readingRoutes from '#modules/reading/routes/reading.routes.js';
 import speakingRoutes from '#modules/speaking/routes/speaking.routes.js';
 import learningRoutes from '#modules/learning/routes/learning.routes.js';
+import analyticsRoutes from '#modules/analytics/routes/analytics.routes.js';
 import subscriptionWorker from '#services/subscriptionWorker.js';
 
 import errorHandler from '#middlewares/errorHandler.js';
@@ -73,6 +74,7 @@ app.use('/listening', listeningRoutes);
 app.use('/reading', readingRoutes);
 app.use('/speaking', speakingRoutes);
 app.use('/learning', learningRoutes);
+app.use('/analytics', analyticsRoutes);
 
 
 app.context = app; // For rare cases passing app context

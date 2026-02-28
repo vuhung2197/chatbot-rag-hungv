@@ -1,5 +1,6 @@
 import writingRepository from '../repositories/writing.repository.js';
 import writingAiService from './writingAI.service.js';
+import analyticsService from '../../analytics/services/analytics.service.js';
 
 // =============================================================================
 // Writing Service - Business Logic Layer
@@ -88,6 +89,21 @@ const writingService = {
                     .catch(e => console.error('Silent fail on add vocab:', e)); // soft fail if it crashes
             }
 
+            // Auto-log mistakes to analytics
+            if (feedbackData.errors && feedbackData.errors.length > 0) {
+                feedbackData.errors.forEach(err => {
+                    analyticsService.logMistake({
+                        userId,
+                        sourceModule: 'writing',
+                        errorCategory: 'grammar',
+                        // We map mistake roughly. Depending on AI output it might be full sentences, so we slice it just in case.
+                        errorDetail: err.type || 'grammar_error',
+                        contextText: err.mistake || '',
+                        sessionId: submission.id
+                    }).catch(e => console.error('Silent fail on log mistake:', e));
+                });
+            }
+
             // 6. Update streak CHỈ KHI điểm tốt (>= 60)
             let streakInfo = { streakIncremented: false, newStreak: 0, milestoneReached: null };
             if (feedbackData.scores && feedbackData.scores.total >= 60) {
@@ -98,7 +114,7 @@ const writingService = {
         } catch (e) {
             console.error('Grading failed:', e);
             await writingRepository.markSubmissionError(submission.id, e.message);
-            throw new Error('AI system failed to process the text. Please try avoiding nonsensical inputs. Details: ' + e.message);
+            throw new Error(`AI system failed to process the text. Please try avoiding nonsensical inputs. Details: ${  e.message}`);
         }
     },
 

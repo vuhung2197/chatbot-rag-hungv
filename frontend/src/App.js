@@ -8,6 +8,7 @@ import ListeningTab from './features/listening/ListeningTab';
 import ReadingTab from './features/reading/ReadingTab';
 import SpeakingTab from './features/speaking/SpeakingTab';
 import LearningTab from './features/learning/LearningTab';
+import AnalyticsDashboard from './features/analytics/AnalyticsDashboard';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
 import UsageCounter from './features/user/UsageCounter';
@@ -409,6 +410,19 @@ export default function App() {
         >
           🎓 Learning Hub
         </button>
+        <button
+          onClick={() => setView('analytics')}
+          style={{
+            background: view === 'analytics' ? '#eab308' : '#f6f9fc',
+            color: view === 'analytics' ? '#fff' : '#333',
+            border: '1px solid #eab308',
+            borderRadius: 8,
+            padding: '8px 16px',
+            cursor: 'pointer'
+          }}
+        >
+          📊 Analytics
+        </button>
         {role === 'admin' && (
           <button
             onClick={() => setView('knowledgeadmin')}
@@ -466,6 +480,7 @@ export default function App() {
           {view === 'reading' && <ReadingTab darkMode={darkMode} />}
           {view === 'speaking' && <SpeakingTab darkMode={darkMode} />}
           {view === 'learning' && <LearningTab darkMode={darkMode} />}
+          {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} />}
         </>
       )}
     </>

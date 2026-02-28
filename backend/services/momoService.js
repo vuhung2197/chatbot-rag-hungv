@@ -61,8 +61,8 @@ class MoMoService extends PaymentService {
                 storeId: 'EnglishChatbot',
                 requestId: reqId,
                 amount: amountInt,
-                orderId: orderId,
-                orderInfo: orderInfo,
+                orderId,
+                orderInfo,
                 redirectUrl: this.redirectUrl,
                 ipnUrl: this.ipnUrl,
                 lang: 'vi',
@@ -127,8 +127,8 @@ class MoMoService extends PaymentService {
             .digest('hex');
 
         this.log('debug', 'Generated signature', {
-            rawSignature: rawSignature.substring(0, 100) + '...',
-            signature: signature.substring(0, 20) + '...'
+            rawSignature: `${rawSignature.substring(0, 100)  }...`,
+            signature: `${signature.substring(0, 20)  }...`
         });
 
         return signature;
@@ -175,8 +175,8 @@ class MoMoService extends PaymentService {
 
             if (!isValid) {
                 this.log('warn', 'Invalid MoMo signature', {
-                    expected: expectedSignature.substring(0, 20) + '...',
-                    received: signature.substring(0, 20) + '...'
+                    expected: `${expectedSignature.substring(0, 20)  }...`,
+                    received: `${signature.substring(0, 20)  }...`
                 });
             }
 
@@ -315,7 +315,7 @@ class MoMoService extends PaymentService {
             const requestBody = {
                 partnerCode: this.partnerCode,
                 requestId: reqId,
-                orderId: orderId,
+                orderId,
                 lang: 'vi'
             };
 
@@ -363,7 +363,7 @@ class MoMoService extends PaymentService {
                 amount: Math.round(amount),
                 transId: transactionId,
                 lang: 'vi',
-                description: description
+                description
             };
 
             // Generate signature for refund

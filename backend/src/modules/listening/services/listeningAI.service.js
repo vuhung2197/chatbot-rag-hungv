@@ -55,7 +55,7 @@ DO NOT output markdown \`\`\`json wrappers. Just raw JSON.`;
                 maxTokens: 1000
             };
 
-            console.log(`🧠 AI Listening Grading - Bắt đầu chấm`);
+            console.log('🧠 AI Listening Grading - Bắt đầu chấm');
             const responseText = await callLLM(modelConfig, messages);
 
             console.log('\n--- RAW AI RESPONSE (DICTATION) ---');
@@ -81,7 +81,7 @@ DO NOT output markdown \`\`\`json wrappers. Just raw JSON.`;
 
         } catch (error) {
             console.error('❌ Lỗi chấm bài AI Dictation:', error);
-            throw new Error('AI Grading Failed: ' + error.message);
+            throw new Error(`AI Grading Failed: ${  error.message}`);
         }
     }
 };

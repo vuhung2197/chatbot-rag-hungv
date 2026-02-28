@@ -6,7 +6,7 @@ async function resetSubscriptions() {
 
         // Update all active or trial subscriptions to expired
         const [result] = await pool.execute(
-            "UPDATE user_subscriptions SET status = 'expired', auto_renew = FALSE, updated_at = NOW() WHERE status IN ('active', 'trial')"
+            'UPDATE user_subscriptions SET status = \'expired\', auto_renew = FALSE, updated_at = NOW() WHERE status IN (\'active\', \'trial\')'
         );
 
         console.log(`✅ Successfully reset ${result.affectedRows} subscriptions.`);

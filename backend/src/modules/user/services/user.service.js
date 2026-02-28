@@ -42,7 +42,7 @@ class UserService {
             createdAt: user.created_at,
             lastLoginAt: user.last_login_at,
             updatedAt: user.updated_at,
-            hasPassword: hasPassword,
+            hasPassword,
         };
     }
 

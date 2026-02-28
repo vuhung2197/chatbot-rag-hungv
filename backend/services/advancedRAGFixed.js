@@ -45,7 +45,7 @@ async function performVectorRetrieval(questionEmbedding) {
     { topK: 8, threshold: 0.45, name: 'medium_similarity' }
   ];
 
-  let allChunks = [];
+  const allChunks = [];
 
   for (const stage of stages) {
     try {
@@ -180,7 +180,7 @@ export async function multiHopReasoning(initialChunks, questionEmbedding, questi
 export function fuseContext(chunks, reasoningChains, question) {
   try {
     // Tạo context có cấu trúc
-    let context = `# Thông tin chính:\n\n`;
+    let context = '# Thông tin chính:\n\n';
 
     // Nhóm chunks theo chủ đề
     const topicGroups = groupChunksByTopic(chunks);
@@ -196,7 +196,7 @@ export function fuseContext(chunks, reasoningChains, question) {
 
     // Thêm reasoning chains
     if (reasoningChains && reasoningChains.length > 0) {
-      context += `# Mối liên kết thông tin:\n\n`;
+      context += '# Mối liên kết thông tin:\n\n';
 
       reasoningChains.forEach((chain, index) => {
         context += `## Liên kết ${index + 1}:\n`;
@@ -204,11 +204,11 @@ export function fuseContext(chunks, reasoningChains, question) {
         context += `**Nội dung:** ${chain.source_chunk.content}\n\n`;
 
         if (chain.related_chunks && chain.related_chunks.length > 0) {
-          context += `**Thông tin liên quan:**\n`;
+          context += '**Thông tin liên quan:**\n';
           chain.related_chunks.forEach(related => {
             context += `- ${related.title || 'Unknown'}: ${related.content.substring(0, 200)}...\n`;
           });
-          context += `\n`;
+          context += '\n';
         }
       });
     }
@@ -230,7 +230,7 @@ export async function adaptiveRetrieval(question, questionEmbedding) {
     // Phân tích độ phức tạp của câu hỏi
     const complexity = analyzeQuestionComplexity(question);
 
-    let retrievalParams = {
+    const retrievalParams = {
       maxChunks: 5,
       threshold: 0.5,
       useMultiHop: false,
@@ -333,9 +333,9 @@ export async function rerankWithCohere(chunks, query) {
     const response = await axios.post(
       'https://api.cohere.ai/v1/rerank',
       {
-        model: model,
-        query: query,
-        documents: documents,
+        model,
+        query,
+        documents,
         top_n: chunks.length
       },
       {
@@ -621,7 +621,7 @@ function reciprocalRankFusion(vectorResults, textResults, k = 60) {
     const chunk = chunkMap.get(id);
     fusedResults.push({
       ...chunk,
-      score: score, // Update score to RRF score
+      score, // Update score to RRF score
       debug_info: `RRF Score: ${score.toFixed(4)}`
     });
   }

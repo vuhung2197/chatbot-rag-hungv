@@ -10,9 +10,9 @@ async function run() {
         const sqlPath = path.resolve(__dirname, '../../db/migrations/seed_reflex_topics.sql');
         const sql = fs.readFileSync(sqlPath, 'utf-8');
         await pool.query(sql);
-        console.log("✅ Seed Reflex Topics successfully!");
+        console.log('✅ Seed Reflex Topics successfully!');
     } catch (e) {
-        console.error("❌ Migration failed:", e);
+        console.error('❌ Migration failed:', e);
     } finally {
         process.exit();
     }

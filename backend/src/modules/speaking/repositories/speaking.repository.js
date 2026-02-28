@@ -37,7 +37,7 @@ const speakingRepository = {
 
     async getTopicById(id) {
         const [rows] = await pool.query(
-            `SELECT * FROM speaking_topics WHERE id = $1 AND is_active = true`,
+            'SELECT * FROM speaking_topics WHERE id = $1 AND is_active = true',
             [id]
         );
         return rows[0] || null;
@@ -70,7 +70,7 @@ const speakingRepository = {
 
     async updateTopicAudioUrl(id, audioUrl) {
         await pool.query(
-            `UPDATE speaking_topics SET audio_url = $1 WHERE id = $2`,
+            'UPDATE speaking_topics SET audio_url = $1 WHERE id = $2',
             [audioUrl, id]
         );
     },

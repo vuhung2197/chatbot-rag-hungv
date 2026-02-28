@@ -4,8 +4,8 @@ import { learningAiService } from './src/modules/learning/services/learningAI.se
 (async () => {
     try {
         const res = await learningAiService.generateLesson('grammar', 'B2');
-        console.log("SUCCESS:", res);
+        console.log('SUCCESS:', res);
     } catch (e) {
-        console.error("FAIL:", e);
+        console.error('FAIL:', e);
     }
 })();

@@ -52,7 +52,7 @@ class KnowledgeService {
         );
 
         const insertedId = rows[0]?.id;
-        if (!insertedId) throw new Error("Failed to retrieve inserted ID");
+        if (!insertedId) throw new Error('Failed to retrieve inserted ID');
 
         await this.updateImportantKeywords(title, content);
         await updateChunksForKnowledge(insertedId, title, content); // This is an external service/helper

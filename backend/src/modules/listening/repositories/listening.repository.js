@@ -30,9 +30,9 @@ const listeningRepository = {
         const [rows] = await pool.execute(sql, params);
 
         // Count total
-        let countSql = `SELECT COUNT(*) as total FROM listening_exercises WHERE is_active = true`;
+        let countSql = 'SELECT COUNT(*) as total FROM listening_exercises WHERE is_active = true';
         const countParams = [];
-        if (level) { countSql += ` AND level = $1`; countParams.push(level); }
+        if (level) { countSql += ' AND level = $1'; countParams.push(level); }
         if (type) { countSql += ` AND type = $${countParams.length + 1}`; countParams.push(type); }
 
         const [countRows] = await pool.execute(countSql, countParams);
@@ -48,7 +48,7 @@ const listeningRepository = {
      */
     async getExerciseById(id) {
         const [rows] = await pool.execute(
-            `SELECT * FROM listening_exercises WHERE id = $1 AND is_active = true`,
+            'SELECT * FROM listening_exercises WHERE id = $1 AND is_active = true',
             [id]
         );
         return rows[0] || null;
@@ -59,7 +59,7 @@ const listeningRepository = {
      */
     async updateExerciseAudio(id, audioUrl) {
         await pool.execute(
-            `UPDATE listening_exercises SET audio_url = $1 WHERE id = $2`,
+            'UPDATE listening_exercises SET audio_url = $1 WHERE id = $2',
             [audioUrl, id]
         );
     },
@@ -98,7 +98,7 @@ const listeningRepository = {
      */
     async markSubmissionError(id, errorMsg) {
         await pool.execute(
-            `UPDATE listening_submissions SET status = 'error', feedback = $1 WHERE id = $2`,
+            'UPDATE listening_submissions SET status = \'error\', feedback = $1 WHERE id = $2',
             [JSON.stringify({ error: errorMsg }), id]
         );
     },

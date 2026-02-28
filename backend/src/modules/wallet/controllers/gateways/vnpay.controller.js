@@ -247,11 +247,11 @@ export async function queryVNPayTransaction(req, res) {
             success: true,
             transaction: {
                 id: transaction.id,
-                orderId: orderId,
+                orderId,
                 amount: transaction.amount,
                 status: transaction.status,
                 created_at: transaction.created_at,
-                metadata: metadata
+                metadata
             },
             vnpayQuery: result
         });

@@ -89,7 +89,7 @@ pool.getConnection = async function () {
   const wrappedClient = {
     ...client,
 
-    execute: async function (sql, params) {
+    async execute (sql, params) {
       const { sql: newSql, params: newParams } = convertPlaceholders(sql, params);
       try {
         const result = await client.query(newSql, newParams);
@@ -114,23 +114,23 @@ pool.getConnection = async function () {
       }
     },
 
-    query: async function (sql, params) {
+    async query (sql, params) {
       return this.execute(sql, params);
     },
 
-    beginTransaction: async function () {
+    async beginTransaction () {
       await client.query('BEGIN');
     },
 
-    commit: async function () {
+    async commit () {
       await client.query('COMMIT');
     },
 
-    rollback: async function () {
+    async rollback () {
       await client.query('ROLLBACK');
     },
 
-    release: function () {
+    release () {
       client.release();
     }
   };

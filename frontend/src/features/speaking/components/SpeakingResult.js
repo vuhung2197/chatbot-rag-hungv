@@ -33,16 +33,53 @@ export default function SpeakingResult({ submission, topic, darkMode, onBack }) 
                 </div>
             </div>
 
-            {/* Whisper Transcript */}
+            {/* Whisper/Azure Transcript */}
             <div style={{
                 padding: '20px', borderRadius: '12px', background: 'var(--card-bg, white)',
                 border: '1px solid var(--border-color, #e2e8f0)'
             }}>
                 <h3 style={{ color: '#ec4899', margin: '0 0 12px 0', fontSize: '1.1rem' }}>🎙️ AI bóc băng giọng của bạn:</h3>
-                <div style={{ fontStyle: 'italic', fontSize: '1.2rem', color: 'var(--text-primary, #1e293b)', lineHeight: '1.6' }}>
-                    "{submission.transcript}"
-                </div>
-                {submission.transcript === '' && (
+
+                {fb.raw_words_detail && fb.raw_words_detail.length > 0 ? (
+                    <div style={{ fontSize: '1.2rem', lineHeight: '1.8', marginBottom: '16px' }}>
+                        {fb.raw_words_detail.map((w, idx) => {
+                            let color = '#10b981'; // Green for good (>80)
+                            if (w.AccuracyScore < 60) color = '#ef4444'; // Red for bad
+                            else if (w.AccuracyScore < 80) color = '#f59e0b'; // Yellow for okay
+
+                            // Add Title for tooltip showing exact score
+                            return (
+                                <span
+                                    key={idx}
+                                    title={`Độ chính xác: ${w.AccuracyScore}%`}
+                                    style={{
+                                        color: color,
+                                        marginRight: '6px',
+                                        fontWeight: w.AccuracyScore < 80 ? 'bold' : 'normal',
+                                        borderBottom: w.AccuracyScore < 60 ? `2px solid ${color}` : 'none',
+                                        cursor: 'help'
+                                    }}
+                                >
+                                    {w.Word}
+                                </span>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div style={{ fontStyle: 'italic', fontSize: '1.2rem', color: 'var(--text-primary, #1e293b)', lineHeight: '1.6', marginBottom: '16px' }}>
+                        "{submission.transcript}"
+                    </div>
+                )}
+
+                {fb.scores_detail && (
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '0.85rem', color: 'var(--text-secondary, #64748b)', flexWrap: 'wrap', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
+                        <div>🎯 Accuracy: <strong>{fb.scores_detail.accuracy}%</strong></div>
+                        <div>🌊 Fluency: <strong>{fb.scores_detail.fluency}%</strong></div>
+                        <div>✅ Completeness: <strong>{fb.scores_detail.completeness}%</strong></div>
+                    </div>
+                )}
+
+                {submission.transcript === '' && (!fb.raw_words_detail || fb.raw_words_detail.length === 0) && (
                     <div style={{ color: '#ef4444' }}>⚠️ AI không nghe được chữ nào! Hãy chắc chắn micro của bạn hoạt động và bạn đọc to rõ ràng.</div>
                 )}
             </div>

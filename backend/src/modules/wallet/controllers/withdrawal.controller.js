@@ -120,7 +120,7 @@ export async function calculateWithdrawalFee(req, res) {
             amount,
             fee,
             net_amount: netAmount,
-            currency: currency
+            currency
         });
     } catch (error) {
         console.error('❌ Error calculating fee:', error);
@@ -158,7 +158,7 @@ export async function withdraw(req, res) {
             const netAmount = amount - fee;
             if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small. Must be greater than fee.' });
 
-            let amountToDeduct = parseFloat(amount); // Amount is already in wallet currency
+            const amountToDeduct = parseFloat(amount); // Amount is already in wallet currency
 
             if (parseFloat(wallet.balance) < amountToDeduct) {
                 await connection.rollback();

@@ -1,6 +1,8 @@
 import fs from 'fs';
 import speakingRepository from '../repositories/speaking.repository.js';
 import speakingAiService from './speakingAI.service.js';
+import azureSpeechService from './azureSpeech.service.js';
+import analyticsService from '../../analytics/services/analytics.service.js';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -32,7 +34,7 @@ export const speakingService = {
         // Chưa có -> Generate bằng AI TTS alloy
         console.log(`🎙️ Sinh TTS audio cho topic ID: ${id}`);
         const mp3 = await openai.audio.speech.create({
-            model: "tts-1", voice: "alloy", input: topic.prompt_text
+            model: 'tts-1', voice: 'alloy', input: topic.prompt_text
         });
         const buffer = Buffer.from(await mp3.arrayBuffer());
 
@@ -60,17 +62,34 @@ export const speakingService = {
             const submission = await speakingRepository.createSubmission({ userId, topicId, audioUrl: null });
             submissionId = submission.id;
 
-            // 2. Transcribe Audio (Whisper)
-            const transcript = await speakingAiService.transcribeAudio(audioFilePath);
+            // 2. Transcribe Audio (Whisper) - Always done to ensure we have a transcript
+            let transcript = '';
+            try {
+                transcript = await speakingAiService.transcribeAudio(audioFilePath);
+            } catch (e) {
+                console.warn('Whisper transcription failed (will be ignored if Azure works):', e);
+            }
 
             // 3. Grade the transcript based on Topic type
             let evaluation;
-            if (topic.type === 'shadowing') {
-                evaluation = await speakingAiService.gradeShadowing(topic.level, topic.prompt_text, transcript);
+            if (topic.type === 'shadowing' || topic.type === 'pronunciation') {
+                // Sử dụng Azure Cognitive Services cho phần đánh giá âm vị cực chuẩn
+                try {
+                    console.log(`🎙️ Chấm điểm bằng Azure cho topic: ${topic.type}`);
+                    evaluation = await azureSpeechService.evaluatePronunciation(audioFilePath, topic.prompt_text);
+                } catch (e) {
+                    console.warn(`Azure failed, fallback to Whisper AI: ${e.message}`);
+                    evaluation = topic.type === 'shadowing' ?
+                        await speakingAiService.gradeShadowing(topic.level, topic.prompt_text, transcript) :
+                        await speakingAiService.gradePronunciation(topic.level, topic.prompt_text, transcript);
+
+                    if (!transcript) transcript = evaluation.transcript || '';
+                }
+                if (!transcript && evaluation.transcript) {
+                    transcript = evaluation.transcript;
+                }
             } else if (topic.type === 'reflex') {
                 evaluation = await speakingAiService.gradeReflex(topic.level, topic.prompt_text, transcript);
-            } else if (topic.type === 'pronunciation') {
-                evaluation = await speakingAiService.gradePronunciation(topic.level, topic.prompt_text, transcript);
             } else { // 'topic'
                 evaluation = await speakingAiService.gradeTopic(topic.level, topic.prompt_text, transcript);
             }
@@ -94,6 +113,30 @@ export const speakingService = {
                 grammar_correction: e.correction,
                 level: topic.level
             })) : [];
+
+            // Auto-log mistakes to analytics
+            pronunciationItems.forEach(item => {
+                analyticsService.logMistake({
+                    userId,
+                    sourceModule: 'speaking',
+                    errorCategory: 'pronunciation',
+                    errorDetail: item.expected || 'phoneme_error',
+                    contextText: item.heard || '',
+                    sessionId: submissionId
+                }).catch(e => console.error('Silent fail on log mistake:', e));
+            });
+
+            grammarItems.forEach(item => {
+                analyticsService.logMistake({
+                    userId,
+                    sourceModule: 'speaking',
+                    errorCategory: 'grammar',
+                    errorDetail: 'grammar_error',
+                    contextText: item.grammar_error || '',
+                    sessionId: submissionId
+                }).catch(e => console.error('Silent fail on log mistake:', e));
+            });
+
 
             if (newWords.length > 0 || pronunciationItems.length > 0 || grammarItems.length > 0) {
                 // Grammar items trong Speaking được append vào pronunciationItems param để process chung ở hàm tiếp theo 

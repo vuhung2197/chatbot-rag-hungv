@@ -27,6 +27,11 @@ export const speakingService = {
         return response.data.phonemes;
     },
 
+    generateTopic: async (type, level) => {
+        const response = await axios.post(`${API_URL}/speaking/generate`, { type, level }, getConfig());
+        return response.data.topic;
+    },
+
     getTopicAudioUrl: (id) => {
         return `${API_URL}/speaking/topics/${id}/audio`;
     },

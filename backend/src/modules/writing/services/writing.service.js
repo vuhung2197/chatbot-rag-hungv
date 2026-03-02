@@ -43,6 +43,53 @@ const writingService = {
         return exercise;
     },
 
+    // Sinh bài tập viết mới bằng AI và lưu vào DB (tránh trùng)
+    async generateExercise(level, type) {
+        // 1. Lấy danh sách bài đã có cùng level/type để tránh trùng
+        const existingExercises = await writingRepository.getExercises({ level, type, limit: 50, offset: 0 });
+        const existingTitles = existingExercises.map(e => e.title);
+
+        const MAX_RETRIES = 3;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            const data = await writingAiService.generateExercise(level, type, existingTitles);
+
+            // 2. Kiểm tra trùng lặp title + prompt
+            const isDuplicate = existingExercises.some(existing =>
+                this._isSimilar(existing.title, data.title) || this._isSimilar(existing.prompt, data.prompt)
+            );
+
+            if (!isDuplicate) {
+                const exercise = await writingRepository.createExercise(data);
+                return exercise;
+            }
+
+            console.warn(`⚠️ Writing generate attempt ${attempt}/${MAX_RETRIES}: duplicate detected, retrying...`);
+        }
+
+        // Fallback: lưu anyway
+        console.warn('⚠️ Writing: All retries exhausted, saving anyway');
+        const data = await writingAiService.generateExercise(level, type, existingTitles);
+        const exercise = await writingRepository.createExercise(data);
+        return exercise;
+    },
+
+    /**
+     * So sánh tương đồng giữa 2 đoạn text (word-level overlap)
+     * Trả về true nếu trùng >60% từ
+     */
+    _isSimilar(textA, textB) {
+        if (!textA || !textB) return false;
+        const normalize = (t) => t.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+        const wordsA = normalize(textA);
+        const wordsB = normalize(textB);
+        if (wordsA.length === 0 || wordsB.length === 0) return false;
+
+        const setB = new Set(wordsB);
+        const matchCount = wordsA.filter(w => setB.has(w)).length;
+        const similarity = matchCount / Math.max(wordsA.length, wordsB.length);
+        return similarity > 0.6;
+    },
+
     // ==================== SUBMISSIONS ====================
 
     async submitWriting(userId, { exerciseId, content, userPlan = 'free' }) {
@@ -114,7 +161,7 @@ const writingService = {
         } catch (e) {
             console.error('Grading failed:', e);
             await writingRepository.markSubmissionError(submission.id, e.message);
-            throw new Error(`AI system failed to process the text. Please try avoiding nonsensical inputs. Details: ${  e.message}`);
+            throw new Error(`AI system failed to process the text. Please try avoiding nonsensical inputs. Details: ${e.message}`);
         }
     },
 

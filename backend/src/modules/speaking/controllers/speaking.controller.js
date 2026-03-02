@@ -54,6 +54,23 @@ export const speakingController = {
         }
     },
 
+    // POST /speaking/generate
+    async generateTopic(req, res) {
+        try {
+            const { type, level } = req.body;
+            if (!level) {
+                return res.status(400).json({ success: false, error: 'Level is required' });
+            }
+            const validTypes = ['shadowing', 'topic', 'reflex'];
+            const topicType = validTypes.includes(type) ? type : 'topic';
+            const topic = await speakingService.generateTopic(topicType, level);
+            res.status(200).json({ success: true, topic });
+        } catch (error) {
+            console.error('Lỗi sinh topic speaking:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
     // POST /speaking/submit
     async submitAudio(req, res) {
         try {

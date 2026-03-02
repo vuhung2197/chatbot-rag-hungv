@@ -34,6 +34,25 @@ export async function getExerciseById(req, res) {
 
 // ==================== SUBMISSIONS ====================
 
+export async function generateExercise(req, res) {
+    try {
+        const { level, type } = req.body;
+        if (!level) {
+            return res.status(400).json({ success: false, error: 'Level is required' });
+        }
+        const validTypes = ['sentence', 'email', 'story', 'opinion', 'essay', 'report'];
+        const exerciseType = validTypes.includes(type) ? type : 'sentence';
+
+        const exercise = await writingService.generateExercise(level, exerciseType);
+        res.status(200).json({ success: true, exercise });
+    } catch (err) {
+        console.error('❌ Error generating writing exercise:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+}
+
+// ==================== SUBMISSIONS ====================
+
 export async function submitWriting(req, res) {
     try {
         const userId = req.user?.id;

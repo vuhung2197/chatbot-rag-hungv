@@ -17,7 +17,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => {
-        const uniqueSuffix = `${Date.now()  }-${  Math.round(Math.random() * 1E9)}`;
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
         const ext = path.extname(file.originalname) || '';
         cb(null, `${req.user.id}-${uniqueSuffix}${ext}`);
     }
@@ -32,6 +32,9 @@ router.get('/ipa', verifyToken, speakingController.getIpaPhonemes);
 router.get('/topics', verifyToken, speakingController.getTopics);
 router.get('/topics/:id', verifyToken, speakingController.getTopicById);
 router.get('/topics/:id/audio', verifyToken, speakingController.streamTopicAudio);
+
+// AI sinh topic mới
+router.post('/generate', verifyToken, speakingController.generateTopic);
 
 // Nộp bài nói qua form-data với trường 'audio'
 router.post('/submit', verifyToken, upload.single('audio'), speakingController.submitAudio);

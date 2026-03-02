@@ -50,6 +50,53 @@ export const speakingService = {
         return await speakingRepository.getIpaPhonemes();
     },
 
+    // ==================== AI GENERATE ==================== //
+
+    async generateTopic(type, level) {
+        // 1. Lấy danh sách bài đã có cùng type/level để tránh trùng
+        const { topics: existingTopics } = await speakingRepository.getTopics({ type, level, limit: 50, offset: 0 });
+        const existingPrompts = existingTopics.map(t => t.prompt_text);
+
+        const MAX_RETRIES = 3;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            const data = await speakingAiService.generateTopic(type, level, existingPrompts);
+
+            // 2. Kiểm tra trùng lặp - so sánh nội dung
+            const isDuplicate = existingPrompts.some(existing =>
+                this._isSimilar(existing, data.prompt_text)
+            );
+
+            if (!isDuplicate) {
+                const topic = await speakingRepository.createTopic(data);
+                return topic;
+            }
+
+            console.warn(`⚠️ Speaking generate attempt ${attempt}/${MAX_RETRIES}: duplicate detected, retrying...`);
+        }
+
+        // Nếu retry hết vẫn trùng, vẫn lưu (tốt hơn là lỗi)
+        console.warn('⚠️ Speaking: All retries exhausted, saving anyway');
+        const data = await speakingAiService.generateTopic(type, level, existingPrompts);
+        const topic = await speakingRepository.createTopic(data);
+        return topic;
+    },
+
+    /**
+     * So sánh tương đồng giữa 2 đoạn text (word-level overlap)
+     * Trả về true nếu trùng >60% từ
+     */
+    _isSimilar(textA, textB) {
+        const normalize = (t) => t.toLowerCase().replace(/[^a-zàáảãạăắằẳẵặâấầẩẫậđéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵ0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+        const wordsA = normalize(textA);
+        const wordsB = normalize(textB);
+        if (wordsA.length === 0 || wordsB.length === 0) return false;
+
+        const setB = new Set(wordsB);
+        const matchCount = wordsA.filter(w => setB.has(w)).length;
+        const similarity = matchCount / Math.max(wordsA.length, wordsB.length);
+        return similarity > 0.6;
+    },
+
     // ==================== SUBMISSIONS & GRADING ==================== //
 
     async submitAudio(userId, { topicId, audioFilePath }) {

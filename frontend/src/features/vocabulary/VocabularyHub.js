@@ -200,15 +200,24 @@ export default function VocabularyHub({ darkMode }) {
             {view === 'daily' && (
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Mục tiêu hôm nay: Học {dailyWords.length} từ mới</h3>
+                        <div>
+                            <h3 style={{ color: 'var(--text-primary)', margin: '0 0 4px 0' }}>🎯 Mục tiêu hôm nay: Học {dailyWords.length} từ mới</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Từ vựng được đề xuất theo level từ thấp đến cao. Danh sách tự đổi mỗi ngày.
+                            </p>
+                        </div>
                         {dailyWords.length > 0 && (
-                            <button onClick={handleAddAllDaily} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                Thêm {dailyWords.length} từ vào Sổ
+                            <button onClick={handleAddAllDaily} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                ✅ Thêm {dailyWords.length} từ vào Sổ
                             </button>
                         )}
                     </div>
                     {dailyWords.length === 0 ? (
-                        <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px' }}>Bạn đã hết từ đề xuất hôm nay! Hãy qua mục Khám Phá để tự tìm thêm nhé.</p>
+                        <div style={{ textAlign: 'center', padding: '60px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉</div>
+                            <h2 style={{ color: 'var(--text-primary)' }}>Tuyệt vời! Bạn đã thêm hết từ đề xuất hôm nay!</h2>
+                            <p style={{ color: 'var(--text-secondary)' }}>Quay lại vào ngày mai để nhận từ mới, hoặc vào mục <strong>Khám Phá Thư Viện</strong> để tự học thêm.</p>
+                        </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {dailyWords.map(w => renderWordCard(w, (

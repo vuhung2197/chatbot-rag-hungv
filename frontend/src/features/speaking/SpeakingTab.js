@@ -15,6 +15,7 @@ export default function SpeakingTab({ darkMode }) {
     const [selectedTopic, setSelectedTopic] = useState(null);
     const [completedSubmission, setCompletedSubmission] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const loadTopics = async () => {
         setIsLoading(true);
@@ -30,6 +31,24 @@ export default function SpeakingTab({ darkMode }) {
     };
 
     useEffect(() => { loadTopics(); }, [type, level]);
+
+    const handleGenerateTopic = async () => {
+        setIsGenerating(true);
+        try {
+            const topic = await speakingService.generateTopic(type, level);
+            setSelectedTopic(topic);
+            if (type === 'reflex') {
+                // For reflex, add to the topics list instead
+                setTopics(prev => [topic, ...prev]);
+            } else {
+                setCurrentView('recorder');
+            }
+            loadTopics(); // refresh in background
+        } catch (e) {
+            alert('Lỗi tạo đề nói: ' + (e.response?.data?.error || e.message));
+        }
+        setIsGenerating(false);
+    };
 
     const themeVars = darkMode ? {
         '--card-bg': '#1e293b', '--border-color': '#334155',
@@ -74,6 +93,28 @@ export default function SpeakingTab({ darkMode }) {
             {/* List or Game Start */}
             {type !== 'pronunciation' ? (
                 <>
+                    {/* ✨ AI Generate Section */}
+                    <div style={{ padding: '16px 20px', background: darkMode ? 'rgba(113, 55, 234, 0.1)' : 'rgba(113, 55, 234, 0.06)', borderRadius: '12px', marginBottom: '16px', border: '1px solid rgba(113, 55, 234, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                            <h3 style={{ margin: '0 0 4px 0', color: 'var(--text-primary)', fontSize: '1rem' }}>✨ Tạo đề mới bằng AI</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                AI sẽ tạo {type === 'shadowing' ? 'câu mẫu' : type === 'reflex' ? 'câu dịch' : 'câu hỏi'} mới phù hợp level {level}
+                            </p>
+                        </div>
+                        <button
+                            onClick={handleGenerateTopic}
+                            disabled={isGenerating}
+                            style={{
+                                padding: '10px 20px', background: isGenerating ? '#94a3b8' : '#7137ea', color: 'white',
+                                border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isGenerating ? 'not-allowed' : 'pointer',
+                                whiteSpace: 'nowrap', fontSize: '0.95rem',
+                                boxShadow: isGenerating ? 'none' : '0 4px 6px rgba(113, 55, 234, 0.3)'
+                            }}
+                        >
+                            {isGenerating ? '⏳ Đang tạo...' : '✨ Tạo đề mới'}
+                        </button>
+                    </div>
+
                     <h3 style={{ color: 'var(--text-primary)', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
                         Danh sách bài tập {type === 'shadowing' ? 'Shadowing' : type === 'reflex' ? 'Phản Xạ' : 'Topic'} ({level})
 

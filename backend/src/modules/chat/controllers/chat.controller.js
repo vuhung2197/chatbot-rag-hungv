@@ -26,18 +26,18 @@ function toMarkdown(text) {
     }
 
     // B2: Duyệt các đoạn còn lại
-    for (let para of paragraphs) {
-        para = para.trim();
-        if (!para) continue;
+    for (const para of paragraphs) {
+        const trimmedPara = para.trim();
+        if (!trimmedPara) continue;
 
         const isList =
-            para.startsWith('- ') ||
-            para.startsWith('* ') ||
-            /^[•\-+]\s/.test(para) ||
-            (/(,|\.)\s/.test(para) && para.length < 200);
+            trimmedPara.startsWith('- ') ||
+            trimmedPara.startsWith('* ') ||
+            /^[•\-+]\s/.test(trimmedPara) ||
+            (/(,|\.)\s/.test(trimmedPara) && trimmedPara.length < 200);
 
         if (isList) {
-            const points = para
+            const points = trimmedPara
                 .split(/(?:^|\n)[•\-+*]?\s*/)
                 .map((p) => p.trim())
                 .filter((p) => p.length > 0);
@@ -46,7 +46,7 @@ function toMarkdown(text) {
             });
             markdown += '\n';
         } else {
-            markdown += `${para}\n\n`;
+            markdown += `${trimmedPara}\n\n`;
         }
     }
 

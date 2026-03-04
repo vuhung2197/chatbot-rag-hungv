@@ -14,6 +14,14 @@ export function useConfirm() {
 
   const confirm = useCallback((options) => {
     return new Promise((resolve) => {
+      const handleConfirm = () => {
+        setConfirmState(prev => ({ ...prev, isOpen: false }));
+        resolve(true);
+      };
+      const handleCancel = () => {
+        setConfirmState(prev => ({ ...prev, isOpen: false }));
+        resolve(false);
+      };
       setConfirmState({
         isOpen: true,
         title: options.title || '',
@@ -21,14 +29,8 @@ export function useConfirm() {
         confirmText: options.confirmText || 'Xác nhận',
         cancelText: options.cancelText || 'Hủy',
         confirmColor: options.confirmColor || '#dc3545',
-        onConfirm: () => {
-          setConfirmState(prev => ({ ...prev, isOpen: false }));
-          resolve(true);
-        },
-        onCancel: () => {
-          setConfirmState(prev => ({ ...prev, isOpen: false }));
-          resolve(false);
-        },
+        onConfirm: handleConfirm,
+        onCancel: handleCancel,
       });
     });
   }, []);

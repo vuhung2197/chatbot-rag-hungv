@@ -65,7 +65,7 @@ class PaymentService {
      */
     sortObject(obj) {
         const sorted = {};
-        const keys = Object.keys(obj).sort();
+        const keys = Object.keys(obj).sort((a, b) => a.localeCompare(b));
         keys.forEach(key => {
             sorted[key] = obj[key];
         });

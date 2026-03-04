@@ -6,6 +6,17 @@ import styles from '../../styles/components/UsageCounter.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+// ─── Helper: Build CSS classes based on usage status ───
+function getStatusClass(isAtLimit, isNearLimit) {
+  if (isAtLimit) return styles.atLimit;
+  if (isNearLimit) return styles.nearLimit;
+  return '';
+}
+
+function buildClasses(baseClasses, statusClass) {
+  return [...baseClasses, statusClass].filter(Boolean).join(' ');
+}
+
 export default function UsageCounter({ darkMode }) {
   const [usage, setUsage] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,34 +52,22 @@ export default function UsageCounter({ darkMode }) {
   const advancedRagCount = Number(usage.usage?.advanced_rag_count) || 0;
   const queriesLimit = usage.limits?.queries_per_day || 50;
   const queriesPercent = usage.percentage?.queries || 0;
-  
+
   // Advanced RAG doesn't have a limit in the response, so we'll just show the count
   const isNearLimit = queriesPercent >= 80;
   const isAtLimit = queriesPercent >= 100;
+  const statusClass = getStatusClass(isAtLimit, isNearLimit);
 
-  const containerClasses = [
-    styles.container,
-    darkMode ? styles.darkMode : '',
-    isAtLimit ? styles.atLimit : isNearLimit ? styles.nearLimit : ''
-  ].filter(Boolean).join(' ');
-
-  const valueClasses = [
-    styles.value,
-    darkMode ? styles.darkMode : '',
-    isAtLimit ? styles.atLimit : isNearLimit ? styles.nearLimit : ''
-  ].filter(Boolean).join(' ');
-
-  const progressFillClasses = [
-    styles.progressFill,
-    isAtLimit ? styles.atLimit : isNearLimit ? styles.nearLimit : ''
-  ].filter(Boolean).join(' ');
+  const containerClasses = buildClasses([styles.container, darkMode ? styles.darkMode : ''], statusClass);
+  const valueClasses = buildClasses([styles.value, darkMode ? styles.darkMode : ''], statusClass);
+  const progressFillClasses = buildClasses([styles.progressFill], statusClass);
 
   return (
     <div className={containerClasses}>
       <div className={`${styles.title} ${darkMode ? styles.darkMode : ''}`}>
         📊 Usage Today
       </div>
-      
+
       {/* Queries */}
       <div className={styles.queriesSection}>
         <div className={styles.row}>

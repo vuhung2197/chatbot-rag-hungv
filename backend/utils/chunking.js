@@ -6,43 +6,63 @@
  */
 export function splitIntoSemanticChunks(content, maxWords = 100) {
   const paragraphs = content
-    .split(/\n\s*\n/) // Tách đoạn văn theo dòng trống
+    .split(/\n\s*\n/)
     .map((p) => p.trim())
-    .filter((p) => p.length > 0); // Loại bỏ đoạn rỗng
+    .filter((p) => p.length > 0);
 
-  const chunks = [];
-  let currentChunk = '';
-  let wordCount = 0;
+  let state = {
+    chunks: [],
+    currentChunk: '',
+    wordCount: 0
+  };
 
   for (const paragraph of paragraphs) {
-    const paragraphWordCount = paragraph.split(/\s+/).length;
-
-    // Nếu đoạn văn lớn hơn maxWords, chia nhỏ bằng câu
-    if (paragraphWordCount > maxWords) {
-      const sentences = paragraph.match(/[^.!?]+[.!?]+/g) || [paragraph];
-      for (const sentence of sentences) {
-        const sentenceWords = sentence.split(/\s+/).length;
-        if (wordCount + sentenceWords > maxWords) {
-          if (currentChunk.trim()) chunks.push(currentChunk.trim());
-          currentChunk = sentence;
-          wordCount = sentenceWords;
-        } else {
-          currentChunk += ` ${sentence}`;
-          wordCount += sentenceWords;
-        }
-      }
-    } else {
-      if (wordCount + paragraphWordCount > maxWords) {
-        if (currentChunk.trim()) chunks.push(currentChunk.trim());
-        currentChunk = paragraph;
-        wordCount = paragraphWordCount;
-      } else {
-        currentChunk += `\n\n${paragraph}`;
-        wordCount += paragraphWordCount;
-      }
-    }
+    processParagraph(paragraph, maxWords, state);
   }
 
-  if (currentChunk.trim()) chunks.push(currentChunk.trim());
-  return chunks;
+  if (state.currentChunk.trim()) {
+    state.chunks.push(state.currentChunk.trim());
+  }
+  return state.chunks;
+}
+
+function processParagraph(paragraph, maxWords, state) {
+  const paragraphWordCount = paragraph.split(/\s+/).length;
+
+  if (paragraphWordCount > maxWords) {
+    processLongParagraphBySentences(paragraph, maxWords, state);
+  } else {
+    processShortParagraph(paragraph, paragraphWordCount, maxWords, state);
+  }
+}
+
+function processLongParagraphBySentences(paragraph, maxWords, state) {
+  const sentences = paragraph.match(/[^.!?]+[.!?]+/g) || [paragraph];
+
+  for (const sentence of sentences) {
+    const sentenceWords = sentence.split(/\s+/).length;
+    if (state.wordCount + sentenceWords > maxWords) {
+      if (state.currentChunk.trim()) {
+        state.chunks.push(state.currentChunk.trim());
+      }
+      state.currentChunk = sentence;
+      state.wordCount = sentenceWords;
+    } else {
+      state.currentChunk += ` ${sentence}`;
+      state.wordCount += sentenceWords;
+    }
+  }
+}
+
+function processShortParagraph(paragraph, paragraphWordCount, maxWords, state) {
+  if (state.wordCount + paragraphWordCount > maxWords) {
+    if (state.currentChunk.trim()) {
+      state.chunks.push(state.currentChunk.trim());
+    }
+    state.currentChunk = paragraph;
+    state.wordCount = paragraphWordCount;
+  } else {
+    state.currentChunk += state.currentChunk ? `\n\n${paragraph}` : paragraph;
+    state.wordCount += paragraphWordCount;
+  }
 }

@@ -42,10 +42,12 @@ export default function UsageTrendsModal({ darkMode = false, isOpen, onClose, re
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div 
+    <div className={styles.overlay} onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()} role="button" tabIndex={0}>
+      <div
         className={`${styles.modal} ${darkMode ? styles.darkMode : ''}`}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        role="dialog"
       >
         <div className={styles.header}>
           <h2 className={`${styles.title} ${darkMode ? styles.darkMode : ''}`}>

@@ -105,8 +105,8 @@ const CurrencySelector = ({ currentCurrency, onCurrencyChange }) => {
 
             {/* Confirmation Modal */}
             {showConfirm && (
-                <div className="modal-overlay" onClick={cancelCurrencyChange}>
-                    <div className="currency-confirm-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-overlay" onClick={cancelCurrencyChange} onKeyDown={(e) => e.key === 'Escape' && cancelCurrencyChange()} role="button" tabIndex={0}>
+                    <div className="currency-confirm-modal" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="dialog">
                         <div className="modal-header">
                             <h3>
                                 <i className="fas fa-exchange-alt"></i>

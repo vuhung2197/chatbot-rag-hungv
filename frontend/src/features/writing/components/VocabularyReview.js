@@ -147,8 +147,13 @@ export default function VocabularyReview({ darkMode, onBack }) {
                     <div
                         style={{ ...styles.modeCard, borderColor: '#7137ea' }}
                         onClick={() => setMode('flashcard')}
+                        onKeyDown={(e) => e.key === 'Enter' && setMode('flashcard')}
+                        role="button"
+                        tabIndex={0}
                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🗂️</div>
                         <h3 style={{ color: '#7137ea' }}>Flashcard</h3>
@@ -158,8 +163,13 @@ export default function VocabularyReview({ darkMode, onBack }) {
                     <div
                         style={{ ...styles.modeCard, borderColor: '#10b981' }}
                         onClick={() => setMode('match')}
+                        onKeyDown={(e) => e.key === 'Enter' && setMode('match')}
+                        role="button"
+                        tabIndex={0}
                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎮</div>
                         <h3 style={{ color: '#10b981' }}>Nối Từ Siêu Tốc</h3>
@@ -194,7 +204,7 @@ export default function VocabularyReview({ darkMode, onBack }) {
             </div>
 
             {/* FLASHCARD */}
-            <div style={styles.flashcard} onClick={() => setIsFlipped(!isFlipped)}>
+            <div style={styles.flashcard} onClick={() => setIsFlipped(!isFlipped)} onKeyDown={(e) => e.key === 'Enter' && setIsFlipped(!isFlipped)} role="button" tabIndex={0}>
                 {/* Mặt Trước (Front) */}
                 <div style={{ ...styles.cardFace(isFlipped), ...styles.cardFront(isFlipped), borderColor: currentWord.item_type === 'grammar' ? '#e11d48' : currentWord.item_type === 'pronunciation' ? '#d97706' : '#7137ea' }}>
                     {currentWord.item_type === 'grammar' ? (

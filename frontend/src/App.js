@@ -22,6 +22,91 @@ import { useLanguage } from './context/LanguageContext';
 
 import { setupAxiosInterceptor } from './utils/axiosConfig';
 
+// ─── Custom Hook: Handle OAuth and Auth Params ───
+function useAuthParams({ showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword }) {
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const roleFromUrl = urlParams.get('role');
+    const idFromUrl = urlParams.get('id');
+    const error = urlParams.get('error');
+    const pathname = window.location.pathname;
+
+    const oauthLinked = urlParams.get('oauth_linked');
+    const oauthSuccess = urlParams.get('success');
+    if (oauthLinked && oauthSuccess === 'true' && pathname === '/profile') {
+      showToast(`✅ ${oauthLinked} đã được liên kết thành công!`);
+      window.history.replaceState({}, document.title, '/profile');
+      return;
+    }
+
+    if (error) {
+      let errorMessage = `OAuth error: ${error}`;
+      if (error === 'already_linked_to_another_account') errorMessage = 'Tài khoản này đã được liên kết với một tài khoản khác';
+      else if (error === 'user_not_found') errorMessage = 'Không tìm thấy người dùng';
+      showToast(errorMessage);
+      window.history.replaceState({}, document.title, '/');
+      return;
+    }
+
+    if (pathname === '/set-password' && token && roleFromUrl && idFromUrl) {
+      if (urlParams.get('newUser') === 'true') {
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', roleFromUrl);
+        localStorage.setItem('userId', idFromUrl);
+        setIsSettingPassword(true);
+        return;
+      }
+    }
+
+    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password' && !oauthLinked) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', roleFromUrl);
+      localStorage.setItem('userId', idFromUrl);
+      setRole(roleFromUrl);
+      showToast('Đăng nhập thành công!');
+      window.history.replaceState({}, document.title, '/');
+      setTimeout(() => window.location.reload(), 100);
+      return;
+    }
+
+    if (token && !roleFromUrl && (pathname === '/reset-password' || pathname === '/')) {
+      setIsResettingPassword(true);
+      return;
+    }
+
+    if (token && !roleFromUrl && !isResettingPassword && !isSettingPassword) {
+      setIsVerifyingEmail(true);
+    }
+  }, [showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword]);
+}
+
+// ─── Sub-component: Global Nav ───
+function GlobalNav({ view, setView, role }) {
+  const navStyle = (activeView) => ({
+    background: view === activeView ? (['speaking', 'learning'].includes(activeView) ? '#ec4899' : activeView === 'analytics' ? '#eab308' : activeView === 'vocabulary' ? '#10b981' : '#7137ea') : '#f6f9fc',
+    color: view === activeView ? '#fff' : '#333',
+    border: `1px solid ${['speaking', 'learning'].includes(activeView) ? '#ec4899' : activeView === 'analytics' ? '#eab308' : activeView === 'vocabulary' ? '#10b981' : '#7137ea'}`,
+    borderRadius: 8, padding: '8px 16px', cursor: 'pointer'
+  });
+
+  return (
+    <nav style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
+      <button onClick={() => setView('chat')} style={navStyle('chat')}>Knowledge Search</button>
+      <button onClick={() => setView('writing')} style={navStyle('writing')}>✍️ Writing Practice</button>
+      <button onClick={() => setView('listening')} style={navStyle('listening')}>🎧 Listening Practice</button>
+      <button onClick={() => setView('reading')} style={navStyle('reading')}>📖 Reading Practice</button>
+      <button onClick={() => setView('speaking')} style={navStyle('speaking')}>🎙️ Speaking Practice</button>
+      <button onClick={() => setView('learning')} style={navStyle('learning')}>🎓 Learning Hub</button>
+      <button onClick={() => setView('analytics')} style={navStyle('analytics')}>📊 Analytics</button>
+      <button onClick={() => setView('vocabulary')} style={navStyle('vocabulary')}>📓 Sổ Từ Vựng</button>
+      {role === 'admin' && (
+        <button onClick={() => setView('knowledgeadmin')} style={navStyle('knowledgeadmin')}>Knowledge Admin</button>
+      )}
+    </nav>
+  );
+}
+
 export default function App() {
   const [view, setView] = useState('chat');
   const [toast, setToast] = useState('');
@@ -42,85 +127,7 @@ export default function App() {
     setTimeout(() => setToast(''), 2000);
   }
 
-  // Handle Google OAuth callback token and other token-based flows
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const roleFromUrl = urlParams.get('role');
-    const idFromUrl = urlParams.get('id');
-    const error = urlParams.get('error');
-    const pathname = window.location.pathname;
-
-    // Handle OAuth link success
-    const oauthLinked = urlParams.get('oauth_linked');
-    const oauthSuccess = urlParams.get('success');
-    if (oauthLinked && oauthSuccess === 'true' && pathname === '/profile') {
-      showToast(`✅ ${oauthLinked} đã được liên kết thành công!`);
-      // Clean URL
-      window.history.replaceState({}, document.title, '/profile');
-      return;
-    }
-
-    // Handle OAuth errors
-    if (error) {
-      let errorMessage = `OAuth error: ${error}`;
-      if (error === 'already_linked_to_another_account') {
-        errorMessage = 'Tài khoản này đã được liên kết với một tài khoản khác';
-      } else if (error === 'user_not_found') {
-        errorMessage = 'Không tìm thấy người dùng';
-      }
-      showToast(errorMessage);
-      // Clean URL
-      window.history.replaceState({}, document.title, '/');
-      return;
-    }
-
-    // Priority 1: Check if this is set password page (new OAuth user)
-    if (pathname === '/set-password' && token && roleFromUrl && idFromUrl) {
-      const newUser = urlParams.get('newUser') === 'true';
-      if (newUser) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('role', roleFromUrl);
-        localStorage.setItem('userId', idFromUrl);
-        setIsSettingPassword(true);
-        return;
-      }
-    }
-
-    // Priority 2: Handle Google OAuth success (token from callback)
-    // Google OAuth will have token, role, and id in URL
-    // Check this BEFORE checking for oauth_linked to handle login flow
-    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password' && !oauthLinked) {
-      console.log('🔐 Google OAuth callback - Setting token and role:', { token: token.substring(0, 20) + '...', roleFromUrl, idFromUrl });
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', roleFromUrl);
-      localStorage.setItem('userId', idFromUrl);
-      setRole(roleFromUrl);
-      showToast('Đăng nhập thành công!');
-      // Clean URL immediately
-      window.history.replaceState({}, document.title, '/');
-      // Force a small delay to ensure state updates
-      setTimeout(() => {
-        // This ensures the component re-renders with the new role
-        window.location.reload();
-      }, 100);
-      return;
-    }
-
-    // Priority 3: Check if this is a reset password link
-    // Reset password will have token but no role/id, and pathname might be /reset-password
-    if (token && !roleFromUrl && (pathname === '/reset-password' || pathname === '/')) {
-      setIsResettingPassword(true);
-      return;
-    }
-
-    // Priority 4: Check if URL contains verification token (for email verification)
-    // Email verification will have token but no role/id
-    if (token && !roleFromUrl && !isResettingPassword && !isSettingPassword) {
-      setIsVerifyingEmail(true);
-      return;
-    }
-  }, []);
+  useAuthParams({ showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword });
 
   useEffect(() => {
     if (role) setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
@@ -315,7 +322,15 @@ export default function App() {
               e.currentTarget.style.transform = 'scale(1.05)';
               e.currentTarget.style.background = darkMode ? '#450a0a' : '#fee2e2';
             }}
+            onFocus={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = darkMode ? '#450a0a' : '#fee2e2';
+            }}
             onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = darkMode ? '#3f1a1a' : '#ffebee';
+            }}
+            onBlur={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
               e.currentTarget.style.background = darkMode ? '#3f1a1a' : '#ffebee';
             }}
@@ -325,134 +340,7 @@ export default function App() {
         </div>
       </div>
 
-      <nav
-        style={{
-          marginBottom: 20,
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 10,
-        }}
-      >
-        <button
-          onClick={() => setView('chat')}
-          style={{
-            background: view === 'chat' ? '#7137ea' : '#f6f9fc',
-            color: view === 'chat' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          Knowledge Search
-        </button>
-        <button
-          onClick={() => setView('writing')}
-          style={{
-            background: view === 'writing' ? '#7137ea' : '#f6f9fc',
-            color: view === 'writing' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          ✍️ Writing Practice
-        </button>
-        <button
-          onClick={() => setView('listening')}
-          style={{
-            background: view === 'listening' ? '#7137ea' : '#f6f9fc',
-            color: view === 'listening' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          🎧 Listening Practice
-        </button>
-        <button
-          onClick={() => setView('reading')}
-          style={{
-            background: view === 'reading' ? '#7137ea' : '#f6f9fc',
-            color: view === 'reading' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          📖 Reading Practice
-        </button>
-        <button
-          onClick={() => setView('speaking')}
-          style={{
-            background: view === 'speaking' ? '#ec4899' : '#f6f9fc',
-            color: view === 'speaking' ? '#fff' : '#333',
-            border: '1px solid #ec4899',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          🎙️ Speaking Practice
-        </button>
-        <button
-          onClick={() => setView('learning')}
-          style={{
-            background: view === 'learning' ? '#ec4899' : '#f6f9fc',
-            color: view === 'learning' ? '#fff' : '#333',
-            border: '1px solid #ec4899',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          🎓 Learning Hub
-        </button>
-        <button
-          onClick={() => setView('analytics')}
-          style={{
-            background: view === 'analytics' ? '#eab308' : '#f6f9fc',
-            color: view === 'analytics' ? '#fff' : '#333',
-            border: '1px solid #eab308',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          📊 Analytics
-        </button>
-        <button
-          onClick={() => setView('vocabulary')}
-          style={{
-            background: view === 'vocabulary' ? '#10b981' : '#f6f9fc',
-            color: view === 'vocabulary' ? '#fff' : '#333',
-            border: '1px solid #10b981',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          📓 Sổ Từ Vựng
-        </button>
-        {role === 'admin' && (
-          <button
-            onClick={() => setView('knowledgeadmin')}
-            style={{
-              background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
-              color: view === 'knowledgeadmin' ? '#fff' : '#333',
-              border: '1px solid #7137ea',
-              borderRadius: 8,
-              padding: '8px 16px',
-            }}
-          >
-            Knowledge Admin
-          </button>
-        )}
-
-      </nav>
+      <GlobalNav view={view} setView={setView} role={role} />
 
       {toast && (
         <div

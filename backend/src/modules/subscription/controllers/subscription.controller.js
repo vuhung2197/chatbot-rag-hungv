@@ -1,5 +1,31 @@
 import subscriptionService from '../services/subscription.service.js';
 
+// ─── Helper: Map upgrade errors to HTTP responses ───
+const NOT_FOUND_ERRORS = new Set(['User not found', 'Tier not found', 'Wallet not found']);
+
+function handleUpgradeError(error, res) {
+    if (error.message === 'Insufficient balance' && error.details) {
+        const { required, available, currency } = error.details;
+        const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
+        const fmt = (val) => new Intl.NumberFormat(locale, { style: 'currency', currency }).format(val);
+        return res.status(400).json({
+            message: `Insufficient balance. Required: ${fmt(required)}, Available: ${fmt(available)}`,
+            required, available
+        });
+    }
+
+    if (error.code === 409) return res.status(409).json({ message: error.message });
+    if (NOT_FOUND_ERRORS.has(error.message)) return res.status(404).json({ message: error.message });
+    if (error.message === 'Cannot downgrade. Please cancel your current subscription first.') {
+        return res.status(400).json({ message: error.message });
+    }
+
+    return res.status(500).json({
+        message: error.message || 'Error upgrading subscription',
+        error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+}
+
 /**
  * Get all available subscription tiers
  */
@@ -19,15 +45,10 @@ export async function getTiers(req, res) {
 export async function getCurrentSubscription(req, res) {
     try {
         const userId = req.user?.id;
-        if (!userId) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
         const result = await subscriptionService.getCurrentSubscription(userId);
-
-        if (!result) {
-            return res.status(404).json({ message: 'No subscription found' });
-        }
+        if (!result) return res.status(404).json({ message: 'No subscription found' });
 
         res.json(result);
     } catch (error) {
@@ -42,51 +63,17 @@ export async function getCurrentSubscription(req, res) {
 export async function upgradeSubscription(req, res) {
     try {
         const userId = req.user?.id;
-        if (!userId) {
-            return res.status(401).json({ message: 'Unauthorized' });
-        }
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
         const { tierName, billingCycle = 'monthly' } = req.body;
-
-        if (!tierName) {
-            return res.status(400).json({ message: 'Tier name is required' });
-        }
+        if (!tierName) return res.status(400).json({ message: 'Tier name is required' });
 
         const result = await subscriptionService.upgradeSubscription(userId, tierName, billingCycle);
         res.json(result);
 
     } catch (error) {
         console.error('❌ Error upgrading subscription:', error);
-
-        if (error.message === 'Insufficient balance' && error.details) {
-            const { required, available, currency } = error.details;
-            const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
-            const formattedRequired = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(required);
-            const formattedAvailable = new Intl.NumberFormat(locale, { style: 'currency', currency }).format(available);
-
-            return res.status(400).json({
-                message: `Insufficient balance. Required: ${formattedRequired}, Available: ${formattedAvailable}`,
-                required,
-                available
-            });
-        }
-
-        if (error.code === 409) {
-            return res.status(409).json({ message: error.message });
-        }
-
-        if (error.message === 'User not found' || error.message === 'Tier not found' || error.message === 'Wallet not found') {
-            return res.status(404).json({ message: error.message });
-        }
-
-        if (error.message === 'Cannot downgrade. Please cancel your current subscription first.') {
-            return res.status(400).json({ message: error.message });
-        }
-
-        res.status(500).json({
-            message: error.message || 'Error upgrading subscription',
-            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        handleUpgradeError(error, res);
     }
 }
 

@@ -1,15 +1,69 @@
 import pool from '#db';
 
+// ─── Helper: Parse features JSON safely ───
+function parseFeatures(rawFeatures) {
+    if (typeof rawFeatures === 'string') {
+        try {
+            return JSON.parse(rawFeatures);
+        } catch (e) {
+            console.error('Error parsing features JSON:', e);
+            return {};
+        }
+    }
+    if (rawFeatures && typeof rawFeatures === 'object') {
+        return rawFeatures;
+    }
+    return {};
+}
+
+// ─── Helper: Build limits object from features + tier row ───
+function buildLimits(features, tierRow = {}) {
+    return {
+        queries_per_day: features.queries_per_day || 50,
+        file_size_mb: tierRow.max_file_size_mb || 1,
+        chat_history_days: tierRow.max_chat_history_days || 7,
+        advanced_rag: features.advanced_rag || false,
+        priority_support: features.priority_support || false,
+        api_access: features.api_access || false,
+        team_collaboration: features.team_collaboration || false
+    };
+}
+
+// ─── Helper: Map usage type to DB column ───
+const USAGE_TYPE_MAP = {
+    query: 'queries_count',
+    advanced_rag: 'advanced_rag_count',
+    file_upload: 'file_uploads_count',
+    file_size: 'file_uploads_size_mb',
+    tokens: 'tokens_used'
+};
+
+// ─── Helper: Calculate date filter for stats ───
+function getDateFilter(period) {
+    const now = new Date();
+    const daysMap = { day: 7, week: 30 };
+    const monthsMap = { month: 12 };
+
+    if (daysMap[period]) {
+        const startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - daysMap[period]);
+        return `AND date >= '${startDate.toISOString().split('T')[0]}'`;
+    }
+    if (monthsMap[period]) {
+        const startDate = new Date(now);
+        startDate.setMonth(startDate.getMonth() - monthsMap[period]);
+        return `AND date >= '${startDate.toISOString().split('T')[0]}'`;
+    }
+    return '';
+}
+
 class UsageService {
     /**
      * Get usage for a specific user on a specific date
-     * @param {number} userId 
-     * @param {string} date 
      */
     async getUserUsage(userId, date) {
         const [usage] = await pool.execute(
-            `SELECT * FROM user_usage 
-       WHERE user_id = ? AND date = ?`,
+            `SELECT * FROM user_usage WHERE user_id = ? AND date = ?`,
             [userId, date]
         );
         return usage[0];
@@ -17,10 +71,8 @@ class UsageService {
 
     /**
      * Get user subscription features and limits
-     * @param {number} userId 
      */
     async getSubscriptionLimits(userId) {
-        // Get user's subscription to get limits
         const [subscriptions] = await pool.execute(
             `SELECT st.features, st.max_file_size_mb, st.max_chat_history_days
        FROM user_subscriptions us
@@ -31,90 +83,31 @@ class UsageService {
             [userId]
         );
 
-        let limits = {
-            queries_per_day: 50,
-            file_size_mb: 1,
-            chat_history_days: 7,
-            advanced_rag: false,
-            priority_support: false,
-            api_access: false,
-            team_collaboration: false
-        };
-
         if (subscriptions.length > 0) {
-            let features = subscriptions[0].features;
-            if (typeof features === 'string') {
-                try {
-                    features = JSON.parse(features);
-                } catch (e) {
-                    console.error('Error parsing features JSON:', e);
-                    features = {};
-                }
-            } else if (!features || typeof features !== 'object') {
-                features = {};
-            }
-
-            limits = {
-                queries_per_day: features.queries_per_day || 50,
-                file_size_mb: subscriptions[0].max_file_size_mb || 1,
-                chat_history_days: subscriptions[0].max_chat_history_days || 7,
-                advanced_rag: features.advanced_rag || false,
-                priority_support: features.priority_support || false,
-                api_access: features.api_access || false,
-                team_collaboration: features.team_collaboration || false
-            };
-        } else {
-            const [freeTier] = await pool.execute(
-                'SELECT features, max_file_size_mb, max_chat_history_days FROM subscription_tiers WHERE name = ?',
-                ['free']
-            );
-            if (freeTier.length > 0) {
-                let features = freeTier[0].features;
-                if (typeof features === 'string') {
-                    try {
-                        features = JSON.parse(features);
-                    } catch (e) {
-                        console.error('Error parsing features JSON:', e);
-                        features = {};
-                    }
-                } else if (!features || typeof features !== 'object') {
-                    features = {};
-                }
-
-                limits = {
-                    queries_per_day: features.queries_per_day || 50,
-                    file_size_mb: freeTier[0].max_file_size_mb || 1,
-                    chat_history_days: freeTier[0].max_chat_history_days || 7,
-                    advanced_rag: features.advanced_rag || false,
-                    priority_support: features.priority_support || false,
-                    api_access: features.api_access || false,
-                    team_collaboration: features.team_collaboration || false
-                };
-            }
+            const features = parseFeatures(subscriptions[0].features);
+            return buildLimits(features, subscriptions[0]);
         }
-        return limits;
+
+        // Fallback to free tier
+        const [freeTier] = await pool.execute(
+            'SELECT features, max_file_size_mb, max_chat_history_days FROM subscription_tiers WHERE name = ?',
+            ['free']
+        );
+
+        if (freeTier.length > 0) {
+            const features = parseFeatures(freeTier[0].features);
+            return buildLimits(features, freeTier[0]);
+        }
+
+        // Default limits
+        return buildLimits({});
     }
 
     /**
      * Get usage stats for period
      */
     async getUsageStats(userId, period) {
-        let dateFilter = '';
-        const now = new Date();
-
-        if (period === 'day') {
-            const startDate = new Date(now);
-            startDate.setDate(startDate.getDate() - 7);
-            dateFilter = `AND date >= '${startDate.toISOString().split('T')[0]}'`;
-        } else if (period === 'week') {
-            const startDate = new Date(now);
-            startDate.setDate(startDate.getDate() - 30);
-            dateFilter = `AND date >= '${startDate.toISOString().split('T')[0]}'`;
-        } else if (period === 'month') {
-            const startDate = new Date(now);
-            startDate.setMonth(startDate.getMonth() - 12);
-            dateFilter = `AND date >= '${startDate.toISOString().split('T')[0]}'`;
-        }
+        const dateFilter = getDateFilter(period);
 
         const [stats] = await pool.execute(
             `SELECT 
@@ -154,6 +147,8 @@ class UsageService {
     async incrementUsage(userId, type, value = 1) {
         try {
             const today = new Date().toISOString().split('T')[0];
+            const updateField = USAGE_TYPE_MAP[type];
+            if (!updateField) return;
 
             const [existing] = await pool.execute(
                 'SELECT * FROM user_usage WHERE user_id = ? AND date = ?',
@@ -161,31 +156,22 @@ class UsageService {
             );
 
             if (existing.length > 0) {
-                const updateField = type === 'query' ? 'queries_count' :
-                    type === 'advanced_rag' ? 'advanced_rag_count' :
-                        type === 'file_upload' ? 'file_uploads_count' :
-                            type === 'file_size' ? 'file_uploads_size_mb' :
-                                type === 'tokens' ? 'tokens_used' : null;
-
-                if (updateField) {
-                    // Round to integer for tokens_used column (INTEGER type in DB)
-                    const finalValue = type === 'tokens' ? Math.round(value) : value;
-                    await pool.execute(
-                        `UPDATE user_usage 
+                const finalValue = type === 'tokens' ? Math.round(value) : value;
+                await pool.execute(
+                    `UPDATE user_usage 
            SET ${updateField} = ${updateField} + ? 
            WHERE user_id = ? AND date = ?`,
-                        [finalValue, userId, today]
-                    );
-                }
+                    [finalValue, userId, today]
+                );
             } else {
                 const initialValues = {
-                    queries_count: type === 'query' ? value : 0,
-                    advanced_rag_count: type === 'advanced_rag' ? value : 0,
-                    file_uploads_count: type === 'file_upload' ? value : 0,
-                    file_uploads_size_mb: type === 'file_size' ? value : 0,
-                    // Round tokens to integer for DB compatibility
-                    tokens_used: type === 'tokens' ? Math.round(value) : 0
+                    queries_count: 0,
+                    advanced_rag_count: 0,
+                    file_uploads_count: 0,
+                    file_uploads_size_mb: 0,
+                    tokens_used: 0
                 };
+                initialValues[updateField] = type === 'tokens' ? Math.round(value) : value;
 
                 await pool.execute(
                     `INSERT INTO user_usage 
@@ -206,7 +192,6 @@ class UsageService {
     async trackUsage(userId, type, options = {}) {
         try {
             const tokens = options.tokens || 0;
-
             await this.incrementUsage(userId, type, 1);
 
             if (tokens > 0) {
@@ -219,8 +204,6 @@ class UsageService {
 
     /**
      * Đếm số lần Web Search hôm nay (cho rate limiting)
-     * @param {number} userId
-     * @returns {Promise<number>} Số lần web search hôm nay
      */
     async getWebSearchCount(userId) {
         try {
@@ -234,7 +217,7 @@ class UsageService {
             return rows[0]?.count || 0;
         } catch (error) {
             console.warn('⚠️ Error counting web searches:', error.message);
-            return 0; // Fail open - cho phép search nếu lỗi đếm
+            return 0;
         }
     }
 }

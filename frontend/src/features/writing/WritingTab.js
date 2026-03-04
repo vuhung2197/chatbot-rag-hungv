@@ -239,18 +239,28 @@ export default function WritingTab({ darkMode }) {
                     <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
                         <div
                             onClick={() => setCurrentView('vocabList')}
+                            onKeyDown={(e) => e.key === 'Enter' && setCurrentView('vocabList')}
+                            role="button"
+                            tabIndex={0}
                             style={{ flex: 1, background: '#f0fdf4', padding: '12px', borderRadius: '8px', border: '1px solid #bbf7d0', cursor: 'pointer', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onFocus={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                            onBlur={e => e.currentTarget.style.transform = 'none'}
                         >
                             <div style={{ color: '#166534', fontSize: '1.25rem', fontWeight: 'bold' }}>{stats?.vocabulary?.mastered || 0}</div>
                             <div style={{ color: '#15803d', fontSize: '0.75rem' }}>Từ đã thuộc</div>
                         </div>
                         <div
                             onClick={() => setCurrentView('vocabReview')}
+                            onKeyDown={(e) => e.key === 'Enter' && setCurrentView('vocabReview')}
+                            role="button"
+                            tabIndex={0}
                             style={{ flex: 1, background: '#fef3c7', padding: '12px', borderRadius: '8px', border: '1px solid #fde68a', cursor: 'pointer', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onFocus={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                            onBlur={e => e.currentTarget.style.transform = 'none'}
                         >
                             <div style={{ color: '#92400e', fontSize: '1.25rem', fontWeight: 'bold' }}>{stats?.vocabulary?.to_review || 0}</div>
                             <div style={{ color: '#b45309', fontSize: '0.75rem' }}>Chờ ôn SRS</div>

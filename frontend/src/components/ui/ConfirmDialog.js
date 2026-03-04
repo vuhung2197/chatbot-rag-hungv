@@ -3,11 +3,11 @@ import shared from '../../styles/shared.module.css';
 import buttons from '../../styles/buttons.module.css';
 import styles from '../../styles/components/ConfirmDialog.module.css';
 
-export default function ConfirmDialog({ 
-  isOpen, 
-  title, 
-  message, 
-  onConfirm, 
+export default function ConfirmDialog({
+  isOpen,
+  title,
+  message,
+  onConfirm,
   onCancel,
   confirmText = 'Xác nhận',
   cancelText = 'Hủy',
@@ -17,10 +17,12 @@ export default function ConfirmDialog({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onCancel}>
-      <div 
+    <div className={styles.overlay} onClick={onCancel} onKeyDown={(e) => e.key === 'Escape' && onCancel()} role="button" tabIndex={0}>
+      <div
         className={`${styles.content} ${darkMode ? styles.darkMode : ''}`}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        role="dialog"
       >
         {title && (
           <h3 className={`${shared.title} ${darkMode ? shared.darkMode : ''}`}>

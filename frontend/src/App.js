@@ -19,6 +19,7 @@ import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import SetPasswordPage from './features/auth/SetPasswordPage';
 import { useDarkMode } from './context/DarkModeContext';
 import { useLanguage } from './context/LanguageContext';
+import EnvConfigPopup from './components/EnvConfigPopup';
 
 import { setupAxiosInterceptor } from './utils/axiosConfig';
 
@@ -111,6 +112,8 @@ export default function App() {
   const [view, setView] = useState('chat');
   const [toast, setToast] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [showEnvConfigPopup, setShowEnvConfigPopup] = useState(false);
+  const [showPublicEnvPopup, setShowPublicEnvPopup] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { t } = useLanguage();
 
@@ -129,9 +132,49 @@ export default function App() {
 
   useAuthParams({ showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword });
 
+  const checkEnvConfig = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const API_URL = process.env.REACT_APP_API_URL || window.location.origin.replace(':3000', ':3001');
+      const res = await axios.get(`${API_URL}/settings/env`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = res.data;
+      const isMissingOpenAI = !data.OPENAI_API_KEY || data.OPENAI_API_KEY.trim() === '';
+      if (isMissingOpenAI) {
+        setShowEnvConfigPopup(true);
+      }
+    } catch (err) {
+      console.error('Error checking env config:', err);
+    }
+  };
+
   useEffect(() => {
-    if (role) setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
-  }, [role]);
+    if (role) {
+      setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
+      checkEnvConfig();
+    } else {
+      // Not logged in -> check public config
+      const checkPublicEnv = async () => {
+        try {
+          const API_URL = process.env.REACT_APP_API_URL || window.location.origin.replace(':3000', ':3001');
+          const res = await axios.get(`${API_URL}/settings/public-env`);
+          const data = res.data;
+          const isMissingGoogle = !data.GOOGLE_CLIENT_ID || !data.GOOGLE_CLIENT_SECRET;
+          if (isMissingGoogle) {
+            setShowPublicEnvPopup(true);
+          }
+        } catch(e) {
+          console.error('Error checking public env:', e);
+        }
+      };
+      // only check public env if we aren't in the middle of password reset/email verify flows
+      if (!isVerifyingEmail && !isResettingPassword && !isSettingPassword) {
+         checkPublicEnv();
+      }
+    }
+  }, [role, isVerifyingEmail, isResettingPassword, isSettingPassword]);
 
   // Setup axios interceptor to handle 401 errors (session expired/revoked)
   useEffect(() => {
@@ -151,7 +194,7 @@ export default function App() {
       const token = localStorage.getItem('token');
       if (token) {
         // Call logout API to delete session in database
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        const API_URL = process.env.REACT_APP_API_URL || window.location.origin.replace(':3000', ':3001');
         await axios.post(
           `${API_URL}/auth/logout`,
           {},
@@ -228,6 +271,17 @@ export default function App() {
             </p>
           </>
         )}
+        {showPublicEnvPopup && (
+          <EnvConfigPopup
+            darkMode={darkMode}
+            mode="public"
+            onClose={() => setShowPublicEnvPopup(false)}
+            onSuccess={() => {
+              showToast('Google OAuth Configuration saved');
+              setShowPublicEnvPopup(false);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -278,6 +332,26 @@ export default function App() {
             }}
           >
             {darkMode ? '🌙' : '☀️'} <span style={{ display: 'none', '@media (min-width: 768px)': { display: 'inline' } }}>{darkMode ? 'Dark' : 'Light'}</span>
+          </button>
+
+          <button
+            onClick={() => setShowEnvConfigPopup(true)}
+            style={{
+              background: darkMode ? '#2d2d2d' : '#f0f0f0',
+              border: `1px solid ${darkMode ? '#555' : '#e5e7eb'}`,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              color: darkMode ? '#fff' : '#333',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+          >
+            ⚙️ System Config
           </button>
 
           <button
@@ -362,6 +436,13 @@ export default function App() {
         </div>
       )}
       <UsageCounter darkMode={darkMode} />
+      {showEnvConfigPopup && (
+        <EnvConfigPopup
+          darkMode={darkMode}
+          onClose={() => setShowEnvConfigPopup(false)}
+          onSuccess={() => showToast('System configuration updated successfully')}
+        />
+      )}
       {showProfile ? (
         <div style={{
           padding: '20px',

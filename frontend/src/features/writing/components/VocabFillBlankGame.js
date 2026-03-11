@@ -354,8 +354,23 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                 </div>
             )}
 
+            {/* Full answer reveal - level 3 */}
+            {hintLevel >= 3 && (
+                <div style={{
+                    padding: '12px 20px', borderRadius: '10px',
+                    backgroundColor: '#ef444414', border: '1px solid #ef444430',
+                    color: 'var(--text-primary, #334155)', fontSize: '1rem',
+                    maxWidth: '600px', textAlign: 'center'
+                }}>
+                    🔓 Đáp án: <strong style={{ color: '#7137ea', fontSize: '1.15rem' }}>{current.correctAnswer}</strong>
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>
+                        Hãy ghi nhớ từ này và thử lại lần sau nhé!
+                    </div>
+                </div>
+            )}
+
             {/* Hint button */}
-            {!result && hintLevel < 2 && (
+            {!result && hintLevel < 3 && (
                 <button
                     onClick={() => setHintLevel(prev => prev + 1)}
                     style={{
@@ -365,7 +380,7 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                         transition: 'all 0.2s'
                     }}
                 >
-                    {hintLevel === 0 ? '💡 Xem gợi ý (định nghĩa)' : '💡 Xem thêm chữ cái'}
+                    {hintLevel === 0 ? '💡 Xem gợi ý (định nghĩa)' : hintLevel === 1 ? '💡 Xem thêm chữ cái' : '🔓 Xem đáp án'}
                 </button>
             )}
 

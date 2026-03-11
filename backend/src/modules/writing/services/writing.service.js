@@ -143,8 +143,7 @@ const writingService = {
                         userId,
                         sourceModule: 'writing',
                         errorCategory: 'grammar',
-                        // We map mistake roughly. Depending on AI output it might be full sentences, so we slice it just in case.
-                        errorDetail: err.type || 'grammar_error',
+                        errorDetail: err.correction || err.mistake || err.type || 'unknown_grammar_error',
                         contextText: err.mistake || '',
                         sessionId: submission.id
                     }).catch(e => console.error('Silent fail on log mistake:', e));

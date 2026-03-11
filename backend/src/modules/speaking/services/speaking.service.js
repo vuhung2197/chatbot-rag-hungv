@@ -58,7 +58,8 @@ function logMistakesToAnalytics(userId, submissionId, pronunciationItems, gramma
 
     grammarItems.forEach(item => logSilent({
         userId, sourceModule: 'speaking', errorCategory: 'grammar',
-        errorDetail: 'grammar_error', contextText: item.grammar_error || '', sessionId: submissionId
+        errorDetail: item.grammar_correction || item.grammar_error || 'unknown_grammar_error',
+        contextText: item.grammar_error || '', sessionId: submissionId
     }));
 }
 

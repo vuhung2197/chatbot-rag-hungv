@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { writingService } from '../writingService';
 import VocabMatchGame from './VocabMatchGame';
+import VocabFillBlankGame from './VocabFillBlankGame';
 
 const styles = {
     container: {
@@ -175,6 +176,22 @@ export default function VocabularyReview({ darkMode, onBack }) {
                         <h3 style={{ color: '#10b981' }}>Nối Từ Siêu Tốc</h3>
                         <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>Luyện phản xạ nối cặp từ - nghĩa trong 60 giây.</p>
                     </div>
+
+                    <div
+                        style={{ ...styles.modeCard, borderColor: '#f59e0b' }}
+                        onClick={() => setMode('fillblank')}
+                        onKeyDown={(e) => e.key === 'Enter' && setMode('fillblank')}
+                        role="button"
+                        tabIndex={0}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>✍️</div>
+                        <h3 style={{ color: '#f59e0b' }}>Điền Từ Vào Câu</h3>
+                        <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>Đọc câu và điền từ còn thiếu vào chỗ trống.</p>
+                    </div>
                 </div>
 
                 <button onClick={onBack} style={{ ...styles.btnAction('#64748b'), maxWidth: '200px', marginTop: 'auto' }}>
@@ -182,6 +199,13 @@ export default function VocabularyReview({ darkMode, onBack }) {
                 </button>
             </div>
         );
+    }
+
+    if (mode === 'fillblank') {
+        return <VocabFillBlankGame words={reviewList} darkMode={darkMode} onComplete={(score) => {
+            setCurrentIndex(reviewList.length); // mark all done
+            setMode(null);
+        }} />;
     }
 
     if (mode === 'match') {
@@ -241,6 +265,8 @@ export default function VocabularyReview({ darkMode, onBack }) {
                         </>
                     ) : (
                         <>
+                            <div style={{ ...styles.wordBig, fontSize: '2rem', color: '#7137ea', marginBottom: '4px' }}>{currentWord.word}</div>
+                            {currentWord.pos && <div style={{ color: '#a78bfa', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '12px' }}>({currentWord.pos})</div>}
                             <div style={styles.wordDef}>{currentWord.definition}</div>
                             {currentWord.translation && (
                                 <div style={{ ...styles.wordDef, color: '#10b981', fontWeight: 'bold', marginTop: '8px' }}>

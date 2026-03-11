@@ -382,7 +382,7 @@ export default function App() {
           {view === 'reading' && <ReadingTab darkMode={darkMode} />}
           {view === 'speaking' && <SpeakingTab darkMode={darkMode} />}
           {view === 'learning' && <LearningTab darkMode={darkMode} />}
-          {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} />}
+          {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} onNavigate={setView} />}
           {view === 'vocabulary' && <VocabularyHub darkMode={darkMode} />}
         </>
       )}

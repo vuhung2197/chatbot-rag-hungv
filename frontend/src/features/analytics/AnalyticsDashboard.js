@@ -4,7 +4,14 @@ import { RefreshCw, AlertTriangle, BookOpen, AlertCircle, Activity } from 'lucid
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
-export default function AnalyticsDashboard({ darkMode }) {
+export default function AnalyticsDashboard({ darkMode, onNavigate }) {
+
+    const getTargetView = (category) => {
+        if (category === 'grammar') return 'writing';
+        if (category === 'pronunciation') return 'speaking';
+        if (category === 'vocabulary') return 'vocabulary';
+        return 'writing';
+    };
     const [weaknesses, setWeaknesses] = useState([]);
     const [recentMistakes, setRecentMistakes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,6 +68,22 @@ export default function AnalyticsDashboard({ darkMode }) {
         if (category === 'pronunciation') return 'Phát âm';
         if (category === 'vocabulary') return 'Từ vựng';
         return category;
+    };
+
+    // Format error_detail: convert code-like strings to readable text
+    const formatErrorDetail = (detail, contextText) => {
+        if (!detail) return 'Không rõ';
+        const codeMap = {
+            'grammar_error': 'Lỗi ngữ pháp',
+            'unknown_grammar_error': 'Lỗi ngữ pháp',
+            'phoneme_error': 'Lỗi phát âm',
+            'unknown_pronunciation_error': 'Lỗi phát âm',
+        };
+        if (codeMap[detail]) {
+            // If we have context_text, show that instead for more detail
+            return contextText ? contextText.slice(0, 80) : codeMap[detail];
+        }
+        return detail.length > 80 ? detail.slice(0, 80) + '…' : detail;
     };
 
     return (
@@ -151,7 +174,7 @@ export default function AnalyticsDashboard({ darkMode }) {
                                                     }}>
                                                         {getCategoryLabel(w.error_category)}
                                                     </span>
-                                                    {w.error_detail}
+                                                    {formatErrorDetail(w.error_detail, w.context_text)}
                                                 </span>
                                                 <span style={{ color: textSecondary, fontWeight: 'bold' }}>{w.error_count} lỗi</span>
                                             </div>
@@ -184,18 +207,21 @@ export default function AnalyticsDashboard({ darkMode }) {
                                 {weaknesses.slice(0, 3).map((w, index) => (
                                     <div key={index} style={{ padding: '12px', border: `1px solid ${border}`, borderRadius: '8px', background: darkMode ? '#333' : '#f8fafc' }}>
                                         <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem' }}>
-                                            Bạn thường xuyên sai <strong>{w.error_detail}</strong> ({getCategoryLabel(w.error_category)}).
+                                            Bạn thường xuyên sai <strong>{formatErrorDetail(w.error_detail, w.context_text)}</strong> ({getCategoryLabel(w.error_category)}).
                                         </p>
-                                        <button style={{
-                                            background: '#7137ea',
-                                            color: '#fff',
-                                            border: 'none',
-                                            padding: '6px 12px',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 'bold'
-                                        }}>
+                                        <button
+                                            onClick={() => onNavigate && onNavigate(getTargetView(w.error_category))}
+                                            style={{
+                                                background: '#7137ea',
+                                                color: '#fff',
+                                                border: 'none',
+                                                padding: '6px 12px',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.8rem',
+                                                fontWeight: 'bold'
+                                            }}
+                                        >
                                             Khắc phục ngay
                                         </button>
                                     </div>
@@ -227,7 +253,7 @@ export default function AnalyticsDashboard({ darkMode }) {
                                             borderRadius: '4px'
                                         }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{m.error_detail}</span>
+                                                <span style={{ fontWeight: 'bold', fontSize: '0.85rem' }}>{formatErrorDetail(m.error_detail, m.context_text)}</span>
                                                 <span style={{ fontSize: '0.75rem', color: textSecondary }}>
                                                     {new Date(m.created_at).toLocaleDateString()}
                                                 </span>

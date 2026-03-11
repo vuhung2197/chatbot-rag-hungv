@@ -9,6 +9,143 @@ import styles from '../../styles/components/SubscriptionStatus.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+// ─── Helper: Map tier name to CSS class ───
+const TIER_COLOR_MAP = { free: 'free', pro: 'pro', team: 'team' };
+
+function getTierColorClass(tierName) {
+  return styles[TIER_COLOR_MAP[tierName]] || '';
+}
+
+// ─── Helper: Format date ───
+function formatDate(dateString, language) {
+  if (!dateString || dateString === '0' || dateString === 0) return '';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US');
+  } catch (e) {
+    return '';
+  }
+}
+
+// ─── Helper: Format subscription status label ───
+function getStatusLabel(status, t) {
+  const statusMap = {
+    active: '✓ ' + t('subscription.active'),
+    trial: '⏱ ' + t('subscription.trial'),
+    cancelled: '⚠ ' + t('subscription.cancelled'),
+  };
+  return statusMap[status] || status;
+}
+
+// ─── Helper: Format price function factory ───
+function createPriceFormatter(walletCurrency, exchangeRate) {
+  return (priceUSD) => {
+    let price = Number(priceUSD) || 0;
+    if (walletCurrency === 'VND') {
+      price = price * exchangeRate;
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    }
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+  };
+}
+
+// ─── Extracted: Features List Component ───
+function FeaturesList({ features, darkMode, t }) {
+  if (!features) return null;
+
+  const featureItems = [
+    features.queries_per_day === -1
+      ? t('subscription.unlimitedQueries')
+      : `${features.queries_per_day} ${t('subscription.queriesPerDay')}`,
+    features.file_upload_mb === -1
+      ? t('subscription.unlimitedFileUpload')
+      : `${features.file_upload_mb}MB ${t('subscription.fileUpload')}`,
+    features.chat_history_days === -1
+      ? t('subscription.unlimitedHistory')
+      : `${features.chat_history_days} ${t('subscription.daysHistory')}`,
+  ];
+
+  const booleanFeatures = [
+    { key: 'advanced_rag', label: t('subscription.advancedRAG') },
+    { key: 'priority_support', label: t('subscription.prioritySupport') },
+    { key: 'api_access', label: t('subscription.apiAccess') },
+    { key: 'team_collaboration', label: t('subscription.teamCollaboration') },
+  ];
+
+  return (
+    <div className={`${styles.featuresCard} ${darkMode ? styles.darkMode : ''}`}>
+      <h4 className={`${styles.featuresTitle} ${darkMode ? styles.darkMode : ''}`}>
+        {t('subscription.features')}
+      </h4>
+      <ul className={`${styles.featuresList} ${darkMode ? styles.darkMode : ''}`}>
+        {featureItems.map((item, i) => <li key={i}>{item}</li>)}
+        {booleanFeatures
+          .filter(f => Boolean(features[f.key]))
+          .map(f => <li key={f.key}>{f.label}</li>)}
+      </ul>
+    </div>
+  );
+}
+
+// ─── Extracted: Subscription Info Component ───
+function SubscriptionInfo({ subscription, darkMode, language, t, onToggleAutoRenew }) {
+  if (!subscription) return null;
+
+  return (
+    <div className={`${styles.subscriptionInfo} ${darkMode ? styles.darkMode : ''}`}>
+      <div className={styles.infoRow}>
+        <strong>{t('subscription.periodStart')}:</strong> {formatDate(subscription.current_period_start, language)}
+      </div>
+      <div className={styles.infoRow}>
+        <strong>{t('subscription.periodEnd')}:</strong> {formatDate(subscription.current_period_end, language)}
+      </div>
+      <div className={styles.infoRow}>
+        <strong>{t('subscription.autoRenew')}:</strong>{' '}
+        <span className={subscription.auto_renew ? styles.autoRenewOn : styles.autoRenewOff}>
+          {subscription.auto_renew ? t('subscription.autoRenewEnabled') : t('subscription.autoRenewDisabled')}
+        </span>
+        <button
+          onClick={onToggleAutoRenew}
+          className={styles.toggleButton}
+          title={subscription.auto_renew ? t('subscription.autoRenewDisable') : t('subscription.autoRenewEnable')}
+        >
+          <i className={`fas ${subscription.auto_renew ? 'fa-toggle-on' : 'fa-toggle-off'}`}></i>
+        </button>
+      </div>
+      {Boolean(subscription.cancel_at_period_end) && (
+        <div className={`${messages.warning} ${darkMode ? messages.darkMode : ''}`}>
+          ⚠ {t('subscription.willCancel')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Extracted: Action Buttons Component ───
+function ActionButtons({ subscription, tier, t, onRenew, onCancel }) {
+  if (!subscription) return null;
+
+  const showRenew = Boolean(subscription.cancel_at_period_end);
+  const showCancel = subscription.status === 'active' && !Boolean(subscription.cancel_at_period_end) && tier.name !== 'free';
+
+  return (
+    <div className={styles.buttonContainer}>
+      {showRenew && (
+        <button onClick={onRenew} className={`${buttons.button} ${buttons.buttonSuccess}`}>
+          {t('subscription.renew')}
+        </button>
+      )}
+      {showCancel && (
+        <button onClick={onCancel} className={`${buttons.button} ${buttons.buttonDanger}`}>
+          {t('subscription.cancel')}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───
 export default function SubscriptionStatus({ darkMode = false, refreshTrigger }) {
   const { t, language } = useLanguage();
   const { confirm } = useConfirmContext();
@@ -16,15 +153,13 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
   const [tier, setTier] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [upgrading, setUpgrading] = useState(false);
   const [walletCurrency, setWalletCurrency] = useState('USD');
   const [exchangeRate, setExchangeRate] = useState(25000);
-
 
   useEffect(() => {
     loadSubscription();
     loadWalletAndRates();
-  }, [refreshTrigger]); // Reload when refreshTrigger changes
+  }, [refreshTrigger]);
 
   const loadSubscription = async () => {
     try {
@@ -47,16 +182,10 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-
       const [walletRes, ratesRes] = await Promise.all([
-        axios.get(`${API_URL}/wallet`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/wallet/currencies`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        axios.get(`${API_URL}/wallet`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/wallet/currencies`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-
       setWalletCurrency(walletRes.data.wallet.currency || 'USD');
       if (ratesRes.data.exchangeRates?.USD_TO_VND) {
         setExchangeRate(ratesRes.data.exchangeRates.USD_TO_VND);
@@ -75,22 +204,17 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
     });
     if (!confirmed) return;
 
-    setUpgrading(true);
     try {
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/subscription/upgrade`,
         { tierName, billingCycle: 'monthly' },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       await loadSubscription();
       setError('');
     } catch (err) {
       setError(err.response?.data?.message || t('subscription.upgradeError'));
-    } finally {
-      setUpgrading(false);
     }
   };
 
@@ -105,13 +229,9 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/subscription/cancel`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axios.post(`${API_URL}/subscription/cancel`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       await loadSubscription();
       setError('');
     } catch (err) {
@@ -122,13 +242,9 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
   const handleRenew = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
-        `${API_URL}/subscription/renew`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await axios.post(`${API_URL}/subscription/renew`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       await loadSubscription();
       setError('');
     } catch (err) {
@@ -138,16 +254,12 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
 
   const handleToggleAutoRenew = async () => {
     if (!subscription) return;
-    const newAutoRenew = !subscription.auto_renew;
-
     try {
       const token = localStorage.getItem('token');
       await axios.post(
         `${API_URL}/subscription/auto-renew`,
-        { autoRenew: newAutoRenew },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { autoRenew: !subscription.auto_renew },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       await loadSubscription();
       setError('');
@@ -164,44 +276,7 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
     );
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString || dateString === '0' || dateString === 0) return '';
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return '';
-      return date.toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US');
-    } catch (e) {
-      return '';
-    }
-  };
-
-  const getTierColorClass = (tierName) => {
-    switch (tierName) {
-      case 'free':
-        return styles.free;
-      case 'pro':
-        return styles.pro;
-      case 'team':
-        return styles.team;
-      default:
-        return '';
-    }
-  };
-
-  const formatPrice = (priceUSD) => {
-    let price = Number(priceUSD) || 0;
-    if (walletCurrency === 'VND') {
-      price = price * exchangeRate;
-      return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND'
-      }).format(price);
-    }
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(price);
-  };
+  const formatPrice = createPriceFormatter(walletCurrency, exchangeRate);
 
   return (
     <div className={`${shared.container} ${darkMode ? shared.darkMode : ''}`}>
@@ -224,10 +299,7 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
               </h4>
               {subscription && (
                 <div className={`${styles.status} ${darkMode ? styles.darkMode : ''}`}>
-                  {subscription.status === 'active' ? '✓ ' + t('subscription.active') :
-                    subscription.status === 'trial' ? '⏱ ' + t('subscription.trial') :
-                      subscription.status === 'cancelled' ? '⚠ ' + t('subscription.cancelled') :
-                        subscription.status}
+                  {getStatusLabel(subscription.status, t)}
                 </div>
               )}
             </div>
@@ -237,8 +309,7 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
                   <div className={`${styles.price} ${darkMode ? styles.darkMode : ''}`}>
                     {subscription?.billing_cycle === 'yearly'
                       ? formatPrice(tier.price_yearly)
-                      : formatPrice(tier.price_monthly)
-                    }
+                      : formatPrice(tier.price_monthly)}
                   </div>
                   <div className={`${styles.priceLabel} ${darkMode ? styles.darkMode : ''}`}>
                     /{subscription?.billing_cycle === 'yearly' ? t('subscription.year') : t('subscription.month')}
@@ -252,97 +323,27 @@ export default function SubscriptionStatus({ darkMode = false, refreshTrigger })
             </div>
           </div>
 
-          {subscription && (
-            <div className={`${styles.subscriptionInfo} ${darkMode ? styles.darkMode : ''}`}>
-              <div className={styles.infoRow}>
-                <strong>{t('subscription.periodStart')}:</strong> {formatDate(subscription.current_period_start)}
-              </div>
-              <div className={styles.infoRow}>
-                <strong>{t('subscription.periodEnd')}:</strong> {formatDate(subscription.current_period_end)}
-              </div>
+          <SubscriptionInfo
+            subscription={subscription}
+            darkMode={darkMode}
+            language={language}
+            t={t}
+            onToggleAutoRenew={handleToggleAutoRenew}
+          />
 
-              <div className={styles.infoRow}>
-                <strong>{t('subscription.autoRenew')}:</strong>{' '}
-                <span className={subscription.auto_renew ? styles.autoRenewOn : styles.autoRenewOff}>
-                  {subscription.auto_renew ? t('subscription.autoRenewEnabled') : t('subscription.autoRenewDisabled')}
-                </span>
-                <button
-                  onClick={handleToggleAutoRenew}
-                  className={styles.toggleButton}
-                  title={subscription.auto_renew ? t('subscription.autoRenewDisable') : t('subscription.autoRenewEnable')}
-                >
-                  <i className={`fas ${subscription.auto_renew ? 'fa-toggle-on' : 'fa-toggle-off'}`}></i>
-                </button>
-              </div>
-
-              {Boolean(subscription.cancel_at_period_end) && (
-                <div className={`${messages.warning} ${darkMode ? messages.darkMode : ''}`}>
-                  ⚠ {t('subscription.willCancel')}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className={styles.buttonContainer}>
-            {subscription && Boolean(subscription.cancel_at_period_end) && (
-              <button
-                onClick={handleRenew}
-                className={`${buttons.button} ${buttons.buttonSuccess}`}
-              >
-                {t('subscription.renew')}
-              </button>
-            )}
-
-            {subscription && subscription.status === 'active' && !Boolean(subscription.cancel_at_period_end) && tier.name !== 'free' && (
-              <button
-                onClick={handleCancel}
-                className={`${buttons.button} ${buttons.buttonDanger}`}
-              >
-                {t('subscription.cancel')}
-              </button>
-            )}
-          </div>
+          <ActionButtons
+            subscription={subscription}
+            tier={tier}
+            t={t}
+            onRenew={handleRenew}
+            onCancel={handleCancel}
+          />
         </div>
       )}
 
-      {/* Features List */}
       {tier && tier.features && (
-        <div className={`${styles.featuresCard} ${darkMode ? styles.darkMode : ''}`}>
-          <h4 className={`${styles.featuresTitle} ${darkMode ? styles.darkMode : ''}`}>
-            {t('subscription.features')}
-          </h4>
-          <ul className={`${styles.featuresList} ${darkMode ? styles.darkMode : ''}`}>
-            {tier.features.queries_per_day === -1 ? (
-              <li>{t('subscription.unlimitedQueries')}</li>
-            ) : (
-              <li>{tier.features.queries_per_day} {t('subscription.queriesPerDay')}</li>
-            )}
-            {Boolean(tier.features.advanced_rag) && (
-              <li>{t('subscription.advancedRAG')}</li>
-            )}
-            {tier.features.file_upload_mb === -1 ? (
-              <li>{t('subscription.unlimitedFileUpload')}</li>
-            ) : (
-              <li>{tier.features.file_upload_mb}MB {t('subscription.fileUpload')}</li>
-            )}
-            {tier.features.chat_history_days === -1 ? (
-              <li>{t('subscription.unlimitedHistory')}</li>
-            ) : (
-              <li>{tier.features.chat_history_days} {t('subscription.daysHistory')}</li>
-            )}
-            {Boolean(tier.features.priority_support) && (
-              <li>{t('subscription.prioritySupport')}</li>
-            )}
-            {Boolean(tier.features.api_access) && (
-              <li>{t('subscription.apiAccess')}</li>
-            )}
-            {Boolean(tier.features.team_collaboration) && (
-              <li>{t('subscription.teamCollaboration')}</li>
-            )}
-          </ul>
-        </div>
+        <FeaturesList features={tier.features} darkMode={darkMode} t={t} />
       )}
     </div>
   );
 }
-

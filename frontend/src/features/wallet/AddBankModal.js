@@ -47,8 +47,8 @@ const AddBankModal = ({ onClose, onSuccess }) => {
     };
 
     return (
-        <div className="add-bank-modal-overlay" onClick={onClose}>
-            <div className="add-bank-modal" onClick={e => e.stopPropagation()}>
+        <div className="add-bank-modal-overlay" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()} role="button" tabIndex={0}>
+            <div className="add-bank-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="dialog">
                 <div className="add-bank-header">
                     <h2>Link Bank Account</h2>
                 </div>

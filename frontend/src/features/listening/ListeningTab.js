@@ -14,8 +14,20 @@ export default function ListeningTab({ darkMode }) {
     const [completedSubmission, setCompletedSubmission] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+    const LISTENING_TOPICS = [
+        { id: 'daily_life', label: '🏠 Cuộc sống' },
+        { id: 'travel', label: '✈️ Du lịch' },
+        { id: 'technology', label: '💻 Công nghệ' },
+        { id: 'science', label: '🔬 Khoa học' },
+        { id: 'health', label: '🏥 Sức khỏe' },
+        { id: 'business', label: '💼 Kinh doanh' },
+        { id: 'education', label: '📚 Giáo dục' },
+        { id: 'culture', label: '🎭 Văn hóa' },
+    ];
 
     const loadExercises = async () => {
         setIsLoading(true);
@@ -35,6 +47,19 @@ export default function ListeningTab({ darkMode }) {
     useEffect(() => {
         loadExercises();
     }, [selectedLevel]);
+
+    const handleGenerateExercise = async (topic) => {
+        setIsGenerating(true);
+        try {
+            const exercise = await listeningService.generateExercise(selectedLevel, topic);
+            setSelectedExercise(exercise);
+            setCurrentView('editor');
+            loadExercises(); // refresh list in background
+        } catch (e) {
+            alert('Lỗi tạo bài nghe: ' + (e.response?.data?.error || e.message));
+        }
+        setIsGenerating(false);
+    };
 
     const themeVars = darkMode ? {
         '--card-bg': '#1e293b',
@@ -76,6 +101,29 @@ export default function ListeningTab({ darkMode }) {
                                 {lvl}
                             </button>
                         ))}
+                    </div>
+
+                    {/* ✨ AI Generate Section */}
+                    <div style={{ padding: '20px', background: darkMode ? 'rgba(113, 55, 234, 0.1)' : 'rgba(113, 55, 234, 0.06)', borderRadius: '12px', marginBottom: '20px', border: '1px solid rgba(113, 55, 234, 0.2)' }}>
+                        <h3 style={{ margin: '0 0 12px 0', color: 'var(--text-primary)' }}>✨ Tạo bài nghe mới bằng AI</h3>
+                        <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            Chọn chủ đề, AI sẽ tạo bài nghe phù hợp level {selectedLevel}:
+                        </p>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            {LISTENING_TOPICS.map(t => (
+                                <button key={t.id} onClick={() => handleGenerateExercise(t.id)}
+                                    disabled={isGenerating}
+                                    style={{
+                                        padding: '8px 14px', borderRadius: '8px',
+                                        background: darkMode ? '#334155' : '#f1f5f9',
+                                        color: darkMode ? '#e2e8f0' : '#334155',
+                                        border: '1px solid transparent', cursor: isGenerating ? 'not-allowed' : 'pointer',
+                                        fontSize: '0.9rem', transition: 'all 0.2s',
+                                        opacity: isGenerating ? 0.5 : 1
+                                    }}>{t.label}</button>
+                            ))}
+                        </div>
+                        {isGenerating && <p style={{ color: '#7137ea', fontWeight: 'bold', marginTop: '12px' }}>⏳ AI đang tạo bài nghe mới... (5-10 giây)</p>}
                     </div>
 
                     {isLoading ? <p style={{ textAlign: 'center' }}>Đang tải bài tập...</p> : (
@@ -135,18 +183,28 @@ export default function ListeningTab({ darkMode }) {
                         <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
                             <div
                                 onClick={() => setCurrentView('vocabList')}
+                                onKeyDown={(e) => e.key === 'Enter' && setCurrentView('vocabList')}
+                                role="button"
+                                tabIndex={0}
                                 style={{ flex: 1, background: '#f0fdf4', padding: '12px', borderRadius: '8px', border: '1px solid #bbf7d0', cursor: 'pointer', transition: 'transform 0.2s' }}
                                 onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onFocus={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                                 onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                                onBlur={e => e.currentTarget.style.transform = 'none'}
                             >
                                 <div style={{ color: '#166534', fontSize: '1.25rem', fontWeight: 'bold' }}>{stats?.vocabulary?.mastered || 0}</div>
                                 <div style={{ color: '#15803d', fontSize: '0.75rem' }}>Từ đã thuộc</div>
                             </div>
                             <div
                                 onClick={() => setCurrentView('vocabReview')}
+                                onKeyDown={(e) => e.key === 'Enter' && setCurrentView('vocabReview')}
+                                role="button"
+                                tabIndex={0}
                                 style={{ flex: 1, background: '#fef3c7', padding: '12px', borderRadius: '8px', border: '1px solid #fde68a', cursor: 'pointer', transition: 'transform 0.2s' }}
                                 onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                                onFocus={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                                 onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                                onBlur={e => e.currentTarget.style.transform = 'none'}
                             >
                                 <div style={{ color: '#92400e', fontSize: '1.25rem', fontWeight: 'bold' }}>{stats?.vocabulary?.to_review || 0}</div>
                                 <div style={{ color: '#b45309', fontSize: '0.75rem' }}>Chờ ôn SRS</div>

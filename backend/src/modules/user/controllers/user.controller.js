@@ -143,7 +143,7 @@ export async function sendEmailVerification(req, res) {
         if (!result.serviceConfigured) {
             return res.json({
                 message: result.message,
-                ...((process.env.NODE_ENV === 'development' || true) && {
+                ...(process.env.NODE_ENV === 'development' && {
                     verificationUrl: result.verificationUrl,
                     verificationCode: result.verificationCode
                 })

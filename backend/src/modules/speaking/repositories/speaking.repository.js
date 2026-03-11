@@ -43,6 +43,19 @@ const speakingRepository = {
         return rows[0] || null;
     },
 
+    /**
+     * Lưu topic do AI sinh vào DB
+     */
+    async createTopic({ type, level, prompt_text }) {
+        const [rows] = await pool.query(
+            `INSERT INTO speaking_topics (type, level, prompt_text, is_active)
+             VALUES ($1, $2, $3, TRUE)
+             RETURNING *`,
+            [type, level, prompt_text]
+        );
+        return rows[0];
+    },
+
     // ==================== SUBMISSIONS ==================== //
 
     async createSubmission({ userId, topicId, audioUrl }) {

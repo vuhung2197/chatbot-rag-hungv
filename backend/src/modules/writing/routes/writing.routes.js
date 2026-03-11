@@ -3,6 +3,7 @@ import { verifyToken } from '#shared/middlewares/auth.middleware.js';
 import {
     getExercises,
     getExerciseById,
+    generateExercise,
     submitWriting,
     getSubmissions,
     getSubmissionDetail,
@@ -21,6 +22,7 @@ const router = express.Router();
 // ==================== EXERCISES (Public - no auth required) ====================
 router.get('/exercises', getExercises);
 router.get('/exercises/:id', getExerciseById);
+router.post('/generate', verifyToken, generateExercise);
 
 // ==================== SUBMISSIONS (Auth required) ====================
 router.post('/submit', verifyToken, submitWriting);

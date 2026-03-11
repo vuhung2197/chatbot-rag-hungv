@@ -8,6 +8,7 @@ import ListeningTab from './features/listening/ListeningTab';
 import ReadingTab from './features/reading/ReadingTab';
 import SpeakingTab from './features/speaking/SpeakingTab';
 import LearningTab from './features/learning/LearningTab';
+import VocabularyHub from './features/vocabulary/VocabularyHub';
 import AnalyticsDashboard from './features/analytics/AnalyticsDashboard';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
@@ -18,13 +19,101 @@ import ResetPasswordPage from './features/auth/ResetPasswordPage';
 import SetPasswordPage from './features/auth/SetPasswordPage';
 import { useDarkMode } from './context/DarkModeContext';
 import { useLanguage } from './context/LanguageContext';
+import EnvConfigPopup from './components/EnvConfigPopup';
 
 import { setupAxiosInterceptor } from './utils/axiosConfig';
+
+// ─── Custom Hook: Handle OAuth and Auth Params ───
+function useAuthParams({ showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword }) {
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const roleFromUrl = urlParams.get('role');
+    const idFromUrl = urlParams.get('id');
+    const error = urlParams.get('error');
+    const pathname = window.location.pathname;
+
+    const oauthLinked = urlParams.get('oauth_linked');
+    const oauthSuccess = urlParams.get('success');
+    if (oauthLinked && oauthSuccess === 'true' && pathname === '/profile') {
+      showToast(`✅ ${oauthLinked} đã được liên kết thành công!`);
+      window.history.replaceState({}, document.title, '/profile');
+      return;
+    }
+
+    if (error) {
+      let errorMessage = `OAuth error: ${error}`;
+      if (error === 'already_linked_to_another_account') errorMessage = 'Tài khoản này đã được liên kết với một tài khoản khác';
+      else if (error === 'user_not_found') errorMessage = 'Không tìm thấy người dùng';
+      showToast(errorMessage);
+      window.history.replaceState({}, document.title, '/');
+      return;
+    }
+
+    if (pathname === '/set-password' && token && roleFromUrl && idFromUrl) {
+      if (urlParams.get('newUser') === 'true') {
+        localStorage.setItem('token', token);
+        localStorage.setItem('role', roleFromUrl);
+        localStorage.setItem('userId', idFromUrl);
+        setIsSettingPassword(true);
+        return;
+      }
+    }
+
+    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password' && !oauthLinked) {
+      localStorage.setItem('token', token);
+      localStorage.setItem('role', roleFromUrl);
+      localStorage.setItem('userId', idFromUrl);
+      setRole(roleFromUrl);
+      showToast('Đăng nhập thành công!');
+      window.history.replaceState({}, document.title, '/');
+      setTimeout(() => window.location.reload(), 100);
+      return;
+    }
+
+    if (token && !roleFromUrl && (pathname === '/reset-password' || pathname === '/')) {
+      setIsResettingPassword(true);
+      return;
+    }
+
+    if (token && !roleFromUrl && !isResettingPassword && !isSettingPassword) {
+      setIsVerifyingEmail(true);
+    }
+  }, [showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword]);
+}
+
+// ─── Sub-component: Global Nav ───
+function GlobalNav({ view, setView, role }) {
+  const navStyle = (activeView) => ({
+    background: view === activeView ? (['speaking', 'learning'].includes(activeView) ? '#ec4899' : activeView === 'analytics' ? '#eab308' : activeView === 'vocabulary' ? '#10b981' : '#7137ea') : '#f6f9fc',
+    color: view === activeView ? '#fff' : '#333',
+    border: `1px solid ${['speaking', 'learning'].includes(activeView) ? '#ec4899' : activeView === 'analytics' ? '#eab308' : activeView === 'vocabulary' ? '#10b981' : '#7137ea'}`,
+    borderRadius: 8, padding: '8px 16px', cursor: 'pointer'
+  });
+
+  return (
+    <nav style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
+      <button onClick={() => setView('chat')} style={navStyle('chat')}>Knowledge Search</button>
+      <button onClick={() => setView('writing')} style={navStyle('writing')}>✍️ Writing Practice</button>
+      <button onClick={() => setView('listening')} style={navStyle('listening')}>🎧 Listening Practice</button>
+      <button onClick={() => setView('reading')} style={navStyle('reading')}>📖 Reading Practice</button>
+      <button onClick={() => setView('speaking')} style={navStyle('speaking')}>🎙️ Speaking Practice</button>
+      <button onClick={() => setView('learning')} style={navStyle('learning')}>🎓 Learning Hub</button>
+      <button onClick={() => setView('analytics')} style={navStyle('analytics')}>📊 Analytics</button>
+      <button onClick={() => setView('vocabulary')} style={navStyle('vocabulary')}>📓 Sổ Từ Vựng</button>
+      {role === 'admin' && (
+        <button onClick={() => setView('knowledgeadmin')} style={navStyle('knowledgeadmin')}>Knowledge Admin</button>
+      )}
+    </nav>
+  );
+}
 
 export default function App() {
   const [view, setView] = useState('chat');
   const [toast, setToast] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [showEnvConfigPopup, setShowEnvConfigPopup] = useState(false);
+  const [showPublicEnvPopup, setShowPublicEnvPopup] = useState(false);
   const { darkMode, toggleDarkMode } = useDarkMode();
   const { t } = useLanguage();
 
@@ -41,89 +130,51 @@ export default function App() {
     setTimeout(() => setToast(''), 2000);
   }
 
-  // Handle Google OAuth callback token and other token-based flows
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const roleFromUrl = urlParams.get('role');
-    const idFromUrl = urlParams.get('id');
-    const error = urlParams.get('error');
-    const pathname = window.location.pathname;
+  useAuthParams({ showToast, setRole, setIsSettingPassword, setIsResettingPassword, setIsVerifyingEmail, isResettingPassword, isSettingPassword });
 
-    // Handle OAuth link success
-    const oauthLinked = urlParams.get('oauth_linked');
-    const oauthSuccess = urlParams.get('success');
-    if (oauthLinked && oauthSuccess === 'true' && pathname === '/profile') {
-      showToast(`✅ ${oauthLinked} đã được liên kết thành công!`);
-      // Clean URL
-      window.history.replaceState({}, document.title, '/profile');
-      return;
-    }
-
-    // Handle OAuth errors
-    if (error) {
-      let errorMessage = `OAuth error: ${error}`;
-      if (error === 'already_linked_to_another_account') {
-        errorMessage = 'Tài khoản này đã được liên kết với một tài khoản khác';
-      } else if (error === 'user_not_found') {
-        errorMessage = 'Không tìm thấy người dùng';
+  const checkEnvConfig = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      const API_URL = process.env.REACT_APP_API_URL || window.location.origin.replace(':3000', ':3001');
+      const res = await axios.get(`${API_URL}/settings/env`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = res.data;
+      const isMissingOpenAI = !data.OPENAI_API_KEY || data.OPENAI_API_KEY.trim() === '';
+      if (isMissingOpenAI) {
+        setShowEnvConfigPopup(true);
       }
-      showToast(errorMessage);
-      // Clean URL
-      window.history.replaceState({}, document.title, '/');
-      return;
+    } catch (err) {
+      console.error('Error checking env config:', err);
     }
-
-    // Priority 1: Check if this is set password page (new OAuth user)
-    if (pathname === '/set-password' && token && roleFromUrl && idFromUrl) {
-      const newUser = urlParams.get('newUser') === 'true';
-      if (newUser) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('role', roleFromUrl);
-        localStorage.setItem('userId', idFromUrl);
-        setIsSettingPassword(true);
-        return;
-      }
-    }
-
-    // Priority 2: Handle Google OAuth success (token from callback)
-    // Google OAuth will have token, role, and id in URL
-    // Check this BEFORE checking for oauth_linked to handle login flow
-    if (token && roleFromUrl && idFromUrl && pathname !== '/set-password' && !oauthLinked) {
-      console.log('🔐 Google OAuth callback - Setting token and role:', { token: token.substring(0, 20) + '...', roleFromUrl, idFromUrl });
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', roleFromUrl);
-      localStorage.setItem('userId', idFromUrl);
-      setRole(roleFromUrl);
-      showToast('Đăng nhập thành công!');
-      // Clean URL immediately
-      window.history.replaceState({}, document.title, '/');
-      // Force a small delay to ensure state updates
-      setTimeout(() => {
-        // This ensures the component re-renders with the new role
-        window.location.reload();
-      }, 100);
-      return;
-    }
-
-    // Priority 3: Check if this is a reset password link
-    // Reset password will have token but no role/id, and pathname might be /reset-password
-    if (token && !roleFromUrl && (pathname === '/reset-password' || pathname === '/')) {
-      setIsResettingPassword(true);
-      return;
-    }
-
-    // Priority 4: Check if URL contains verification token (for email verification)
-    // Email verification will have token but no role/id
-    if (token && !roleFromUrl && !isResettingPassword && !isSettingPassword) {
-      setIsVerifyingEmail(true);
-      return;
-    }
-  }, []);
+  };
 
   useEffect(() => {
-    if (role) setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
-  }, [role]);
+    if (role) {
+      setView(role === 'admin' ? 'knowledgeadmin' : 'chat');
+      checkEnvConfig();
+    } else {
+      // Not logged in -> check public config
+      const checkPublicEnv = async () => {
+        try {
+          const API_URL = process.env.REACT_APP_API_URL || window.location.origin.replace(':3000', ':3001');
+          const res = await axios.get(`${API_URL}/settings/public-env`);
+          const data = res.data;
+          const isMissingGoogle = !data.GOOGLE_CLIENT_ID || !data.GOOGLE_CLIENT_SECRET;
+          if (isMissingGoogle) {
+            setShowPublicEnvPopup(true);
+          }
+        } catch(e) {
+          console.error('Error checking public env:', e);
+        }
+      };
+      // only check public env if we aren't in the middle of password reset/email verify flows
+      if (!isVerifyingEmail && !isResettingPassword && !isSettingPassword) {
+         checkPublicEnv();
+      }
+    }
+  }, [role, isVerifyingEmail, isResettingPassword, isSettingPassword]);
 
   // Setup axios interceptor to handle 401 errors (session expired/revoked)
   useEffect(() => {
@@ -143,7 +194,7 @@ export default function App() {
       const token = localStorage.getItem('token');
       if (token) {
         // Call logout API to delete session in database
-        const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+        const API_URL = process.env.REACT_APP_API_URL || window.location.origin.replace(':3000', ':3001');
         await axios.post(
           `${API_URL}/auth/logout`,
           {},
@@ -220,6 +271,17 @@ export default function App() {
             </p>
           </>
         )}
+        {showPublicEnvPopup && (
+          <EnvConfigPopup
+            darkMode={darkMode}
+            mode="public"
+            onClose={() => setShowPublicEnvPopup(false)}
+            onSuccess={() => {
+              showToast('Google OAuth Configuration saved');
+              setShowPublicEnvPopup(false);
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -273,6 +335,26 @@ export default function App() {
           </button>
 
           <button
+            onClick={() => setShowEnvConfigPopup(true)}
+            style={{
+              background: darkMode ? '#2d2d2d' : '#f0f0f0',
+              border: `1px solid ${darkMode ? '#555' : '#e5e7eb'}`,
+              padding: '8px 16px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              color: darkMode ? '#fff' : '#333',
+              fontSize: '0.9rem',
+              fontWeight: 500,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+          >
+            ⚙️ System Config
+          </button>
+
+          <button
             onClick={() => setShowProfile(true)}
             style={{
               background: darkMode ? '#2d2d2d' : '#f0f0f0',
@@ -314,7 +396,15 @@ export default function App() {
               e.currentTarget.style.transform = 'scale(1.05)';
               e.currentTarget.style.background = darkMode ? '#450a0a' : '#fee2e2';
             }}
+            onFocus={(e) => {
+              e.currentTarget.style.transform = 'scale(1.05)';
+              e.currentTarget.style.background = darkMode ? '#450a0a' : '#fee2e2';
+            }}
             onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+              e.currentTarget.style.background = darkMode ? '#3f1a1a' : '#ffebee';
+            }}
+            onBlur={(e) => {
               e.currentTarget.style.transform = 'scale(1)';
               e.currentTarget.style.background = darkMode ? '#3f1a1a' : '#ffebee';
             }}
@@ -324,121 +414,7 @@ export default function App() {
         </div>
       </div>
 
-      <nav
-        style={{
-          marginBottom: 20,
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 10,
-        }}
-      >
-        <button
-          onClick={() => setView('chat')}
-          style={{
-            background: view === 'chat' ? '#7137ea' : '#f6f9fc',
-            color: view === 'chat' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          Knowledge Search
-        </button>
-        <button
-          onClick={() => setView('writing')}
-          style={{
-            background: view === 'writing' ? '#7137ea' : '#f6f9fc',
-            color: view === 'writing' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          ✍️ Writing Practice
-        </button>
-        <button
-          onClick={() => setView('listening')}
-          style={{
-            background: view === 'listening' ? '#7137ea' : '#f6f9fc',
-            color: view === 'listening' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          🎧 Listening Practice
-        </button>
-        <button
-          onClick={() => setView('reading')}
-          style={{
-            background: view === 'reading' ? '#7137ea' : '#f6f9fc',
-            color: view === 'reading' ? '#fff' : '#333',
-            border: '1px solid #7137ea',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          📖 Reading Practice
-        </button>
-        <button
-          onClick={() => setView('speaking')}
-          style={{
-            background: view === 'speaking' ? '#ec4899' : '#f6f9fc',
-            color: view === 'speaking' ? '#fff' : '#333',
-            border: '1px solid #ec4899',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          🎙️ Speaking Practice
-        </button>
-        <button
-          onClick={() => setView('learning')}
-          style={{
-            background: view === 'learning' ? '#ec4899' : '#f6f9fc',
-            color: view === 'learning' ? '#fff' : '#333',
-            border: '1px solid #ec4899',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          🎓 Learning Hub
-        </button>
-        <button
-          onClick={() => setView('analytics')}
-          style={{
-            background: view === 'analytics' ? '#eab308' : '#f6f9fc',
-            color: view === 'analytics' ? '#fff' : '#333',
-            border: '1px solid #eab308',
-            borderRadius: 8,
-            padding: '8px 16px',
-            cursor: 'pointer'
-          }}
-        >
-          📊 Analytics
-        </button>
-        {role === 'admin' && (
-          <button
-            onClick={() => setView('knowledgeadmin')}
-            style={{
-              background: view === 'knowledgeadmin' ? '#7137ea' : '#f6f9fc',
-              color: view === 'knowledgeadmin' ? '#fff' : '#333',
-              border: '1px solid #7137ea',
-              borderRadius: 8,
-              padding: '8px 16px',
-            }}
-          >
-            Knowledge Admin
-          </button>
-        )}
-
-      </nav>
+      <GlobalNav view={view} setView={setView} role={role} />
 
       {toast && (
         <div
@@ -460,6 +436,13 @@ export default function App() {
         </div>
       )}
       <UsageCounter darkMode={darkMode} />
+      {showEnvConfigPopup && (
+        <EnvConfigPopup
+          darkMode={darkMode}
+          onClose={() => setShowEnvConfigPopup(false)}
+          onSuccess={() => showToast('System configuration updated successfully')}
+        />
+      )}
       {showProfile ? (
         <div style={{
           padding: '20px',
@@ -480,7 +463,8 @@ export default function App() {
           {view === 'reading' && <ReadingTab darkMode={darkMode} />}
           {view === 'speaking' && <SpeakingTab darkMode={darkMode} />}
           {view === 'learning' && <LearningTab darkMode={darkMode} />}
-          {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} />}
+          {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} onNavigate={setView} />}
+          {view === 'vocabulary' && <VocabularyHub darkMode={darkMode} />}
         </>
       )}
     </>

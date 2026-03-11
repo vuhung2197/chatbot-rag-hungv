@@ -19,6 +19,80 @@ import styles from '../../styles/components/ProfileSettings.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+// ─── Helper: Format payment amount for success message ───
+function formatPaymentAmount(amount, currency) {
+  const isVND = currency === 'VND';
+  const locale = isVND ? 'vi-VN' : 'en-US';
+  const symbol = isVND ? 'đ' : '$';
+  const formatted = parseFloat(amount).toLocaleString(locale);
+  return isVND ? `${formatted}${symbol}` : `${symbol}${formatted}`;
+}
+
+// ─── Helper: Check payment success from URL params ───
+function checkPaymentSuccess(language, t) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get('payment');
+  const amount = urlParams.get('amount');
+
+  if (paymentStatus !== 'success' || !amount) return null;
+
+  const currency = urlParams.get('currency') || (language === 'vi' ? 'VND' : 'USD');
+  const amountString = formatPaymentAmount(amount, currency);
+  window.history.replaceState({}, document.title, window.location.pathname);
+  return `${t('payment.success')} ${amountString} ${t('payment.addedToWallet')}`;
+}
+
+// ─── Helper: Check if error is a session error ───
+function isSessionError(errorMessage, statusCode) {
+  if (statusCode !== 401) return false;
+  const sessionKeywords = ['session', 'token', 'expired', 'revoked'];
+  return sessionKeywords.some(kw => errorMessage.toLowerCase().includes(kw));
+}
+
+// ─── Sub-component: Profile Header ───
+function ProfileHeader({ t, onClose, error, success, darkMode }) {
+  return (
+    <>
+      <div className={styles.header}>
+        <h2 className={styles.title}>⚙️ {t('profile.title')}</h2>
+        {onClose && <button onClick={onClose} className={styles.closeButton}>×</button>}
+      </div>
+      {error && <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>{error}</div>}
+      {success && <div className={`${messages.success} ${darkMode ? messages.darkMode : ''}`}>{success}</div>}
+    </>
+  );
+}
+
+// ─── Sub-component: Account Details ───
+function AccountDetails({ profile, language, t }) {
+  if (!profile) return null;
+  return (
+    <div className={styles.accountInfo}>
+      <div className={styles.infoRow}><strong>{t('profile.accountStatus')}:</strong> {profile.accountStatus === 'active' ? `✓ ${t('common.active')}` : profile.accountStatus}</div>
+      <div className={styles.infoRow}><strong>{t('profile.createdAt')}:</strong> {new Date(profile.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}</div>
+      {profile.lastLoginAt && (
+        <div className={styles.infoRow}><strong>{t('profile.lastLogin')}:</strong> {new Date(profile.lastLoginAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}</div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Profile Footer ───
+function ProfileFooter({ saving, onClose, handleSave, t, darkMode }) {
+  return (
+    <div className={styles.buttonContainer}>
+      {onClose && (
+        <button onClick={onClose} disabled={saving} className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}>
+          {t('common.cancel')}
+        </button>
+      )}
+      <button onClick={handleSave} disabled={saving} className={`${buttons.button} ${buttons.buttonPrimary} ${darkMode ? buttons.darkMode : ''}`}>
+        {saving ? t('profile.saving') : t('profile.saveChanges')}
+      </button>
+    </div>
+  );
+}
+
 export default function ProfileSettings({ darkMode = false, onClose }) {
   const { language, changeLanguage, t } = useLanguage();
   const [profile, setProfile] = useState(null);
@@ -42,39 +116,10 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
   useEffect(() => {
     loadProfile();
 
-    // Check for payment success
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-    const amount = urlParams.get('amount');
-
-    if (paymentStatus === 'success' && amount) {
-      // Try to get currency from URL or default to language-based
-      const currencyParam = urlParams.get('currency');
-      let displayCurrency = currencyParam;
-
-      if (!displayCurrency) {
-        // Fallback logic matches previous behavior but we should try to be smarter
-        displayCurrency = language === 'vi' ? 'VND' : 'USD';
-      }
-
-      const isVND = displayCurrency === 'VND';
-      const locale = isVND ? 'vi-VN' : 'en-US';
-      const currencySymbol = isVND ? 'đ' : '$';
-
-      const formattedAmount = parseFloat(amount).toLocaleString(locale);
-
-      // If it's USD, put symbol before. If VND, put symbol after.
-      const amountString = isVND ? `${formattedAmount}${currencySymbol}` : `${currencySymbol}${formattedAmount}`;
-
-      setSuccess(`${t('payment.success')} ${amountString} ${t('payment.addedToWallet')}`);
-
-      // Clear URL params after showing message
-      window.history.replaceState({}, document.title, window.location.pathname);
-
-      // Auto-hide success message after 5 seconds
-      setTimeout(() => {
-        setSuccess('');
-      }, 5000);
+    const paymentMsg = checkPaymentSuccess(language, t);
+    if (paymentMsg) {
+      setSuccess(paymentMsg);
+      setTimeout(() => setSuccess(''), 5000);
     }
   }, []);
 
@@ -157,23 +202,11 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         setSuccess('');
       }, 3000);
     } catch (err) {
-      // Handle errors - but don't redirect, stay in profile settings
       const errorMessage = err.response?.data?.message || t('profile.updateError');
 
-      // Check if it's a session/token error (axios interceptor will handle logout)
-      const isSessionError = err.response?.status === 401 && (
-        errorMessage.toLowerCase().includes('session') ||
-        errorMessage.toLowerCase().includes('token') ||
-        errorMessage.toLowerCase().includes('expired') ||
-        errorMessage.toLowerCase().includes('revoked')
-      );
-
-      if (isSessionError) {
-        // Session error - axios interceptor will handle logout
-        // Don't set error here, just log it
+      if (isSessionError(errorMessage, err.response?.status)) {
         console.error('Session expired during profile update:', errorMessage);
       } else {
-        // For other errors (including generic 401 "Unauthorized"), show error but stay in profile
         setError(errorMessage);
       }
     } finally {
@@ -212,33 +245,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
       ref={containerRef}
       className={styles.container}
     >
-      {/* Header */}
-      <div className={styles.header}>
-        <h2 className={styles.title}>
-          ⚙️ {t('profile.title')}
-        </h2>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className={styles.closeButton}
-          >
-            ×
-          </button>
-        )}
-      </div>
-
-      {/* Messages */}
-      {error && (
-        <div className={`${messages.error} ${darkMode ? messages.darkMode : ''}`}>
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className={`${messages.success} ${darkMode ? messages.darkMode : ''}`}>
-          {success}
-        </div>
-      )}
+      <ProfileHeader t={t} onClose={onClose} error={error} success={success} darkMode={darkMode} />
 
       {/* Wallet Section - Moved to Top */}
       <div className={styles.section}>
@@ -366,19 +373,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         </div>
 
         {/* Account Info */}
-        <div className={styles.accountInfo}>
-          <div className={styles.infoRow}>
-            <strong>{t('profile.accountStatus')}:</strong> {profile.accountStatus === 'active' ? `✓ ${t('common.active')}` : profile.accountStatus}
-          </div>
-          <div className={styles.infoRow}>
-            <strong>{t('profile.createdAt')}:</strong> {new Date(profile.createdAt).toLocaleDateString(language === 'vi' ? 'vi-VN' : 'en-US')}
-          </div>
-          {profile.lastLoginAt && (
-            <div className={styles.infoRow}>
-              <strong>{t('profile.lastLogin')}:</strong> {new Date(profile.lastLoginAt).toLocaleString(language === 'vi' ? 'vi-VN' : 'en-US')}
-            </div>
-          )}
-        </div>
+        <AccountDetails profile={profile} language={language} t={t} />
       </div>
 
       {/* Profile Form */}
@@ -441,25 +436,7 @@ export default function ProfileSettings({ darkMode = false, onClose }) {
         {/* OAuth Providers Management */}
         <OAuthProviders darkMode={darkMode} />
 
-        {/* Save Button */}
-        <div className={styles.buttonContainer}>
-          {onClose && (
-            <button
-              onClick={onClose}
-              disabled={saving}
-              className={`${buttons.button} ${buttons.buttonSecondary} ${darkMode ? buttons.darkMode : ''}`}
-            >
-              {t('common.cancel')}
-            </button>
-          )}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className={`${buttons.button} ${buttons.buttonPrimary} ${darkMode ? buttons.darkMode : ''}`}
-          >
-            {saving ? t('profile.saving') : t('profile.saveChanges')}
-          </button>
-        </div>
+        <ProfileFooter saving={saving} onClose={onClose} handleSave={handleSave} t={t} darkMode={darkMode} />
       </div>
     </div>
   );

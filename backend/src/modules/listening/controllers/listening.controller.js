@@ -41,6 +41,24 @@ export const listeningController = {
     },
 
     /**
+     * AI sinh bài nghe dictation mới
+     * POST /api/listening/generate
+     */
+    async generateExercise(req, res) {
+        try {
+            const { level, topic } = req.body;
+            if (!level) {
+                return res.status(400).json({ success: false, error: 'Level is required' });
+            }
+            const exercise = await listeningService.generateExercise(level, topic || 'daily_life');
+            res.status(200).json({ success: true, exercise });
+        } catch (error) {
+            console.error('Error generating listening exercise:', error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    },
+
+    /**
      * Stream or generate audio for dictation text
      * GET /api/listening/audio/:id
      */

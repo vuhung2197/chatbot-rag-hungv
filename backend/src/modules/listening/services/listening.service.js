@@ -28,6 +28,56 @@ export const listeningService = {
         return exercise;
     },
 
+    // ==================== AI GENERATE ====================
+
+    async generateExercise(level, topic) {
+        // 1. Lấy danh sách bài đã có cùng level để tránh trùng
+        const { exercises: existingExercises } = await listeningRepository.getExercises({ level, type: 'dictation', limit: 50, offset: 0 });
+        const existingTexts = existingExercises
+            .filter(e => e.audio_text)
+            .map(e => e.audio_text);
+
+        const MAX_RETRIES = 3;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            const data = await listeningAiService.generateDictation(level, topic, existingTexts);
+
+            // 2. Kiểm tra trùng lặp nội dung
+            const isDuplicate = existingTexts.some(existing =>
+                this._isSimilar(existing, data.audio_text)
+            );
+
+            if (!isDuplicate) {
+                const exercise = await listeningRepository.createExercise(data);
+                return exercise;
+            }
+
+            console.warn(`⚠️ Listening generate attempt ${attempt}/${MAX_RETRIES}: duplicate detected, retrying...`);
+        }
+
+        // Fallback: lưu anyway
+        console.warn('⚠️ Listening: All retries exhausted, saving anyway');
+        const data = await listeningAiService.generateDictation(level, topic, existingTexts);
+        const exercise = await listeningRepository.createExercise(data);
+        return exercise;
+    },
+
+    /**
+     * So sánh tương đồng giữa 2 đoạn text (word-level overlap)
+     * Trả về true nếu trùng >60% từ
+     */
+    _isSimilar(textA, textB) {
+        if (!textA || !textB) return false;
+        const normalize = (t) => t.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+        const wordsA = normalize(textA);
+        const wordsB = normalize(textB);
+        if (wordsA.length === 0 || wordsB.length === 0) return false;
+
+        const setB = new Set(wordsB);
+        const matchCount = wordsA.filter(w => setB.has(w)).length;
+        const similarity = matchCount / Math.max(wordsA.length, wordsB.length);
+        return similarity > 0.6;
+    },
+
     // ==================== SUBMISSIONS ====================
 
     async submitDictation(userId, { exerciseId, content }) {
@@ -67,7 +117,7 @@ export const listeningService = {
         } catch (e) {
             console.error('Dictation grading failed:', e);
             await listeningRepository.markSubmissionError(submission.id, e.message);
-            throw new Error(`AI system failed to process the dictation text. Details: ${  e.message}`);
+            throw new Error(`AI system failed to process the dictation text. Details: ${e.message}`);
         }
     },
 

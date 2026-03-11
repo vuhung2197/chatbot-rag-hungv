@@ -29,6 +29,11 @@ export const listeningService = {
         return response.data.submission;
     },
 
+    generateExercise: async (level, topic) => {
+        const response = await axios.post(`${API_URL}/listening/generate`, { level, topic }, getConfig());
+        return response.data.exercise;
+    },
+
     getAudioUrl: (id) => {
         return `${API_URL}/listening/audio/${id}`;
     }

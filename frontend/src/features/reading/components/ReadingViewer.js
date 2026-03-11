@@ -59,7 +59,9 @@ export default function ReadingViewer({ passage, darkMode, onBack, onWordLookup,
     return (
         <div style={{ maxWidth: '800px', margin: '0 auto', ...themeVars }} onClick={(e) => {
             if (!e.target.closest('.word-popup') && !e.target.closest('.clickable-word')) closePopup();
-        }}>
+        }} onKeyDown={(e) => {
+            if (e.key === 'Escape') closePopup();
+        }} role="presentation">
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <button onClick={onBack} style={{
@@ -98,6 +100,9 @@ export default function ReadingViewer({ passage, darkMode, onBack, onWordLookup,
                     return (
                         <span key={idx} className="clickable-word"
                             onClick={(e) => handleWordClick(token, e)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleWordClick(token, e)}
+                            role="button"
+                            tabIndex={0}
                             style={{
                                 cursor: 'pointer', borderRadius: '3px', padding: '1px 2px',
                                 transition: 'background 0.15s',

@@ -62,7 +62,7 @@ export function getCacheStats() {
         hits: cacheStats.hits,
         misses: cacheStats.misses,
         evictions: cacheStats.evictions,
-        hitRate: total > 0 ? `${((cacheStats.hits / total) * 100).toFixed(1)  }%` : 'N/A'
+        hitRate: total > 0 ? `${((cacheStats.hits / total) * 100).toFixed(1)}%` : 'N/A'
     };
 }
 
@@ -98,33 +98,8 @@ export async function performWebSearch(query, options = {}) {
 
     let apiKey = process.env.TAVILY_API_KEY;
 
-    // Hot-reload .env if key is missing (tránh phải restart server)
     if (!apiKey) {
-        console.log('⚠️ API Key missing, attempting robust hot-reload...');
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-
-        const envPaths = [
-            path.resolve(__dirname, '../../.env'), // Root
-            path.resolve(__dirname, '../.env')     // Backend
-        ];
-
-        for (const envPath of envPaths) {
-            if (fs.existsSync(envPath)) {
-                console.log(`Loading env from: ${envPath}`);
-                try {
-                    const envConfig = dotenv.parse(fs.readFileSync(envPath));
-                    for (const k in envConfig) {
-                        process.env[k] = envConfig[k];
-                    }
-                } catch (e) {
-                    console.error(`Error reading ${envPath}:`, e);
-                }
-            }
-        }
-
-        apiKey = process.env.TAVILY_API_KEY;
-        console.log('Reloaded Key:', apiKey ? 'FOUND' : 'NOT FOUND');
+        apiKey = loadApiKeyBackup();
     }
 
     if (!apiKey) {
@@ -152,27 +127,7 @@ export async function performWebSearch(query, options = {}) {
         const endTime = Date.now();
         console.log(`✅ Web Search completed in ${endTime - startTime}ms (depth: ${searchDepth}). Found ${data.results.length} results.`);
 
-        // Format kết quả
-        let context = `# KẾT QUẢ TÌM KIẾM WEB (Thời gian hiện tại: ${new Date().toLocaleString('vi-VN')}):\n\n`;
-
-        // Nếu Tavily có câu trả lời trực tiếp
-        if (data.answer) {
-            context += `## Tóm tắt nhanh:\n${data.answer}\n\n`;
-        }
-
-        // Structured sources cho frontend
-        const sources = [];
-
-        // Chi tiết từng trang
-        data.results.forEach((result, index) => {
-            context += `## Nguồn ${index + 1}: ${result.title}\n`;
-            context += `**URL:** ${result.url}\n`;
-            context += `**Sơ lược:** ${result.content}\n\n`;
-            sources.push({ title: result.title, url: result.url });
-        });
-
-        // Kết quả trả về bao gồm cả context (cho LLM) và sources (cho frontend)
-        const result = { context, sources };
+        const result = formatSearchResults(data);
 
         // Lưu vào cache
         cleanExpiredCache();
@@ -186,4 +141,46 @@ export async function performWebSearch(query, options = {}) {
         console.error('❌ Web Search Error:', error.response?.data || error.message);
         return 'Xin lỗi, tôi gặp lỗi khi cố gắng tìm kiếm trên internet. Vui lòng thử lại sau.';
     }
+}
+
+function loadApiKeyBackup() {
+    console.log('⚠️ API Key missing, attempting robust hot-reload...');
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const envPaths = [
+        path.resolve(__dirname, '../../.env'),
+        path.resolve(__dirname, '../.env')
+    ];
+
+    for (const envPath of envPaths) {
+        if (fs.existsSync(envPath)) {
+            console.log(`Loading env from: ${envPath}`);
+            try {
+                const envConfig = dotenv.parse(fs.readFileSync(envPath));
+                for (const k in envConfig) {
+                    process.env[k] = envConfig[k];
+                }
+            } catch (e) {
+                console.error(`Error reading ${envPath}:`, e);
+            }
+        }
+    }
+    const apiKey = process.env.TAVILY_API_KEY;
+    console.log('Reloaded Key:', apiKey ? 'FOUND' : 'NOT FOUND');
+    return apiKey;
+}
+
+function formatSearchResults(data) {
+    let context = `# KẾT QUẢ TÌM KIẾM WEB (Thời gian hiện tại: ${new Date().toLocaleString('vi-VN')}):\n\n`;
+    if (data.answer) {
+        context += `## Tóm tắt nhanh:\n${data.answer}\n\n`;
+    }
+    const sources = [];
+    data.results.forEach((result, index) => {
+        context += `## Nguồn ${index + 1}: ${result.title}\n`;
+        context += `**URL:** ${result.url}\n`;
+        context += `**Sơ lược:** ${result.content}\n\n`;
+        sources.push({ title: result.title, url: result.url });
+    });
+    return { context, sources };
 }

@@ -22,7 +22,7 @@ export const speakingAiService = {
             return transcription.text;
         } catch (error) {
             console.error('Whisper API failed:', error.message);
-            throw new Error(`AI không nghe được bạn nói, vui lòng thử lại: ${  error.message}`);
+            throw new Error(`AI không nghe được bạn nói, vui lòng thử lại: ${error.message}`);
         }
     },
 
@@ -121,6 +121,51 @@ Return JSON ONLY:
 }`;
 
         return await this._callGPT(systemPrompt, `Original: ${originalText} | Heard: ${transcript}`);
+    },
+
+    // 6. Sinh topic/câu nói mới bằng AI (tránh trùng với nội dung đã có)
+    async generateTopic(type, level, existingPrompts = []) {
+        const typeInstructions = {
+            'shadowing': `Create a single, natural English sentence (10-25 words) at CEFR ${level} level for shadowing practice. 
+The sentence should be practical and conversational.`,
+            'topic': `Create an IELTS-style speaking question for CEFR ${level} level. 
+The question should invite the student to share their opinion or describe an experience.`,
+            'reflex': `Create a Vietnamese sentence that the student needs to translate into English on the spot.
+The sentence should use grammar and vocabulary appropriate for CEFR ${level} level.
+The Vietnamese sentence should be natural and commonly used.`
+        };
+
+        // Xây danh sách bài đã có để AI tránh trùng
+        const existingSection = existingPrompts.length > 0
+            ? `\n\n⚠️ IMPORTANT - DO NOT duplicate these existing exercises. Create something COMPLETELY DIFFERENT:\n${existingPrompts.map((p, i) => `${i + 1}. "${p}"`).join('\n')}\n\nYour new exercise MUST be about a different topic/scenario than ALL of the above.`
+            : '';
+
+        const systemPrompt = `You are an English speaking practice content creator.
+
+Task: ${typeInstructions[type] || typeInstructions['topic']}
+CEFR Level: ${level}
+${existingSection}
+
+Return ONLY valid JSON:
+{
+  "prompt_text": "The sentence or question text here"
+}
+
+For 'reflex' type, prompt_text should be in Vietnamese.
+For 'shadowing' and 'topic', prompt_text should be in English.
+Do NOT wrap in markdown. Return raw JSON only.`;
+
+        try {
+            const result = await this._callGPT(systemPrompt, `Generate a UNIQUE and CREATIVE ${type} prompt for ${level} level. It must be different from any existing exercises.`);
+            return {
+                type,
+                level,
+                prompt_text: result.prompt_text
+            };
+        } catch (error) {
+            console.error('❌ Lỗi sinh topic Speaking:', error);
+            throw new Error(`AI không thể tạo đề nói lúc này: ${error.message}`);
+        }
     },
 
     async _callGPT(systemPrompt, userText) {

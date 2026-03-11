@@ -28,6 +28,8 @@ import readingRoutes from '#modules/reading/routes/reading.routes.js';
 import speakingRoutes from '#modules/speaking/routes/speaking.routes.js';
 import learningRoutes from '#modules/learning/routes/learning.routes.js';
 import analyticsRoutes from '#modules/analytics/routes/analytics.routes.js';
+import vocabularyRoutes from '#modules/vocabulary/routes/vocabulary.routes.js';
+import settingsRoutes from '#modules/settings/routes/settings.routes.js';
 import subscriptionWorker from '#services/subscriptionWorker.js';
 
 import errorHandler from '#middlewares/errorHandler.js';
@@ -39,7 +41,7 @@ const app = express();
 
 // CORS configuration to allow credentials (cookies)
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -75,14 +77,15 @@ app.use('/reading', readingRoutes);
 app.use('/speaking', speakingRoutes);
 app.use('/learning', learningRoutes);
 app.use('/analytics', analyticsRoutes);
-
+app.use('/vocabulary', vocabularyRoutes);
+app.use('/settings', settingsRoutes);
 
 app.context = app; // For rare cases passing app context
 
 // Error Handler
 app.use(errorHandler);
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Backend running at http://localhost:${PORT}`);
   // Start background tasks

@@ -1,6 +1,99 @@
 import pool from '#db';
 import currencyService from '#services/currencyService.js';
 
+// ─── Helper: Safe parse features JSON ───
+function parseFeatures(rawFeatures) {
+    if (typeof rawFeatures === 'string') {
+        try { return JSON.parse(rawFeatures || '{}'); }
+        catch (e) { console.error('Error parsing features JSON:', e); return {}; }
+    }
+    if (rawFeatures && typeof rawFeatures === 'object') return rawFeatures;
+    return {};
+}
+
+// ─── Helper: Tier ordering ───
+const TIER_ORDER = { free: 0, pro: 1, team: 2, enterprise: 3 };
+
+// ─── Helper: Calculate period dates ───
+function calculatePeriodDates(billingCycle, activeSub, tier) {
+    let periodStart = new Date();
+
+    // If stacking (same tier), start from end of current period
+    if (activeSub && activeSub.tier_id === tier.id) {
+        const existingEnd = new Date(activeSub.current_period_end);
+        if (existingEnd > periodStart) {
+            periodStart = existingEnd;
+        }
+    }
+
+    const periodEnd = new Date(periodStart);
+    if (billingCycle === 'yearly') {
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    } else {
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+    }
+
+    return { periodStart, periodEnd };
+}
+
+// ─── Helper: Calculate purchase amount in wallet currency ───
+function calculatePurchaseAmount(price, walletCurrency) {
+    if (walletCurrency !== 'USD') {
+        return currencyService.convertCurrency(price, 'USD', walletCurrency);
+    }
+    return price;
+}
+
+// ─── Helper: Validate sufficient balance ───
+function validateBalance(walletBalance, purchaseAmount, walletCurrency) {
+    if (parseFloat(walletBalance) < purchaseAmount) {
+        const error = new Error('Insufficient balance');
+        error.details = {
+            required: purchaseAmount,
+            available: parseFloat(walletBalance),
+            currency: walletCurrency
+        };
+        throw error;
+    }
+}
+
+// ─── Helper: Process wallet deduction and create transaction ───
+async function processWalletPayment(connection, { wallet, userId, price, purchaseAmount, tier, tierName, billingCycle }) {
+    const [lockedWallets] = await connection.execute(
+        'SELECT * FROM user_wallets WHERE id = ? FOR UPDATE',
+        [wallet.id]
+    );
+    const lockedWallet = lockedWallets[0];
+    const newBalance = parseFloat(lockedWallet.balance) - purchaseAmount;
+
+    await connection.execute(
+        'UPDATE user_wallets SET balance = ?, updated_at = NOW() WHERE id = ?',
+        [newBalance, wallet.id]
+    );
+
+    await connection.execute(
+        `INSERT INTO wallet_transactions 
+         (wallet_id, user_id, type, amount, balance_before, balance_after, status, payment_method, description, metadata)
+         VALUES (?, ?, 'subscription', ?, ?, ?, 'completed', 'wallet', ?, ?)`,
+        [
+            wallet.id, userId, -price,
+            lockedWallet.balance, newBalance,
+            `Subscription upgrade to ${tier.display_name} (${billingCycle})`,
+            JSON.stringify({
+                tier_name: tierName,
+                tier_display_name: tier.display_name,
+                billing_cycle: billingCycle,
+                price_usd: price,
+                amount_deducted: purchaseAmount,
+                currency: wallet.currency,
+                upgraded_at: new Date().toISOString()
+            })
+        ]
+    );
+
+    return { lockedWallet, newBalance };
+}
+
 class SubscriptionService {
     async getTiers() {
         const [tiers] = await pool.execute(
@@ -29,35 +122,17 @@ class SubscriptionService {
         );
 
         if (subscriptions.length === 0) {
-            // Return free tier as default
             const [freeTier] = await pool.execute(
-                'SELECT * FROM subscription_tiers WHERE name = ?',
-                ['free']
+                'SELECT * FROM subscription_tiers WHERE name = ?', ['free']
             );
-
             if (freeTier.length > 0) {
-                return {
-                    subscription: null,
-                    tier: freeTier[0],
-                    isFree: true
-                };
+                return { subscription: null, tier: freeTier[0], isFree: true };
             }
-
-            return null; // No subscription found
+            return null;
         }
 
         const subscription = subscriptions[0];
-        // Handle both JSON string and object
-        if (typeof subscription.features === 'string') {
-            try {
-                subscription.features = JSON.parse(subscription.features || '{}');
-            } catch (e) {
-                console.error('Error parsing features JSON:', e);
-                subscription.features = {};
-            }
-        } else if (!subscription.features || typeof subscription.features !== 'object') {
-            subscription.features = {};
-        }
+        subscription.features = parseFeatures(subscription.features);
 
         return {
             subscription,
@@ -91,7 +166,7 @@ class SubscriptionService {
             [userId]
         );
 
-        const invoices = subscriptions.map((sub) => {
+        return subscriptions.map((sub) => {
             const price = sub.billing_cycle === 'yearly'
                 ? (sub.price_yearly || sub.price_monthly * 12)
                 : sub.price_monthly;
@@ -112,8 +187,6 @@ class SubscriptionService {
                 stripe_customer_id: sub.stripe_customer_id
             };
         });
-
-        return invoices;
     }
 
     async setAutoRenew(userId, autoRenew) {
@@ -155,22 +228,17 @@ class SubscriptionService {
         try {
             // Get tier
             const [tiers] = await connection.execute(
-                'SELECT * FROM subscription_tiers WHERE name = ?',
-                [tierName]
+                'SELECT * FROM subscription_tiers WHERE name = ?', [tierName]
             );
-
-            if (tiers.length === 0) {
-                throw new Error('Tier not found');
-            }
-
+            if (tiers.length === 0) throw new Error('Tier not found');
             const tier = tiers[0];
 
-            // Calculate price based on billing cycle
+            // Calculate price
             const price = billingCycle === 'yearly'
                 ? (tier.price_yearly || tier.price_monthly * 12)
                 : tier.price_monthly;
 
-            // Get current subscription to check tier order and stacking
+            // Get current subscription
             const [currentSubs] = await connection.execute(
                 `SELECT st.name as tier_name, st.price_monthly, us.current_period_end, us.tier_id
        FROM user_subscriptions us
@@ -181,108 +249,41 @@ class SubscriptionService {
                 [userId]
             );
 
-            const tierOrder = {
-                'free': 0,
-                'pro': 1,
-                'team': 2,
-                'enterprise': 3
-            };
-
-            let currentTierName = 'free';
             let activeSub = null;
+            let currentTierName = 'free';
             if (currentSubs.length > 0) {
                 activeSub = currentSubs[0];
                 currentTierName = activeSub.tier_name;
             } else {
                 const [users] = await connection.execute('SELECT id FROM users WHERE id = ?', [userId]);
-                if (users.length === 0) {
-                    throw new Error('User not found');
-                }
+                if (users.length === 0) throw new Error('User not found');
             }
 
-            const currentTierOrder = tierOrder[currentTierName] || 0;
-            const newTierOrder = tierOrder[tierName] || 0;
-
-            // Allow same tier (extension/cycle change) but block downgrade
-            if (newTierOrder < currentTierOrder) {
+            // Validate tier order (block downgrade)
+            if ((TIER_ORDER[tierName] || 0) < (TIER_ORDER[currentTierName] || 0)) {
                 throw new Error('Cannot downgrade. Please cancel your current subscription first.');
             }
 
-            // ===== WALLET PAYMENT INTEGRATION =====
-
-            // Get user wallet
+            // Get wallet and validate balance
             const [wallets] = await connection.execute(
-                'SELECT * FROM user_wallets WHERE user_id = ?',
-                [userId]
+                'SELECT * FROM user_wallets WHERE user_id = ?', [userId]
             );
-
-            if (wallets.length === 0) {
-                throw new Error('Wallet not found');
-            }
-
+            if (wallets.length === 0) throw new Error('Wallet not found');
             const wallet = wallets[0];
 
-            // Check if wallet has sufficient balance
-            let purchaseAmount = price; // Tier price is in USD
-            if (wallet.currency !== 'USD') {
-                purchaseAmount = currencyService.convertCurrency(price, 'USD', wallet.currency);
-            }
+            const purchaseAmount = calculatePurchaseAmount(price, wallet.currency);
+            validateBalance(wallet.balance, purchaseAmount, wallet.currency);
 
-            if (parseFloat(wallet.balance) < purchaseAmount) {
-                // Return structured error
-                const error = new Error('Insufficient balance');
-                error.details = {
-                    required: purchaseAmount,
-                    available: parseFloat(wallet.balance),
-                    currency: wallet.currency
-                };
-                throw error;
-            }
-
-            // Begin database transaction
+            // Begin transaction
             await connection.beginTransaction();
 
             try {
-                // Lock wallet for update
-                const [lockedWallets] = await connection.execute(
-                    'SELECT * FROM user_wallets WHERE id = ? FOR UPDATE',
-                    [wallet.id]
-                );
+                // Process wallet payment
+                const { newBalance } = await processWalletPayment(connection, {
+                    wallet, userId, price, purchaseAmount, tier, tierName, billingCycle
+                });
 
-                const lockedWallet = lockedWallets[0];
-                const newBalance = parseFloat(lockedWallet.balance) - purchaseAmount;
-
-                // Update wallet balance
-                await connection.execute(
-                    'UPDATE user_wallets SET balance = ?, updated_at = NOW() WHERE id = ?',
-                    [newBalance, wallet.id]
-                );
-
-                // Create wallet transaction record
-                await connection.execute(
-                    `INSERT INTO wallet_transactions 
-         (wallet_id, user_id, type, amount, balance_before, balance_after, status, payment_method, description, metadata)
-         VALUES (?, ?, 'subscription', ?, ?, ?, 'completed', 'wallet', ?, ?)`,
-                    [
-                        wallet.id,
-                        userId,
-                        -price, // Save base price in USD to amount column for consistency
-                        lockedWallet.balance,
-                        newBalance,
-                        `Subscription upgrade to ${tier.display_name} (${billingCycle})`,
-                        JSON.stringify({
-                            tier_name: tierName,
-                            tier_display_name: tier.display_name,
-                            billing_cycle: billingCycle,
-                            price_usd: price,
-                            amount_deducted: purchaseAmount,
-                            currency: wallet.currency,
-                            upgraded_at: new Date().toISOString()
-                        })
-                    ]
-                );
-
-                // Cancel existing subscription if any
+                // Cancel existing subscription
                 if (currentSubs.length > 0) {
                     await connection.execute(
                         `UPDATE user_subscriptions 
@@ -292,24 +293,8 @@ class SubscriptionService {
                     );
                 }
 
-                // Period calculation logic
-                let periodStart = new Date();
-
-                // If stacking (same tier), start from the end of the current period
-                if (activeSub && activeSub.tier_id === tier.id) {
-                    const existingEnd = new Date(activeSub.current_period_end);
-                    // If current subscription is still active, start new period after it ends
-                    if (existingEnd > periodStart) {
-                        periodStart = existingEnd;
-                    }
-                }
-
-                const periodEnd = new Date(periodStart);
-                if (billingCycle === 'yearly') {
-                    periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-                } else {
-                    periodEnd.setMonth(periodEnd.getMonth() + 1);
-                }
+                // Create new subscription
+                const { periodStart, periodEnd } = calculatePeriodDates(billingCycle, activeSub, tier);
 
                 await connection.execute(
                     `INSERT INTO user_subscriptions 
@@ -319,29 +304,13 @@ class SubscriptionService {
                 );
 
                 await connection.commit();
-
                 console.log(`✅ User ${userId} upgraded to tier: ${tierName}`);
 
-                let features = {};
-                if (tier.features) {
-                    if (typeof tier.features === 'string') {
-                        try {
-                            features = JSON.parse(tier.features);
-                        } catch (e) {
-                            features = {};
-                        }
-                    } else if (typeof tier.features === 'object') {
-                        features = tier.features;
-                    }
-                }
+                const features = parseFeatures(tier.features);
 
                 return {
                     message: 'Subscription upgraded successfully',
-                    tier: {
-                        name: tier.name,
-                        display_name: tier.display_name,
-                        features
-                    },
+                    tier: { name: tier.name, display_name: tier.display_name, features },
                     payment: {
                         amount: purchaseAmount,
                         currency: wallet.currency,

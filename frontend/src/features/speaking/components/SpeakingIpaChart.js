@@ -50,6 +50,9 @@ const SpeakingIpaChart = ({ darkMode, onPlayTopic }) => {
             <div
                 key={phoneme.id}
                 onClick={() => setSelectedPhoneme(phoneme)}
+                onKeyDown={(e) => e.key === 'Enter' && setSelectedPhoneme(phoneme)}
+                role="button"
+                tabIndex={0}
                 style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -70,7 +73,13 @@ const SpeakingIpaChart = ({ darkMode, onPlayTopic }) => {
                 onMouseOver={(e) => {
                     if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
                 }}
+                onFocus={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--hover-bg)';
+                }}
                 onMouseOut={(e) => {
+                    if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
+                }}
+                onBlur={(e) => {
                     if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--bg-secondary)';
                 }}
             >

@@ -24,13 +24,21 @@ class VocabularyRepository {
     }
 
     async getRecommendWords(userId, count = 5) {
-        // Find words in system_vocabulary that the user hasn't added yet
+        // Đề xuất từ mới cho user, tránh trùng từ đã thêm
+        // Fix: Dùng md5(id + date + userId) thay vì RANDOM()
+        //   → Cùng 1 ngày, cùng 1 user → luôn thấy cùng danh sách
+        //   → Ngày mới → danh sách tự đổi
+        // Fix: ORDER BY level ASC → ưu tiên từ dễ (A1) cho beginner
+        //   → Khi user học hết A1, A2 tự nổi lên
         const query = `
             SELECT sv.*
             FROM system_vocabulary sv
-            LEFT JOIN user_vocabulary uv ON sv.word = uv.word AND uv.user_id = $1 AND uv.item_type = 'vocabulary'
+            LEFT JOIN user_vocabulary uv 
+                ON sv.word = uv.word 
+                AND uv.user_id = $1 
+                AND uv.item_type = 'vocabulary'
             WHERE sv.is_active = true AND uv.id IS NULL
-            ORDER BY RANDOM()
+            ORDER BY sv.level ASC, md5(sv.id::text || CURRENT_DATE::text || $1::text)
             LIMIT $2
         `;
         const [rows] = await pool.query(query, [userId, count]);

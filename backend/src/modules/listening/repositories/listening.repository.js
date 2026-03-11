@@ -8,7 +8,7 @@ const listeningRepository = {
      */
     async getExercises({ level, type, limit = 20, offset = 0 }) {
         let sql = `
-            SELECT id, level, type, title, hints, questions, is_active, created_at 
+            SELECT id, level, type, title, audio_text, hints, questions, is_active, created_at 
             FROM listening_exercises 
             WHERE is_active = true
         `;
@@ -62,6 +62,19 @@ const listeningRepository = {
             'UPDATE listening_exercises SET audio_url = $1 WHERE id = $2',
             [audioUrl, id]
         );
+    },
+
+    /**
+     * Lưu bài tập nghe do AI sinh vào DB
+     */
+    async createExercise({ level, type, title, audio_text, hints }) {
+        const [rows] = await pool.execute(
+            `INSERT INTO listening_exercises (level, type, title, audio_text, hints, is_active)
+             VALUES ($1, $2, $3, $4, $5, TRUE)
+             RETURNING *`,
+            [level, type, title, audio_text, JSON.stringify(hints)]
+        );
+        return rows[0];
     },
 
     // ==================== SUBMISSIONS ==================== //

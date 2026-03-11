@@ -65,6 +65,43 @@ const styles = {
     }
 };
 
+// Shuffle helper
+const shuffleArray = (array) => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+};
+
+const getFrontText = (w) => {
+    if (w.item_type === 'grammar') return `[Ngữ pháp] ${w.grammar_error}`;
+    if (w.item_type === 'pronunciation') return `[Phát âm] ${w.word}`;
+    return w.word;
+};
+
+const getBackText = (w) => {
+    if (w.item_type === 'grammar') return w.grammar_correction;
+    if (w.item_type === 'pronunciation') return w.example_sentence;
+    return w.definition || w.translation || 'N/A';
+};
+
+// Sub-component: GameCard
+function GameCard({ item, isSelected, isMatched, isError, darkMode, onSelect }) {
+    return (
+        <div
+            style={styles.card(isSelected, isMatched, isError, darkMode)}
+            onClick={() => onSelect(item.id)}
+            onKeyDown={(e) => e.key === 'Enter' && onSelect(item.id)}
+            role="button"
+            tabIndex={0}
+        >
+            {item.text}
+        </div>
+    );
+}
+
 export default function VocabMatchGame({ words, darkMode, onComplete }) {
     const [leftItems, setLeftItems] = useState([]);
     const [rightItems, setRightItems] = useState([]);
@@ -81,34 +118,6 @@ export default function VocabMatchGame({ words, darkMode, onComplete }) {
         '--border-color': '#334155',
         '--text-primary': '#f8fafc'
     } : {};
-
-    // Shuffle helper
-    const shuffleArray = (array) => {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-    };
-
-    /**
-     * Helper mapping item_type to front display text
-     */
-    const getFrontText = (w) => {
-        if (w.item_type === 'grammar') return `[Ngữ pháp] ${w.grammar_error}`;
-        if (w.item_type === 'pronunciation') return `[Phát âm] ${w.word}`;
-        return w.word;
-    };
-
-    /**
-     * Helper mapping item_type to back display text
-     */
-    const getBackText = (w) => {
-        if (w.item_type === 'grammar') return w.grammar_correction;
-        if (w.item_type === 'pronunciation') return w.example_sentence;
-        return w.definition || w.translation || 'N/A';
-    };
 
     useEffect(() => {
         if (!words || words.length === 0) return;
@@ -221,38 +230,32 @@ export default function VocabMatchGame({ words, darkMode, onComplete }) {
             <div style={styles.gameBoard}>
                 {/* Cột trái (Từ Vựng / Focus) */}
                 <div style={styles.column}>
-                    {leftItems.map(item => {
-                        const isMatched = matchedIds.includes(item.id);
-                        const isSelected = selectedLeft === item.id;
-                        const isError = errorPair.includes(item.id) && isSelected;
-                        return (
-                            <div
-                                key={`left-${item.id}`}
-                                style={styles.card(isSelected, isMatched, isError, darkMode)}
-                                onClick={() => handleSelectLeft(item.id)}
-                            >
-                                {item.text}
-                            </div>
-                        )
-                    })}
+                    {leftItems.map(item => (
+                        <GameCard
+                            key={`left-${item.id}`}
+                            item={item}
+                            isSelected={selectedLeft === item.id}
+                            isMatched={matchedIds.includes(item.id)}
+                            isError={errorPair.includes(item.id) && selectedLeft === item.id}
+                            darkMode={darkMode}
+                            onSelect={handleSelectLeft}
+                        />
+                    ))}
                 </div>
 
                 {/* Cột phải (Nghĩa / Định Nghĩa) */}
                 <div style={styles.column}>
-                    {rightItems.map(item => {
-                        const isMatched = matchedIds.includes(item.id);
-                        const isSelected = selectedRight === item.id;
-                        const isError = errorPair.includes(item.id) && isSelected;
-                        return (
-                            <div
-                                key={`right-${item.id}`}
-                                style={styles.card(isSelected, isMatched, isError, darkMode)}
-                                onClick={() => handleSelectRight(item.id)}
-                            >
-                                {item.text}
-                            </div>
-                        )
-                    })}
+                    {rightItems.map(item => (
+                        <GameCard
+                            key={`right-${item.id}`}
+                            item={item}
+                            isSelected={selectedRight === item.id}
+                            isMatched={matchedIds.includes(item.id)}
+                            isError={errorPair.includes(item.id) && selectedRight === item.id}
+                            darkMode={darkMode}
+                            onSelect={handleSelectRight}
+                        />
+                    ))}
                 </div>
             </div>
         </div>

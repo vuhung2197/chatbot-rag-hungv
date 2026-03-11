@@ -67,6 +67,58 @@ async function performVectorRetrieval(questionEmbedding) {
   return removeDuplicateChunks(allChunks);
 }
 
+// Helpers for semanticClustering
+function extractChunkEmbeddings(chunks) {
+  return chunks.map(c => {
+    if (Array.isArray(c.embedding)) return c.embedding;
+    try {
+      return typeof c.embedding === 'string' ? JSON.parse(c.embedding) : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+function buildSimilarityMatrix(chunks, chunkEmbeddings) {
+  const similarityMatrix = [];
+  for (let i = 0; i < chunks.length; i++) {
+    similarityMatrix[i] = [];
+    for (let j = 0; j < chunks.length; j++) {
+      if (i === j) {
+        similarityMatrix[i][j] = 1;
+      } else {
+        try {
+          const similarity = cosineSimilarity(chunkEmbeddings[i], chunkEmbeddings[j]);
+          similarityMatrix[i][j] = isNaN(similarity) ? 0 : similarity;
+        } catch (error) {
+          console.error(`❌ Error calculating similarity ${i}-${j}:`, error);
+          similarityMatrix[i][j] = 0;
+        }
+      }
+    }
+  }
+  return similarityMatrix;
+}
+
+function groupClustersBySimilarity(chunks, similarityMatrix, threshold = 0.6) {
+  const clusters = [];
+  const visited = new Set();
+  for (let i = 0; i < chunks.length; i++) {
+    if (visited.has(i)) continue;
+    const cluster = [chunks[i]];
+    visited.add(i);
+    for (let j = i + 1; j < chunks.length; j++) {
+      if (visited.has(j)) continue;
+      if (similarityMatrix[i][j] > threshold) {
+        cluster.push(chunks[j]);
+        visited.add(j);
+      }
+    }
+    clusters.push(cluster);
+  }
+  return clusters;
+}
+
 /**
  * 2. Semantic Clustering - FIXED
  * Nhóm các chunks theo chủ đề để tìm mối liên kết
@@ -74,62 +126,9 @@ async function performVectorRetrieval(questionEmbedding) {
 export async function semanticClustering(chunks, questionEmbedding) {
   try {
     if (chunks.length <= 3) return [chunks]; // Return as single cluster
-
-    // Use existing embeddings from chunks instead of re-fetching
-    const chunkEmbeddings = chunks.map(c => {
-      if (Array.isArray(c.embedding)) return c.embedding;
-      try {
-        return typeof c.embedding === 'string' ? JSON.parse(c.embedding) : [];
-      } catch {
-        return [];
-      }
-    });
-
-    // Tính similarity matrix - FIXED: Handle missing embeddings
-    const similarityMatrix = [];
-    for (let i = 0; i < chunks.length; i++) {
-      similarityMatrix[i] = [];
-      for (let j = 0; j < chunks.length; j++) {
-        if (i === j) {
-          similarityMatrix[i][j] = 1;
-        } else {
-          try {
-            const similarity = cosineSimilarity(
-              chunkEmbeddings[i],
-              chunkEmbeddings[j]
-            );
-            similarityMatrix[i][j] = isNaN(similarity) ? 0 : similarity;
-          } catch (error) {
-            console.error(`❌ Error calculating similarity ${i}-${j}:`, error);
-            similarityMatrix[i][j] = 0;
-          }
-        }
-      }
-    }
-
-    // Clustering đơn giản: nhóm chunks có similarity > 0.6
-    const clusters = [];
-    const visited = new Set();
-
-    for (let i = 0; i < chunks.length; i++) {
-      if (visited.has(i)) continue;
-
-      const cluster = [chunks[i]];
-      visited.add(i);
-
-      for (let j = i + 1; j < chunks.length; j++) {
-        if (visited.has(j)) continue;
-
-        if (similarityMatrix[i][j] > 0.6) {
-          cluster.push(chunks[j]);
-          visited.add(j);
-        }
-      }
-
-      clusters.push(cluster);
-    }
-
-    return clusters;
+    const chunkEmbeddings = extractChunkEmbeddings(chunks);
+    const similarityMatrix = buildSimilarityMatrix(chunks, chunkEmbeddings);
+    return groupClustersBySimilarity(chunks, similarityMatrix, 0.6);
   } catch (error) {
     console.error('❌ Error in semanticClustering:', error);
     return [chunks]; // Return all chunks as single cluster
@@ -266,20 +265,33 @@ export async function adaptiveRetrieval(question, questionEmbedding) {
   }
 }
 
+function heuristicReRank(chunks, question) {
+  return chunks.map(chunk => {
+    const relevanceScore = chunk.score || 0;
+    const coherenceScore = calculateCoherenceScore(chunk, chunks);
+    const completenessScore = calculateCompletenessScore(chunk, question);
+    const finalScore = (relevanceScore * 0.4 + coherenceScore * 0.3 + completenessScore * 0.3);
+
+    return {
+      ...chunk,
+      final_score: isNaN(finalScore) ? 0 : finalScore,
+      relevance_score: isNaN(relevanceScore) ? 0 : relevanceScore,
+      coherence_score: isNaN(coherenceScore) ? 0 : coherenceScore,
+      completeness_score: isNaN(completenessScore) ? 0 : completenessScore
+    };
+  }).sort((a, b) => b.final_score - a.final_score);
+}
+
 /**
  * 6. Context Re-ranking - FIXED (Implemented Phase 1: Cohere & Threshold)
  * Sắp xếp lại context dựa trên relevance thực sự
  */
 export async function rerankContext(chunks, questionEmbedding, question) {
   try {
-    // Check if Cohere API Key is available
     if (process.env.COHERE_API_KEY) {
       console.log('🚀 Using Cohere Re-ranking...');
       const reranked = await rerankWithCohere(chunks, question);
-
-      // Filter by Threshold < 0.3 (OOK Handling)
       const validChunks = reranked.filter(c => c.final_score >= 0.3);
-
       if (validChunks.length === 0) {
         console.warn('⚠️ All chunks filtered out by Cohere threshold (Score < 0.3)');
         return [];
@@ -287,36 +299,11 @@ export async function rerankContext(chunks, questionEmbedding, question) {
       return validChunks;
     }
 
-    // Fallback to Heuristic
     console.log('⚠️ No COHERE_API_KEY found, using heuristic re-ranking...');
-    return chunks.map(chunk => {
-      // Tính relevance score
-      const relevanceScore = chunk.score || 0;
-
-      // Tính coherence score (dựa trên mối liên kết với các chunks khác)
-      const coherenceScore = calculateCoherenceScore(chunk, chunks);
-
-      // Tính completeness score (độ đầy đủ thông tin)
-      const completenessScore = calculateCompletenessScore(chunk, question);
-
-      // Combined score
-      const finalScore = (
-        relevanceScore * 0.4 +
-        coherenceScore * 0.3 +
-        completenessScore * 0.3
-      );
-
-      return {
-        ...chunk,
-        final_score: isNaN(finalScore) ? 0 : finalScore,
-        relevance_score: isNaN(relevanceScore) ? 0 : relevanceScore,
-        coherence_score: isNaN(coherenceScore) ? 0 : coherenceScore,
-        completeness_score: isNaN(completenessScore) ? 0 : completenessScore
-      };
-    }).sort((a, b) => b.final_score - a.final_score);
+    return heuristicReRank(chunks, question);
   } catch (error) {
     console.error('❌ Error in rerankContext:', error);
-    return chunks; // Return original chunks if error
+    return chunks;
   }
 }
 

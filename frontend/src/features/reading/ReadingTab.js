@@ -134,6 +134,9 @@ export default function ReadingTab({ darkMode }) {
                             cursor: 'pointer', transition: 'border-color 0.2s'
                         }}
                             onClick={() => handleSelectPassage(p)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSelectPassage(p)}
+                            role="button"
+                            tabIndex={0}
                             onMouseEnter={e => e.currentTarget.style.borderColor = '#7137ea'}
                             onMouseLeave={e => e.currentTarget.style.borderColor = ''}
                         >

@@ -74,6 +74,9 @@ const BankAccountManager = ({ onSelect, selectedId, refreshTrigger }) => {
                             key={acc.id}
                             className={`bank-account-item ${selectedId === acc.id ? 'selected' : ''}`}
                             onClick={() => onSelect && onSelect(acc)}
+                            onKeyDown={(e) => e.key === 'Enter' && onSelect && onSelect(acc)}
+                            role="button"
+                            tabIndex={0}
                         >
                             <div className="bank-item-left">
                                 <div className="bank-icon-placeholder">

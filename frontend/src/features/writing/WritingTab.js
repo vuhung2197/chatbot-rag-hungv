@@ -61,6 +61,7 @@ export default function WritingTab({ darkMode }) {
     const [loading, setLoading] = useState(true);
     const [showConfetti, setShowConfetti] = useState(false);
     const [streakMessage, setStreakMessage] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     // Giao diện con: 'list', 'editor', 'feedback'
     const [currentView, setCurrentView] = useState('list');
@@ -94,6 +95,28 @@ export default function WritingTab({ darkMode }) {
         }
     };
 
+    const handleGenerateExercise = async (type) => {
+        setIsGenerating(true);
+        try {
+            const exercise = await writingService.generateExercise(activeLevel, type);
+            setSelectedExercise(exercise);
+            setCurrentView('editor');
+            loadDashboard(); // refresh list in background
+        } catch (e) {
+            alert('Lỗi tạo bài tập: ' + (e.response?.data?.error || e.message));
+        }
+        setIsGenerating(false);
+    };
+
+    const WRITING_TYPES = [
+        { id: 'sentence', label: '📝 Viết câu', levels: ['A1', 'A2'] },
+        { id: 'email', label: '✉️ Email', levels: ['A2', 'B1', 'B2'] },
+        { id: 'story', label: '📖 Kể chuyện', levels: ['B1', 'B2'] },
+        { id: 'opinion', label: '💬 Quan điểm', levels: ['B1', 'B2', 'C1'] },
+        { id: 'essay', label: '📄 Luận văn', levels: ['C1', 'C2'] },
+        { id: 'report', label: '📊 Báo cáo', levels: ['B2', 'C1', 'C2'] },
+    ];
+
     const renderDashboard = () => (
         <div style={{ ...styles.container, ...themeVars }}>
             {/* LEFT COLUMN: Bài tập chờ nộp */}
@@ -111,6 +134,44 @@ export default function WritingTab({ darkMode }) {
                             </button>
                         ))}
                     </div>
+                </div>
+
+                {/* ✨ AI Generate Section */}
+                <div style={{
+                    ...styles.card,
+                    background: darkMode ? 'rgba(113, 55, 234, 0.1)' : 'rgba(113, 55, 234, 0.06)',
+                    border: '1px solid rgba(113, 55, 234, 0.2)'
+                }}>
+                    <h2 style={{ ...styles.header, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        ✨ Tạo bài tập mới bằng AI
+                    </h2>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: darkMode ? '#94a3b8' : '#64748b' }}>
+                        Hết bài rồi? Chọn loại bài tập, AI sẽ tạo đề mới phù hợp level {activeLevel} cho bạn:
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {WRITING_TYPES.map(t => (
+                            <button
+                                key={t.id}
+                                onClick={() => handleGenerateExercise(t.id)}
+                                disabled={isGenerating}
+                                style={{
+                                    padding: '8px 14px', borderRadius: '8px',
+                                    background: darkMode ? '#334155' : '#f1f5f9',
+                                    color: darkMode ? '#e2e8f0' : '#334155',
+                                    border: '1px solid transparent', cursor: isGenerating ? 'not-allowed' : 'pointer',
+                                    fontSize: '0.9rem', transition: 'all 0.2s',
+                                    opacity: isGenerating ? 0.5 : 1
+                                }}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                    {isGenerating && (
+                        <p style={{ color: '#7137ea', fontWeight: 'bold', marginTop: '12px' }}>
+                            ⏳ AI đang tạo bài tập mới cho bạn... (5-10 giây)
+                        </p>
+                    )}
                 </div>
 
                 <div style={styles.card}>
@@ -178,18 +239,28 @@ export default function WritingTab({ darkMode }) {
                     <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
                         <div
                             onClick={() => setCurrentView('vocabList')}
+                            onKeyDown={(e) => e.key === 'Enter' && setCurrentView('vocabList')}
+                            role="button"
+                            tabIndex={0}
                             style={{ flex: 1, background: '#f0fdf4', padding: '12px', borderRadius: '8px', border: '1px solid #bbf7d0', cursor: 'pointer', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onFocus={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                            onBlur={e => e.currentTarget.style.transform = 'none'}
                         >
                             <div style={{ color: '#166534', fontSize: '1.25rem', fontWeight: 'bold' }}>{stats?.vocabulary?.mastered || 0}</div>
                             <div style={{ color: '#15803d', fontSize: '0.75rem' }}>Từ đã thuộc</div>
                         </div>
                         <div
                             onClick={() => setCurrentView('vocabReview')}
+                            onKeyDown={(e) => e.key === 'Enter' && setCurrentView('vocabReview')}
+                            role="button"
+                            tabIndex={0}
                             style={{ flex: 1, background: '#fef3c7', padding: '12px', borderRadius: '8px', border: '1px solid #fde68a', cursor: 'pointer', transition: 'transform 0.2s' }}
                             onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onFocus={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                             onMouseOut={e => e.currentTarget.style.transform = 'none'}
+                            onBlur={e => e.currentTarget.style.transform = 'none'}
                         >
                             <div style={{ color: '#92400e', fontSize: '1.25rem', fontWeight: 'bold' }}>{stats?.vocabulary?.to_review || 0}</div>
                             <div style={{ color: '#b45309', fontSize: '0.75rem' }}>Chờ ôn SRS</div>

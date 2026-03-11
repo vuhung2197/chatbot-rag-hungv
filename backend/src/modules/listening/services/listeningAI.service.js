@@ -81,7 +81,88 @@ DO NOT output markdown \`\`\`json wrappers. Just raw JSON.`;
 
         } catch (error) {
             console.error('❌ Lỗi chấm bài AI Dictation:', error);
-            throw new Error(`AI Grading Failed: ${  error.message}`);
+            throw new Error(`AI Grading Failed: ${error.message}`);
+        }
+    },
+
+    /**
+     * Sinh bài nghe dictation mới bằng AI theo level và topic
+     */
+    async generateDictation(level, topic, existingTexts = []) {
+        const wordRanges = {
+            'A1': '10-20', 'A2': '15-30', 'B1': '25-45',
+            'B2': '40-60', 'C1': '50-80', 'C2': '60-100'
+        };
+
+        const topicNames = {
+            'daily_life': 'daily life and routine',
+            'travel': 'travel and tourism',
+            'technology': 'technology and innovation',
+            'science': 'science and nature',
+            'health': 'health and wellness',
+            'business': 'business and work',
+            'education': 'education and learning',
+            'culture': 'culture and traditions'
+        };
+
+        const topicDesc = topicNames[topic] || topic || 'an interesting general topic';
+
+        // Danh sách bài đã có để AI tránh trùng
+        const existingSection = existingTexts.length > 0
+            ? `\n\n⚠️ IMPORTANT - DO NOT create similar content to these existing dictation exercises:\n${existingTexts.map((t, i) => `${i + 1}. "${t.substring(0, 80)}..."`).join('\n')}\n\nYour new exercise MUST cover a different aspect/angle of the topic.`
+            : '';
+
+        const systemPrompt = `You are an English content creator making dictation exercises for CEFR ${level} learners.
+
+Task: Create ONE dictation exercise about "${topicDesc}".
+
+Requirements:
+1. Write a natural-sounding English passage of ${wordRanges[level] || '30-50'} words.
+2. Use vocabulary and grammar appropriate for CEFR ${level}.
+3. The text should be coherent, meaningful, and educational.
+4. Create a short, catchy Vietnamese title for this exercise.
+5. Provide 1 helpful hint in English about what to listen for.
+${existingSection}
+
+Return ONLY valid JSON:
+{
+  "title": "Tên bài nghe (tiếng Việt, ngắn gọn)",
+  "audio_text": "The English passage for dictation...",
+  "hints": ["One helpful listening tip"]
+}
+
+Do NOT wrap in markdown. Return raw JSON only.`;
+
+        try {
+            const modelConfig = {
+                name: 'gpt-4o-mini',
+                url: 'https://api.openai.com/v1',
+                temperature: 0.9,
+                maxTokens: 500
+            };
+
+            console.log(`✨ AI Listening Generator - Sinh bài nghe mới (${level}/${topic})`);
+            const raw = await callLLM(modelConfig, [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Generate a UNIQUE ${level} dictation exercise about ${topicDesc} now. It must be different from any existing exercises.` }
+            ]);
+
+            let cleaned = raw.trim();
+            if (cleaned.startsWith('```json')) cleaned = cleaned.substring(7);
+            if (cleaned.startsWith('```')) cleaned = cleaned.substring(3);
+            if (cleaned.endsWith('```')) cleaned = cleaned.substring(0, cleaned.length - 3);
+
+            const parsed = JSON.parse(cleaned.trim());
+            return {
+                level,
+                type: 'dictation',
+                title: parsed.title,
+                audio_text: parsed.audio_text,
+                hints: parsed.hints || []
+            };
+        } catch (error) {
+            console.error('❌ Lỗi sinh bài nghe:', error);
+            throw new Error(`AI không thể tạo bài nghe lúc này: ${error.message}`);
         }
     }
 };

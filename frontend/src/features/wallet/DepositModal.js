@@ -139,8 +139,8 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
     };
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="deposit-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()} role="button" tabIndex={0}>
+            <div className="deposit-modal" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="dialog">
                 <div className="modal-header">
                     <h2>
                         <i className="fas fa-plus-circle"></i>

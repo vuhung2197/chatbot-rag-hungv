@@ -17,6 +17,22 @@ import { classifyIntent, INTENTS } from '#services/intentRouter.js';
 
 // ==================== HELPER FUNCTIONS ====================
 
+// ─── Helper: Save chat and track usage in one call ───
+async function saveChatAndTrack(chatService, { userId, conversationId, message, reply, metadata, usageType, usageData }) {
+    const finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
+    await chatService.saveChat(userId, finalConversationId, message, reply, metadata);
+    await usageService.trackUsage(userId, usageType, usageData);
+    return finalConversationId;
+}
+
+// ─── Helper: Build web search system prompt ───
+function buildWebSearchPrompt(isFallback = false) {
+    const base = isFallback
+        ? 'Bạn là một trợ lý AI thông minh. Câu hỏi của người dùng không tìm thấy trong cơ sở dữ liệu nội bộ, nên bạn sẽ trả lời dựa trên kết quả tìm kiếm web.'
+        : 'Bạn là một trợ lý cập nhật tin tức thông minh. Nhiệm vụ của bạn là trả lời câu hỏi dựa trên kết quả tìm kiếm web mới nhất.';
+    return `${base}\nThời gian hiện tại: ${new Date().toLocaleString('vi-VN')}\n\nYêu cầu:\n1. Trả lời chính xác, ngắn gọn.\n2. DẪN NGUỒN (Link URL) dạng [Title](URL).\n3. Không tìm thấy thì nói không biết.\n4. Trình bày Markdown.${isFallback ? '\n5. Lưu ý: Kết quả từ internet, KHÔNG phải từ tài liệu nội bộ.' : ''}`;
+}
+
 /**
  * Chuyển đổi văn bản AI trả lời thành Markdown giống ChatGPT. (Deprecated/Simple)
  */
@@ -137,7 +153,7 @@ class ChatService {
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: `Lịch sử hội thoại:\n${historyText}\n\nCâu hỏi hiện tại: ${message}\n\nViết lại:` }
             ], 0.3, 200);
-            return rewritten.trim().replace(/^['"]|['"]$/g, '');
+            return rewritten.trim().replace(/(?:^['"])|(?:['"]$)/g, '');
         } catch (e) {
             console.error('Rewrite query failed:', e.message);
             return message;
@@ -147,7 +163,6 @@ class ChatService {
     async processChat({ userId, message, model, conversationId }) {
         if (!message) throw new Error('No message provided');
 
-        // Validate Model Config
         const modelConfig = (model && model.url && model.name)
             ? model
             : { url: 'https://api.openai.com/v1', name: 'gpt-4o-mini' };
@@ -162,78 +177,69 @@ class ChatService {
             }
         }
 
-        // Router
         const { intent, reasoning } = await classifyIntent(processingMessage, modelConfig);
         console.log(`🧭 Intent: ${intent} | ${reasoning}`);
 
-        // Handle OFF_TOPIC
         if (intent === INTENTS.OFF_TOPIC) {
-            return {
-                reply: 'Xin lỗi, tôi không thể thảo luận về chủ đề này do các quy định về an toàn nội dung.',
-                reasoning_steps: [`Intent: OFF_TOPIC (${reasoning})`, 'Action: Refusal'],
-                chunks_used: []
-            };
+            return { reply: 'Xin lỗi, tôi không thể thảo luận về chủ đề này do các quy định về an toàn nội dung.', reasoning_steps: [`Intent: OFF_TOPIC (${reasoning})`, 'Action: Refusal'], chunks_used: [] };
         }
 
-        // Handle GREETING
         if (intent === INTENTS.GREETING) {
-            const directSystemPrompt = 'Bạn là trợ lý AI thân thiện. Hãy trả lời người dùng một cách tự nhiên, lịch sự và ngắn gọn.';
-            const messages = [
-                { role: 'system', content: directSystemPrompt },
-                ...history.slice(-4),
-                { role: 'user', content: message }
-            ];
-            const directReply = await callLLM(modelConfig, messages, 0.7, 200);
-            return {
-                reply: directReply,
-                reasoning_steps: [`Intent: GREETING (${reasoning})`, 'Action: Direct Chat (No RAG)'],
-                chunks_used: []
-            };
+            return await this._handleGreeting(message, history, modelConfig, reasoning);
         }
 
-        // Handle LIVE_SEARCH
         if (intent === INTENTS.LIVE_SEARCH) {
-            const t0 = Date.now();
-            const searchResult = await performWebSearch(processingMessage);
-            const { context: searchContext, sources: webSources } = searchResult;
-
-            const systemPrompt = `Bạn là một trợ lý cập nhật tin tức thông minh. Nhiệm vụ của bạn là trả lời câu hỏi của người dùng dựa trên kết quả tìm kiếm web mới nhất được cung cấp.\nThời gian hiện tại: ${new Date().toLocaleString('vi-VN')}\n\nYêu cầu:\n1. Trả lời chính xác, ngắn gọn.\n2. DẪN NGUỒN (Link URL) ở cuối câu trả lời dạng [Title](URL).\n3. Nếu không tìm thấy thông tin, hãy thành thật nói không biết.\n4. Trình bày đẹp bằng Markdown.`;
-
-            const replyRaw = await callLLM(modelConfig, [
-                { role: 'system', content: systemPrompt },
-                ...history.slice(-4),
-                { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
-            ], 0.4, 800);
-
-            const reply = toAdvancedMarkdown(replyRaw);
-            const processTime = Date.now() - t0;
-            const reasoningSteps = [
-                `Intent: LIVE_SEARCH (${reasoning})`,
-                'Performed Web Search via Tavily AI',
-                `Synthesized answer from ${webSources.length} web results`,
-                `Processing time: ${processTime}ms`
-            ];
-
-            if (userId) {
-                const finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
-                await this.saveChat(userId, finalConversationId, message, reply, { processing_time: processTime, model: modelConfig.name, intent, source: 'web_search' });
-                await usageService.trackUsage(userId, 'web_search', { tokens: searchContext.length });
-                // Gap 4: Include web_sources + source_type in response
-                return { reply, conversationId: finalConversationId, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'web_search', web_sources: webSources };
-            }
-            return { reply, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'web_search', web_sources: webSources };
+            return await this._handleLiveSearch({ userId, message, processingMessage, history, modelConfig, conversationId, reasoning });
         }
 
-        // Handle KNOWLEDGE (RAG)
+        return await this._handleKnowledgeRAG({ userId, message, processingMessage, history, modelConfig, conversationId, intent, reasoning });
+    }
+
+    // ─── Intent Handler: Greeting ───
+    async _handleGreeting(message, history, modelConfig, reasoning) {
+        const systemPrompt = 'Bạn là trợ lý AI thân thiện. Hãy trả lời một cách tự nhiên, lịch sự và ngắn gọn.';
+        const messages = [{ role: 'system', content: systemPrompt }, ...history.slice(-4), { role: 'user', content: message }];
+        const reply = await callLLM(modelConfig, messages, 0.7, 200);
+        return { reply, reasoning_steps: [`Intent: GREETING (${reasoning})`, 'Action: Direct Chat (No RAG)'], chunks_used: [] };
+    }
+
+    // ─── Intent Handler: Live Search ───
+    async _handleLiveSearch({ userId, message, processingMessage, history, modelConfig, conversationId, reasoning }) {
+        const t0 = Date.now();
+        const { context: searchContext, sources: webSources } = await performWebSearch(processingMessage);
+        const systemPrompt = buildWebSearchPrompt(false);
+
+        const replyRaw = await callLLM(modelConfig, [
+            { role: 'system', content: systemPrompt },
+            ...history.slice(-4),
+            { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
+        ], 0.4, 800);
+
+        const reply = toAdvancedMarkdown(replyRaw);
+        const processTime = Date.now() - t0;
+        const reasoningSteps = [
+            `Intent: LIVE_SEARCH (${reasoning})`, 'Performed Web Search via Tavily AI',
+            `Synthesized answer from ${webSources.length} web results`, `Processing time: ${processTime}ms`
+        ];
+
+        if (userId) {
+            const finalConversationId = await saveChatAndTrack(this, {
+                userId, conversationId, message, reply,
+                metadata: { processing_time: processTime, model: modelConfig.name, intent: 'LIVE_SEARCH', source: 'web_search' },
+                usageType: 'web_search', usageData: { tokens: searchContext.length }
+            });
+            return { reply, conversationId: finalConversationId, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'web_search', web_sources: webSources };
+        }
+        return { reply, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'web_search', web_sources: webSources };
+    }
+
+    // ─── Intent Handler: Knowledge RAG with web fallback ───
+    async _handleKnowledgeRAG({ userId, message, processingMessage, history, modelConfig, conversationId, intent, reasoning }) {
         const t0 = Date.now();
         const questionEmbedding = await getEmbedding(processingMessage);
         const retrievalParams = await adaptiveRetrieval(processingMessage, questionEmbedding);
 
-        const rawChunks = await multiStageRetrieval(
-            questionEmbedding,
-            processingMessage,
-            retrievalParams.maxChunks
-        );
+        const rawChunks = await multiStageRetrieval(questionEmbedding, processingMessage, retrievalParams.maxChunks);
 
         let finalChunks = [];
         try {
@@ -244,87 +250,28 @@ class ChatService {
         }
 
         if (finalChunks.length === 0) {
-            await this.logUnanswered(message);
-
-            // Fallback: Thử tìm trên Web thay vì bỏ cuộc
-            console.log('📭 KB returned 0 chunks, falling back to Web Search...');
-            {
-                try {
-                    const searchResult = await performWebSearch(processingMessage);
-                    const { context: searchContext, sources: webSources } = searchResult;
-                    if (searchContext && !searchContext.includes('chưa được cấu hình') && !searchContext.includes('gặp lỗi')) {
-                        const fallbackPrompt = `Bạn là một trợ lý AI thông minh. Câu hỏi của người dùng không tìm thấy trong cơ sở dữ liệu nội bộ, nên bạn sẽ trả lời dựa trên kết quả tìm kiếm web.
-Thời gian hiện tại: ${new Date().toLocaleString('vi-VN')}
-
-Yêu cầu:
-1. Trả lời chính xác, ngắn gọn.
-2. DẪN NGUỒN (Link URL) ở cuối câu trả lời dạng [Title](URL).
-3. Nếu không tìm thấy thông tin, hãy thành thật nói không biết.
-4. Trình bày đẹp bằng Markdown.
-5. Lưu ý: Kết quả này từ internet, KHÔNG phải từ tài liệu nội bộ.`;
-
-                        const replyRaw = await callLLM(modelConfig, [
-                            { role: 'system', content: fallbackPrompt },
-                            ...history.slice(-4),
-                            { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
-                        ], 0.4, 800);
-
-                        const reply = toAdvancedMarkdown(replyRaw);
-                        const processTime = Date.now() - t0;
-                        const reasoningSteps = [
-                            `Intent: KNOWLEDGE (${reasoning})`,
-                            'Retrieval returned 0 relevant chunks from KB',
-                            'Fallback: Performed Web Search via Tavily AI',
-                            `Synthesized answer from ${webSources.length} web results`,
-                            `Processing time: ${processTime}ms`
-                        ];
-
-                        if (userId) {
-                            const finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
-                            await this.saveChat(userId, finalConversationId, message, reply, {
-                                processing_time: processTime, model: modelConfig.name,
-                                intent: 'KNOWLEDGE_FALLBACK_WEB', source: 'kb_fallback_web'
-                            });
-                            await usageService.trackUsage(userId, 'web_search', { tokens: searchContext.length });
-                            return { reply, conversationId: finalConversationId, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'kb_fallback_web', web_sources: webSources };
-                        }
-                        return { reply, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'kb_fallback_web', web_sources: webSources };
-                    }
-                } catch (fallbackError) {
-                    console.warn('⚠️ Web Search fallback failed:', fallbackError.message);
-                }
-            }
-
-            // Nếu fallback cũng thất bại → trả lời gốc
-            return {
-                reply: 'Tôi chưa có đủ thông tin trong cơ sở dữ liệu để trả lời câu hỏi này chính xác.',
-                reasoning_steps: ['Retrieval returned 0 relevant chunks', 'Web Search fallback also failed'],
-                chunks_used: []
-            };
+            return await this._handleEmptyChunksFallback({ userId, message, processingMessage, history, modelConfig, conversationId, reasoning, t0 });
         }
 
         // Context Synthesis
-        let clusters = [], reasoningChains = [];
+        let reasoningChains = [];
         if (retrievalParams.useMultiHop) {
             try {
                 const results = await Promise.all([
                     semanticClustering(finalChunks, questionEmbedding),
                     multiHopReasoning(finalChunks.slice(0, 5), questionEmbedding, processingMessage)
                 ]);
-                clusters = results[0];
                 reasoningChains = results[1];
             } catch (e) { console.warn('Advanced synthesis skipped:', e); }
         }
 
         const fusedContext = fuseContext(finalChunks, reasoningChains, processingMessage);
-        const systemPrompt = `Bạn là một trợ lý AI chuyên nghiệp. Hãy trả lời câu hỏi dựa trên thông tin được cung cấp dưới đây.\nNếu thông tin không có trong ngữ cảnh, hãy nói "Tôi không biết".\nLuôn trích dẫn nguồn (nếu có thể) và trình bày mạch lạc bằng Markdown.\n\n---\n${fusedContext}\n---`;
+        const systemPrompt = `Bạn là một trợ lý AI chuyên nghiệp. Hãy trả lời dựa trên thông tin được cung cấp.\nNếu không có trong ngữ cảnh, hãy nói "Tôi không biết".\nTrìch dẫn nguồn và trình bày Markdown.\n\n---\n${fusedContext}\n---`;
 
         let reply = '';
         try {
             const replyRaw = await callLLM(modelConfig, [
-                { role: 'system', content: systemPrompt },
-                ...history.slice(-6),
-                { role: 'user', content: message }
+                { role: 'system', content: systemPrompt }, ...history.slice(-6), { role: 'user', content: message }
             ], 0.3, 1000);
             reply = toAdvancedMarkdown(replyRaw);
         } catch (error) {
@@ -334,34 +281,58 @@ Yêu cầu:
 
         const processTime = Date.now() - t0;
         const reasoningSteps = [
-            `Intent: ${intent}`,
-            `Retrieved ${rawChunks.length} chunks (Hybrid Search)`,
-            `Selected ${finalChunks.length} chunks after Re-ranking`,
-            `Processing time: ${processTime}ms`
+            `Intent: ${intent}`, `Retrieved ${rawChunks.length} chunks (Hybrid Search)`,
+            `Selected ${finalChunks.length} chunks after Re-ranking`, `Processing time: ${processTime}ms`
         ];
-
-        const chunksForClient = finalChunks.map(c => ({
-            id: c.id,
-            title: c.title,
-            content: c.content,
-            score: c.final_score || c.score,
-            source: c.source_type || 'unknown'
-        }));
+        const chunksForClient = finalChunks.map(c => ({ id: c.id, title: c.title, content: c.content, score: c.final_score || c.score, source: c.source_type || 'unknown' }));
 
         if (userId) {
-            const finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
-            const metadata = {
-                processing_time: processTime,
-                model: modelConfig.name,
-                total_chunks: finalChunks.length,
-                intent
-            };
-            await this.saveChat(userId, finalConversationId, message, reply, metadata);
-            await usageService.trackUsage(userId, 'advanced_rag', { tokens: fusedContext.length });
+            const finalConversationId = await saveChatAndTrack(this, {
+                userId, conversationId, message, reply,
+                metadata: { processing_time: processTime, model: modelConfig.name, total_chunks: finalChunks.length, intent },
+                usageType: 'advanced_rag', usageData: { tokens: fusedContext.length }
+            });
             return { reply, conversationId: finalConversationId, chunks_used: chunksForClient, reasoning_steps: reasoningSteps };
         }
-
         return { reply, chunks_used: chunksForClient, reasoning_steps: reasoningSteps };
+    }
+
+    // ─── Sub-handler: Fallback when KB returns 0 chunks ───
+    async _handleEmptyChunksFallback({ userId, message, processingMessage, history, modelConfig, conversationId, reasoning, t0 }) {
+        await this.logUnanswered(message);
+        console.log('📭 KB returned 0 chunks, falling back to Web Search...');
+
+        try {
+            const { context: searchContext, sources: webSources } = await performWebSearch(processingMessage);
+            if (searchContext && !searchContext.includes('chưa được cấu hình') && !searchContext.includes('gặp lỗi')) {
+                const systemPrompt = buildWebSearchPrompt(true);
+                const replyRaw = await callLLM(modelConfig, [
+                    { role: 'system', content: systemPrompt }, ...history.slice(-4),
+                    { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
+                ], 0.4, 800);
+
+                const reply = toAdvancedMarkdown(replyRaw);
+                const processTime = Date.now() - t0;
+                const reasoningSteps = [
+                    `Intent: KNOWLEDGE (${reasoning})`, 'Retrieval returned 0 relevant chunks from KB',
+                    'Fallback: Performed Web Search via Tavily AI', `Synthesized from ${webSources.length} web results`, `Processing time: ${processTime}ms`
+                ];
+
+                if (userId) {
+                    const finalConversationId = await saveChatAndTrack(this, {
+                        userId, conversationId, message, reply,
+                        metadata: { processing_time: processTime, model: modelConfig.name, intent: 'KNOWLEDGE_FALLBACK_WEB', source: 'kb_fallback_web' },
+                        usageType: 'web_search', usageData: { tokens: searchContext.length }
+                    });
+                    return { reply, conversationId: finalConversationId, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'kb_fallback_web', web_sources: webSources };
+                }
+                return { reply, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'kb_fallback_web', web_sources: webSources };
+            }
+        } catch (fallbackError) {
+            console.warn('⚠️ Web Search fallback failed:', fallbackError.message);
+        }
+
+        return { reply: 'Tôi chưa có đủ thông tin để trả lời câu hỏi này chính xác.', reasoning_steps: ['Retrieval returned 0 relevant chunks', 'Web Search fallback also failed'], chunks_used: [] };
     }
 
     async saveChat(userId, conversationId, question, reply, metadata) {
@@ -381,15 +352,12 @@ Yêu cầu:
     }
 
     async streamChat({ userId, message, model, conversationId }, sendEvent) {
-        // Validate Model
         const modelConfig = (model && model.url && model.name)
             ? model
             : { url: 'https://api.openai.com/v1', name: 'gpt-4o-mini' };
 
-        // Step 1: Router
         sendEvent('status', { content: '🧭 Đang phân tích ngữ cảnh & câu hỏi...' });
 
-        // Prepare History & Context
         let history = [];
         let processingMessage = message;
         if (userId && conversationId) {
@@ -411,132 +379,115 @@ Yêu cầu:
         const streamStartTime = Date.now();
 
         try {
-            // Case 1: Greeting
+            let streamResult;
+
             if (intent === INTENTS.GREETING) {
-                sendEvent('status', { content: '👋 Đang soạn câu trả lời...' });
-                const directReply = await callLLM(modelConfig, [
-                    { role: 'system', content: 'Bạn là trợ lý AI thân thiện. Hãy trả lời ngắn gọn.' },
-                    ...history.slice(-4),
-                    { role: 'user', content: message }
-                ]);
-                reply = directReply;
-                sendEvent('text', { content: reply });
-            }
-            // Case 2: Live Search
-            else if (intent === INTENTS.LIVE_SEARCH) {
-                sendEvent('status', { content: '🌍 Đang tìm kiếm trên internet...' });
-                const searchResult = await performWebSearch(processingMessage);
-                const { context: searchContext, sources } = searchResult;
-                webSources = sources;
-                sourceType = 'web_search';
-
-                sendEvent('status', { content: '📝 Đang tổng hợp thông tin...' });
-                const systemPrompt = `Bạn là một trợ lý cập nhật tin tức thông minh. Nhiệm vụ của bạn là trả lời câu hỏi của người dùng dựa trên kết quả tìm kiếm web mới nhất được cung cấp.\nThời gian hiện tại: ${new Date().toLocaleString('vi-VN')}\n\nYêu cầu:\n1. Trả lời chính xác, ngắn gọn.\n2. DẪN NGUỒN (Link URL) ở cuối câu trả lời dạng [Title](URL).\n3. Nếu không tìm thấy thông tin, hãy thành thật nói không biết.\n4. Trình bày đẹp bằng Markdown.`;
-
-                const replyRaw = await callLLM(modelConfig, [
-                    { role: 'system', content: systemPrompt },
-                    ...history.slice(-4),
-                    { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
-                ], 0.4, 800);
-                reply = toAdvancedMarkdown(replyRaw);
-                reasoningDetail.push(
-                    'Performed Web Search via Tavily AI',
-                    `Synthesized answer from ${webSources.length} web results`
-                );
-                sendEvent('text', { content: reply });
-            }
-            // Case 3: Knowledge RAG
-            else if (intent === INTENTS.KNOWLEDGE) {
-                sendEvent('status', { content: '🧠 Đang tra cứu dữ liệu nội bộ...' });
-                const questionEmbedding = await getEmbedding(processingMessage);
-                const rawChunks = await multiStageRetrieval(questionEmbedding, processingMessage, 5);
-                chunksUsed = rawChunks.map(c => ({
-                    id: c.id,
-                    title: c.title,
-                    content: c.content,
-                    score: c.score,
-                    source: c.source_type || 'vector',
-                    stage: c.retrieval_stage || 'retrieval'
-                }));
-
-                if (rawChunks.length === 0) {
-                    // Fallback: Thử tìm trên Web thay vì bỏ cuộc
-                    sendEvent('status', { content: '📭 Không tìm thấy trong tài liệu, đang thử tìm trên web...' });
-                    try {
-                        const searchResult = await performWebSearch(processingMessage);
-                        const { context: searchContext, sources } = searchResult;
-                        if (searchContext && !searchContext.includes('chưa được cấu hình') && !searchContext.includes('gặp lỗi')) {
-                            sendEvent('status', { content: '📝 Đang tổng hợp từ kết quả web...' });
-                            const fallbackPrompt = `Bạn là một trợ lý AI thông minh. Câu hỏi của người dùng không tìm thấy trong cơ sở dữ liệu nội bộ, nên bạn sẽ trả lời dựa trên kết quả tìm kiếm web.\nThời gian hiện tại: ${new Date().toLocaleString('vi-VN')}\n\nYêu cầu:\n1. Trả lời chính xác, ngắn gọn.\n2. DẪN NGUỒN (Link URL) ở cuối câu trả lời dạng [Title](URL).\n3. Nếu không tìm thấy thông tin, hãy thành thật nói không biết.\n4. Trình bày đẹp bằng Markdown.\n5. Lưu ý: Kết quả này từ internet, KHÔNG phải từ tài liệu nội bộ.`;
-
-                            const replyRaw = await callLLM(modelConfig, [
-                                { role: 'system', content: fallbackPrompt },
-                                ...history.slice(-4),
-                                { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
-                            ], 0.4, 800);
-                            reply = toAdvancedMarkdown(replyRaw);
-                            webSources = sources;
-                            sourceType = 'kb_fallback_web';
-                            reasoningDetail.push(
-                                'Retrieval returned 0 relevant chunks from KB',
-                                'Fallback: Performed Web Search via Tavily AI',
-                                `Synthesized answer from ${sources.length} web results`
-                            );
-                        } else {
-                            reply = 'Xin lỗi, tôi không tìm thấy thông tin trong tài liệu nội bộ và cũng không thể tìm trên web.';
-                        }
-                    } catch (fallbackError) {
-                        console.warn('⚠️ Stream Web Search fallback failed:', fallbackError.message);
-                        reply = 'Xin lỗi, tôi không tìm thấy thông tin trong tài liệu.';
-                    }
-                } else {
-                    sendEvent('status', { content: '💡 Đang suy luận...' });
-                    const fusedContext = fuseContext(rawChunks, [], processingMessage);
-                    reply = await callLLM(modelConfig, [
-                        { role: 'system', content: `Trả lời câu hỏi dựa trên context sau:\n${  fusedContext}` },
-                        ...history.slice(-6),
-                        { role: 'user', content: message }
-                    ]);
-                }
-                sendEvent('text', { content: reply });
-            }
-            // Case 4: Off Topic
-            else {
-                reply = 'Xin lỗi, tôi không thể trả lời câu hỏi này.';
-                sendEvent('text', { content: reply });
+                streamResult = await this._streamGreeting({ message, history, modelConfig, sendEvent });
+            } else if (intent === INTENTS.LIVE_SEARCH) {
+                streamResult = await this._streamLiveSearch({ message, processingMessage, history, modelConfig, sendEvent });
+            } else if (intent === INTENTS.KNOWLEDGE) {
+                streamResult = await this._streamKnowledge({ message, processingMessage, history, modelConfig, sendEvent });
+            } else {
+                streamResult = { reply: 'Xin lỗi, tôi không thể trả lời câu hỏi này.' };
+                sendEvent('text', { content: streamResult.reply });
             }
 
-            // Save to DB
+            reply = streamResult.reply;
+            chunksUsed = streamResult.chunksUsed || [];
+            webSources = streamResult.webSources || [];
+            sourceType = streamResult.sourceType || 'stream';
+            reasoningDetail.push(...(streamResult.reasoningDetail || []));
+
             if (userId) {
                 finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
                 const processTime = Date.now() - streamStartTime;
                 const isWebSearch = sourceType === 'web_search' || sourceType === 'kb_fallback_web';
-                const metadata = {
-                    processing_time: processTime,
-                    model: modelConfig.name,
-                    total_chunks: chunksUsed.length,
-                    intent,
-                    source: sourceType
-                };
                 reasoningDetail.push(`Processing time: ${processTime}ms`);
-                await this.saveChat(userId, finalConversationId, message, reply, metadata);
+                await this.saveChat(userId, finalConversationId, message, reply, {
+                    processing_time: processTime, model: modelConfig.name, total_chunks: chunksUsed.length, intent, source: sourceType
+                });
                 await usageService.trackUsage(userId, isWebSearch ? 'web_search' : 'stream_chat', { tokens: reply.length / 4 });
             }
 
-            // Finalize - Gap 4: Include web_sources + source_type
-            sendEvent('done', {
-                reply,
-                reasoning_steps: reasoningDetail,
-                chunks_used: chunksUsed,
-                conversationId: finalConversationId,
-                source_type: sourceType,
-                web_sources: webSources
-            });
+            sendEvent('done', { reply, reasoning_steps: reasoningDetail, chunks_used: chunksUsed, conversationId: finalConversationId, source_type: sourceType, web_sources: webSources });
 
         } catch (error) {
             console.error('Stream processing error:', error);
             throw error;
         }
+    }
+
+    async _streamGreeting({ message, history, modelConfig, sendEvent }) {
+        sendEvent('status', { content: '👋 Đang soạn câu trả lời...' });
+        const reply = await callLLM(modelConfig, [
+            { role: 'system', content: 'Bạn là trợ lý AI thân thiện. Hãy trả lời ngắn gọn.' },
+            ...history.slice(-4), { role: 'user', content: message }
+        ]);
+        sendEvent('text', { content: reply });
+        return { reply, reasoningDetail: [], webSources: [], sourceType: 'stream', chunksUsed: [] };
+    }
+
+    async _streamLiveSearch({ message, processingMessage, history, modelConfig, sendEvent }) {
+        sendEvent('status', { content: '🌍 Đang tìm kiếm trên internet...' });
+        const { context: searchContext, sources: webSources } = await performWebSearch(processingMessage);
+        sendEvent('status', { content: '📝 Đang tổng hợp thông tin...' });
+        const systemPrompt = buildWebSearchPrompt(false);
+        const replyRaw = await callLLM(modelConfig, [
+            { role: 'system', content: systemPrompt }, ...history.slice(-4),
+            { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
+        ], 0.4, 800);
+        const reply = toAdvancedMarkdown(replyRaw);
+        sendEvent('text', { content: reply });
+        return {
+            reply, webSources, sourceType: 'web_search', chunksUsed: [],
+            reasoningDetail: ['Performed Web Search via Tavily AI', `Synthesized answer from ${webSources.length} web results`]
+        };
+    }
+
+    async _streamKnowledge({ message, processingMessage, history, modelConfig, sendEvent }) {
+        sendEvent('status', { content: '🧠 Đang tra cứu dữ liệu nội bộ...' });
+        const questionEmbedding = await getEmbedding(processingMessage);
+        const rawChunks = await multiStageRetrieval(questionEmbedding, processingMessage, 5);
+        const chunksUsed = rawChunks.map(c => ({
+            id: c.id, title: c.title, content: c.content, score: c.score,
+            source: c.source_type || 'vector', stage: c.retrieval_stage || 'retrieval'
+        }));
+        let reply, webSources = [], sourceType = 'stream', reasoningDetail = [];
+        if (rawChunks.length === 0) {
+            const fb = await this._streamKnowledgeFallback({ message, processingMessage, history, modelConfig, sendEvent });
+            reply = fb.reply; webSources = fb.webSources; sourceType = fb.sourceType; reasoningDetail = fb.reasoningDetail;
+        } else {
+            sendEvent('status', { content: '💡 Đang suy luận...' });
+            const fusedContext = fuseContext(rawChunks, [], processingMessage);
+            reply = await callLLM(modelConfig, [
+                { role: 'system', content: `Trả lời câu hỏi dựa trên context sau:\n${fusedContext}` },
+                ...history.slice(-6), { role: 'user', content: message }
+            ]);
+        }
+        sendEvent('text', { content: reply });
+        return { reply, webSources, sourceType, chunksUsed, reasoningDetail };
+    }
+
+    async _streamKnowledgeFallback({ message, processingMessage, history, modelConfig, sendEvent }) {
+        sendEvent('status', { content: '📭 Không tìm thấy trong tài liệu, đang thử tìm trên web...' });
+        try {
+            const { context: searchContext, sources } = await performWebSearch(processingMessage);
+            if (searchContext && !searchContext.includes('chưa được cấu hình') && !searchContext.includes('gặp lỗi')) {
+                sendEvent('status', { content: '📝 Đang tổng hợp từ kết quả web...' });
+                const systemPrompt = buildWebSearchPrompt(true);
+                const replyRaw = await callLLM(modelConfig, [
+                    { role: 'system', content: systemPrompt }, ...history.slice(-4),
+                    { role: 'user', content: `# Câu hỏi: ${message}\n\n${searchContext}` }
+                ], 0.4, 800);
+                return {
+                    reply: toAdvancedMarkdown(replyRaw), webSources: sources, sourceType: 'kb_fallback_web',
+                    reasoningDetail: ['Retrieval returned 0 relevant chunks from KB', 'Fallback: Performed Web Search via Tavily AI', `Synthesized answer from ${sources.length} web results`]
+                };
+            }
+        } catch (fallbackError) {
+            console.warn('⚠️ Stream Web Search fallback failed:', fallbackError.message);
+        }
+        return { reply: 'Xin lỗi, tôi không tìm thấy thông tin trong tài liệu.', webSources: [], sourceType: 'stream', reasoningDetail: [] };
     }
 
     async getHistory(userId) {
@@ -565,4 +516,4 @@ Yêu cầu:
     }
 }
 
-export default new ChatService();
+export default new ChatService();

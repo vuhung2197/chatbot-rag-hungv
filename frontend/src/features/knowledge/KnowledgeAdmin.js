@@ -495,8 +495,8 @@ export default function KnowledgeAdmin() {
 
       {/* Full Content Modal */}
       {showFullContentModal && (
-        <div className="modal-overlay" onClick={() => setShowFullContentModal(false)}>
-          <div className={`modal-content ${styles.modalContentFull}`} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setShowFullContentModal(false)} onKeyDown={(e) => e.key === 'Escape' && setShowFullContentModal(false)} role="button" tabIndex={0}>
+          <div className={`modal-content ${styles.modalContentFull}`} onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="dialog">
             <div className="modal-header">
               <h3>Nội dung đầy đủ</h3>
               <button

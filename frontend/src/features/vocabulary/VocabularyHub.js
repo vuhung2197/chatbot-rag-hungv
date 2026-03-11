@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { vocabularyService } from './vocabularyService';
+import VocabFillBlankGame from '../writing/components/VocabFillBlankGame';
 
 export default function VocabularyHub({ darkMode }) {
     const [view, setView] = useState('daily'); // daily, review, explore, mistakes
@@ -14,6 +15,7 @@ export default function VocabularyHub({ darkMode }) {
     // UI state for practicing
     const [practiceIndex, setPracticeIndex] = useState(0);
     const [showAnswer, setShowAnswer] = useState(false);
+    const [reviewMode, setReviewMode] = useState(null); // null (choose), 'flashcard', 'fillblank'
 
     const themeVars = darkMode ? {
         '--card-bg': '#1e293b', '--border-color': '#334155',
@@ -200,15 +202,24 @@ export default function VocabularyHub({ darkMode }) {
             {view === 'daily' && (
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>Mục tiêu hôm nay: Học {dailyWords.length} từ mới</h3>
+                        <div>
+                            <h3 style={{ color: 'var(--text-primary)', margin: '0 0 4px 0' }}>🎯 Mục tiêu hôm nay: Học {dailyWords.length} từ mới</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Từ vựng được đề xuất theo level từ thấp đến cao. Danh sách tự đổi mỗi ngày.
+                            </p>
+                        </div>
                         {dailyWords.length > 0 && (
-                            <button onClick={handleAddAllDaily} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                                Thêm {dailyWords.length} từ vào Sổ
+                            <button onClick={handleAddAllDaily} style={{ padding: '8px 16px', background: 'var(--success)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                ✅ Thêm {dailyWords.length} từ vào Sổ
                             </button>
                         )}
                     </div>
                     {dailyWords.length === 0 ? (
-                        <p style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '40px' }}>Bạn đã hết từ đề xuất hôm nay! Hãy qua mục Khám Phá để tự tìm thêm nhé.</p>
+                        <div style={{ textAlign: 'center', padding: '60px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                            <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🎉</div>
+                            <h2 style={{ color: 'var(--text-primary)' }}>Tuyệt vời! Bạn đã thêm hết từ đề xuất hôm nay!</h2>
+                            <p style={{ color: 'var(--text-secondary)' }}>Quay lại vào ngày mai để nhận từ mới, hoặc vào mục <strong>Khám Phá Thư Viện</strong> để tự học thêm.</p>
+                        </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {dailyWords.map(w => renderWordCard(w, (
@@ -277,8 +288,53 @@ export default function VocabularyHub({ darkMode }) {
                             <h2 style={{ color: 'var(--text-primary)' }}>Không còn từ nào cần ôn tập hôm nay!</h2>
                             <p style={{ color: 'var(--text-secondary)' }}>Tuyệt vời, bạn đã hoàn thành mục tiêu. Hãy khám phá thêm từ mới nhé.</p>
                         </div>
+                    ) : reviewMode === null ? (
+                        /* Mode selection */
+                        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+                            <h3 style={{ color: 'var(--text-primary)', margin: 0 }}>🔥 Chọn Cách Ôn Tập ({reviewWords.length} từ)</h3>
+                            <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <div
+                                    onClick={() => setReviewMode('flashcard')}
+                                    onKeyDown={(e) => e.key === 'Enter' && setReviewMode('flashcard')}
+                                    role="button" tabIndex={0}
+                                    style={{ width: '220px', padding: '24px', borderRadius: '12px', border: '2px solid var(--accent-color)', cursor: 'pointer', textAlign: 'center', background: 'var(--card-bg)', transition: 'transform 0.2s' }}
+                                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🗂️</div>
+                                    <h4 style={{ color: 'var(--accent-color)', margin: '0 0 8px 0' }}>Lật Thẻ</h4>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Xem từ, lật thẻ để kiểm tra nhớ.</p>
+                                </div>
+                                <div
+                                    onClick={() => setReviewMode('fillblank')}
+                                    onKeyDown={(e) => e.key === 'Enter' && setReviewMode('fillblank')}
+                                    role="button" tabIndex={0}
+                                    style={{ width: '220px', padding: '24px', borderRadius: '12px', border: '2px solid #f59e0b', cursor: 'pointer', textAlign: 'center', background: 'var(--card-bg)', transition: 'transform 0.2s' }}
+                                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                >
+                                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>✍️</div>
+                                    <h4 style={{ color: '#f59e0b', margin: '0 0 8px 0' }}>Điền Từ Vào Câu</h4>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>Đọc câu tiếng Anh, điền từ còn thiếu.</p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : reviewMode === 'fillblank' ? (
+                        <div>
+                            <button onClick={() => setReviewMode(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', marginBottom: '12px' }}>← Đổi chế độ</button>
+                            <VocabFillBlankGame words={reviewWords} darkMode={darkMode} onComplete={() => {
+                                setReviewWords([]);
+                                setReviewMode(null);
+                            }} />
+                        </div>
                     ) : (
+                        /* Flashcard mode (existing) */
                         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '16px', padding: '40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '400px', justifyContent: 'center' }}>
+                            <button onClick={() => setReviewMode(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', fontWeight: 'bold', marginBottom: '12px', alignSelf: 'flex-start' }}>← Đổi chế độ</button>
 
                             <div style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>Tiến độ ôn tập: {practiceIndex + 1} / {reviewWords.length}</div>
 
@@ -287,9 +343,11 @@ export default function VocabularyHub({ darkMode }) {
                                 <button onClick={() => playText(reviewWords[practiceIndex].word)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '2rem', verticalAlign: 'middle', marginLeft: '10px' }}>🔊</button>
                             </div>
 
+
                             {showAnswer ? (
                                 <div style={{ animation: 'fadeIn 0.3s', marginTop: '20px', background: 'var(--border-color)', padding: '20px', borderRadius: '12px', width: '100%' }}>
                                     {reviewWords[practiceIndex].phonetic && <div style={{ color: 'var(--text-primary)', fontSize: '1.2rem', marginBottom: '10px' }}>/{reviewWords[practiceIndex].phonetic}/</div>}
+                                    {reviewWords[practiceIndex].pos && <div style={{ color: '#a78bfa', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '10px' }}>Loại từ: {reviewWords[practiceIndex].pos}</div>}
                                     <div style={{ color: 'var(--text-primary)', fontSize: '1.1rem', marginBottom: '10px' }}>{reviewWords[practiceIndex].definition}</div>
                                     <div style={{ color: 'var(--success)', fontSize: '1.2rem', fontWeight: 'bold' }}>{reviewWords[practiceIndex].translation}</div>
 

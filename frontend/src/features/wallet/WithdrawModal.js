@@ -79,8 +79,8 @@ const WithdrawModal = ({ isOpen, onClose, balance, currency, onSuccess }) => {
     if (!isOpen) return null;
 
     return (
-        <div className="withdraw-modal-overlay" onClick={onClose}>
-            <div className="withdraw-modal" onClick={e => e.stopPropagation()}>
+        <div className="withdraw-modal-overlay" onClick={onClose} onKeyDown={(e) => e.key === 'Escape' && onClose()} role="button" tabIndex={0}>
+            <div className="withdraw-modal" onClick={e => e.stopPropagation()} onKeyDown={e => e.stopPropagation()} role="dialog">
                 <div className="withdraw-modal-header">
                     <h2>
                         <FaMoneyBillWave /> Withdraw Funds

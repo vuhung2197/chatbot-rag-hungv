@@ -118,6 +118,50 @@ services:
     depends_on:
       - backend
 
+  # ============================================
+  # SonarQube Database (separate from app DB)
+  # ============================================
+  sonarqube-db:
+    image: postgres:15
+    container_name: chatbot-sonarqube-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: sonarqube
+      POSTGRES_USER: sonarqube
+      POSTGRES_PASSWORD: sonarqube123
+    volumes:
+      - sonarqube_db_data:/var/lib/postgresql/data
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonarqube -d sonarqube"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # SonarQube - Code Quality Analysis
+  # ============================================
+  sonarqube:
+    image: sonarqube:10-community
+    container_name: chatbot-sonarqube
+    restart: unless-stopped
+    depends_on:
+      sonarqube-db:
+        condition: service_healthy
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonarqube-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonarqube
+      SONAR_JDBC_PASSWORD: sonarqube123
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    networks:
+      - chatbot-network
+
 # ============================================
 # Networks
 # ============================================
@@ -135,4 +179,16 @@ volumes:
     driver: local
   pgadmin_data:
     name: chatbot_pgadmin_data
+    driver: local
+  sonarqube_data:
+    name: chatbot_sonarqube_data
+    driver: local
+  sonarqube_db_data:
+    name: chatbot_sonarqube_db_data
+    driver: local
+  sonarqube_extensions:
+    name: chatbot_sonarqube_extensions
+    driver: local
+  sonarqube_logs:
+    name: chatbot_sonarqube_logs
     driver: local

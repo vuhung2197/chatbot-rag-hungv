@@ -50,7 +50,7 @@ export async function requestPasswordReset(req, res) {
         if (result.serviceConfigured === false) {
             return res.json({
                 message: result.message,
-                ...((process.env.NODE_ENV === 'development' || true) && {
+                ...(process.env.NODE_ENV === 'development' && {
                     resetUrl: result.resetUrl,
                     resetCode: result.resetCode
                 })

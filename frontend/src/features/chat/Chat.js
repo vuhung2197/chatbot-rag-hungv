@@ -10,6 +10,189 @@ import styles from '../../styles/components/Chat.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+// ─── Helper: Process SSE data event ───
+function processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId }) {
+  const result = { botReply: null, metadata: null, error: null };
+  if (data.type === 'status') {
+    setLoadingStatus(data.content);
+  } else if (data.type === 'text') {
+    result.botReply = data.content;
+    setHistory(prev => {
+      const last = prev[prev.length - 1];
+      return [...prev.slice(0, -1), { ...last, bot: data.content }];
+    });
+  } else if (data.type === 'done') {
+    setAdvancedResponse(data);
+    result.metadata = data;
+    if (data.conversationId) setCurrentConversationId(data.conversationId);
+  } else if (data.type === 'error') {
+    result.error = 'Đã xảy ra lỗi: ' + data.message;
+  }
+  return result;
+}
+
+// ─── Helper: Source type badge config ───
+function getSourceBadge(sourceType) {
+  const configs = {
+    web_search: { bg: '#dbeafe', color: '#1d4ed8', label: '🌐 Web Search' },
+    kb_fallback_web: { bg: '#fef3c7', color: '#92400e', label: '📭 KB → Web Fallback' },
+    rate_limited: { bg: '#fee2e2', color: '#dc2626', label: '⚠️ Rate Limited' },
+    stream: { bg: '#e0e7ff', color: '#4338ca', label: '📚 Knowledge Base' },
+  };
+  return configs[sourceType] || { bg: '#e0e7ff', color: '#4338ca', label: sourceType };
+}
+
+// ─── Sub-component: Source Type Badge ───
+function SourceTypeBadge({ sourceType }) {
+  if (!sourceType) return null;
+  const { bg, color, label } = getSourceBadge(sourceType);
+  return (
+    <div style={{ marginTop: '6px', marginBottom: '4px' }}>
+      <span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600, background: bg, color }}>
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ─── Sub-component: Web Sources List ───
+function WebSourcesList({ sources, sourceType }) {
+  if (!sources?.length) return null;
+  return (
+    <div className={styles.advancedRagSection}>
+      <strong>🌐 Web Sources ({sourceType === 'kb_fallback_web' ? 'Fallback từ KB' : 'Tìm kiếm trực tiếp'}):</strong>
+      <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {sources.map((source, index) => (
+          <a key={index} href={source.url} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '6px', background: 'rgba(59, 130, 246, 0.08)', borderLeft: '3px solid #3b82f6', color: '#3b82f6', textDecoration: 'none', fontSize: '13px', transition: 'background 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)'}>
+            <span>🔗</span>
+            <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{source.title}</span>
+            <span style={{ fontSize: '11px', opacity: 0.6 }}>↗</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Sub-component: Message Item ───
+function MessageItem({ item, isLastMessage, lastMessageRef }) {
+  return (
+    <div ref={isLastMessage ? lastMessageRef : null} className={styles.messageContainer}>
+      <div className={`${styles.messageRow} ${styles.messageRowUser}`}>
+        <div className={styles.userMessage}>{item.user}</div>
+      </div>
+      {item.bot && (
+        <div className={`${styles.messageRow} ${styles.messageRowBot}`}>
+          <div className={styles.botMessage}>
+            {item.metadata && (
+              <div className={styles.metadataHeader}>
+                <span><i className="fas fa-robot"></i> {item.metadata.model_used}</span>
+                <span><i className="fas fa-bolt"></i> {item.metadata.processing_time}ms</span>
+                {item.metadata.total_chunks > 0 && <span><i className="fas fa-book"></i> {item.metadata.total_chunks} chunks</span>}
+              </div>
+            )}
+            <ReactMarkdown>{item.bot}</ReactMarkdown>
+
+            {item.reasoning_steps?.length > 0 && (
+              <div className={styles.messageAdvancedInfo}>
+                <details className={styles.advancedDetails}>
+                  <summary className={styles.advancedSummary}>🧠 Chi tiết phân tích Advanced RAG</summary>
+                  <div className={styles.advancedContent}>
+                    <strong>Các bước suy luận:</strong>
+                    <ul className={styles.advancedStepsList}>
+                      {item.reasoning_steps.map((step, idx) => <li key={idx}>{step}</li>)}
+                    </ul>
+                  </div>
+                </details>
+              </div>
+            )}
+
+            {item.chunks_used?.length > 0 && (
+              <div className={styles.chunksSection}>
+                <div className={styles.chunksTitle}>📚 Chunks used ({item.chunks_used.length}):</div>
+                <div className={styles.chunksList}>
+                  {item.chunks_used.map((chunk, idx) => (
+                    <div key={idx} className={styles.chunkItem}>
+                      <div className={styles.chunkTitle}>{chunk.title}</div>
+                      <div className={styles.chunkInfo}>
+                        Score: {chunk.score?.toFixed(3)} | Stage: {chunk.stage || 'N/A'} | ID: {chunk.id}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Advanced RAG Analysis ───
+function AdvancedRAGAnalysis({ advancedResponse }) {
+  if (!advancedResponse) return null;
+  return (
+    <div className={styles.advancedRagInfo}>
+      <div className={styles.advancedRagHeader}>🧠 Advanced RAG Analysis</div>
+      <div className={styles.advancedRagSection}>
+        <strong>📊 Processing Steps:</strong>
+        <ul className={styles.advancedRagList}>
+          {advancedResponse.reasoning_steps?.map((step, idx) => (
+            <li key={idx} className={styles.advancedRagListItem}>{step}</li>
+          ))}
+        </ul>
+      </div>
+
+      <div className={styles.advancedRagSection}>
+        <strong>📚 Chunks Used:</strong> {advancedResponse.chunks_used?.length || 0}
+        {advancedResponse.chunks_used?.length > 0 && (
+          <div className={styles.advancedRagChunksContainer}>
+            {advancedResponse.chunks_used.map((chunk, index) => (
+              <div key={index} className={styles.advancedRagChunk}>
+                <div className={styles.advancedRagChunkHeader}>
+                  <div className={styles.advancedRagChunkTitle}>{chunk.title}</div>
+                  <div className={styles.advancedRagChunkMeta}>
+                    <span>Score: {chunk.score?.toFixed(3)}</span>
+                    <span>Stage: {chunk.stage}</span>
+                  </div>
+                </div>
+                <div className={styles.advancedRagChunkContent}>{chunk.content}</div>
+                <div className={styles.advancedRagChunkFooter}>
+                  <span>ID: {chunk.id}</span>
+                  <span>Source: {chunk.source}</span>
+                  <span>Chunk: {chunk.chunk_index}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <WebSourcesList sources={advancedResponse.web_sources} sourceType={advancedResponse.source_type} />
+      <SourceTypeBadge sourceType={advancedResponse.source_type} />
+
+      {advancedResponse.metadata && (
+        <div className={styles.advancedRagMetadata}>
+          <div className={styles.advancedRagMetadataRow}>
+            <strong>🤖 Model:</strong> {advancedResponse.metadata.model_used} |
+            <strong> ⚡ Time:</strong> {advancedResponse.metadata.processing_time}ms |
+            <strong> 📄 Context:</strong> {advancedResponse.metadata.context_length} chars
+          </div>
+          <div>
+            <strong>🔗 Clusters:</strong> {advancedResponse.metadata.clusters} |
+            <strong> 🧠 Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains} |
+            <strong> 📚 Total Chunks:</strong> {advancedResponse.metadata.total_chunks}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Chat({ darkMode = false }) {
   const { confirm } = useConfirmContext();
   const [input, setInput] = useState('');
@@ -181,28 +364,10 @@ export default function Chat({ darkMode = false }) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
-
-              if (data.type === 'status') {
-                setLoadingStatus(data.content);
-              }
-              else if (data.type === 'text') {
-                botReply = data.content; // Currently replacing, later can append if LLM streams tokens
-                setHistory(prev => {
-                  const last = prev[prev.length - 1];
-                  return [...prev.slice(0, -1), { ...last, bot: botReply }];
-                });
-              }
-              else if (data.type === 'done') {
-                console.log('Stream Done:', data);
-                setAdvancedResponse(data);
-                metadata = data;
-                if (data.conversationId) {
-                  setCurrentConversationId(data.conversationId);
-                }
-              }
-              else if (data.type === 'error') {
-                botReply = "Đã xảy ra lỗi: " + data.message;
-              }
+              const result = processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId });
+              if (result.botReply) botReply = result.botReply;
+              if (result.metadata) metadata = result.metadata;
+              if (result.error) botReply = result.error;
             } catch (e) { console.error('Error parsing SSE data', e); }
           }
         }
@@ -325,80 +490,14 @@ export default function Chat({ darkMode = false }) {
             </div>
           )}
 
-          {history.map((item, idx) => {
-            const isLastMessage = idx === history.length - 1;
-            return (
-              <div
-                key={idx}
-                ref={isLastMessage ? lastMessageRef : null}
-                className={styles.messageContainer}
-              >
-                {/* User Message */}
-                <div className={`${styles.messageRow} ${styles.messageRowUser}`}>
-                  <div className={styles.userMessage}>
-                    {item.user}
-                  </div>
-                </div>
-
-                {/* Bot Message */}
-                {item.bot && (
-                  <div className={`${styles.messageRow} ${styles.messageRowBot}`}>
-                    <div className={styles.botMessage}>
-                      {/* Metadata Header */}
-                      {item.metadata && (
-                        <div className={styles.metadataHeader}>
-                          <span><i className="fas fa-robot"></i> {item.metadata.model_used}</span>
-                          <span><i className="fas fa-bolt"></i> {item.metadata.processing_time}ms</span>
-                          {item.metadata.total_chunks > 0 && <span><i className="fas fa-book"></i> {item.metadata.total_chunks} chunks</span>}
-                        </div>
-                      )}
-                      <ReactMarkdown>{item.bot}</ReactMarkdown>
-
-                      {/* Advanced Analysis for this message (if persisted) */}
-                      {item.reasoning_steps && item.reasoning_steps.length > 0 && (
-                        <div className={styles.messageAdvancedInfo}>
-                          <details className={styles.advancedDetails}>
-                            <summary className={styles.advancedSummary}>🧠 Chi tiết phân tích Advanced RAG</summary>
-                            <div className={styles.advancedContent}>
-                              <strong>Các bước suy luận:</strong>
-                              <ul className={styles.advancedStepsList}>
-                                {item.reasoning_steps.map((step, sIdx) => (
-                                  <li key={sIdx}>{step}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          </details>
-                        </div>
-                      )}
-
-                      {/* Regular Chat Chunks */}
-                      {item.chunks_used && item.chunks_used.length > 0 && (
-                        <div className={styles.chunksSection}>
-                          <div className={styles.chunksTitle}>
-                            📚 Chunks used ({item.chunks_used.length}):
-                          </div>
-                          <div className={styles.chunksList}>
-                            {item.chunks_used.map((chunk, chunkIdx) => (
-                              <div key={chunkIdx} className={styles.chunkItem}>
-                                <div className={styles.chunkTitle}>
-                                  {chunk.title}
-                                </div>
-                                <div className={styles.chunkInfo}>
-                                  Score: {chunk.score?.toFixed(3)} | Stage: {chunk.stage || 'N/A'} | ID: {chunk.id}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {history.map((item, idx) => (
+            <MessageItem
+              key={idx}
+              item={item}
+              isLastMessage={idx === history.length - 1}
+              lastMessageRef={lastMessageRef}
+            />
+          ))}
 
           {/* Loading Message */}
           {loading && (
@@ -414,130 +513,7 @@ export default function Chat({ darkMode = false }) {
             </div>
           )}
 
-          {/* Advanced RAG Info */}
-          {advancedResponse && (
-            <div className={styles.advancedRagInfo}>
-              <div className={styles.advancedRagHeader}>
-                🧠 Advanced RAG Analysis
-              </div>
-
-              <div className={styles.advancedRagSection}>
-                <strong>📊 Processing Steps:</strong>
-                <ul className={styles.advancedRagList}>
-                  {advancedResponse.reasoning_steps?.map((step, index) => (
-                    <li key={index} className={styles.advancedRagListItem}>
-                      {step}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className={styles.advancedRagSection}>
-                <strong>📚 Chunks Used:</strong> {advancedResponse.chunks_used?.length || 0}
-                {advancedResponse.chunks_used?.length > 0 && (
-                  <div className={styles.advancedRagChunksContainer}>
-                    {advancedResponse.chunks_used.map((chunk, index) => (
-                      <div key={index} className={styles.advancedRagChunk}>
-                        <div className={styles.advancedRagChunkHeader}>
-                          <div className={styles.advancedRagChunkTitle}>
-                            {chunk.title}
-                          </div>
-                          <div className={styles.advancedRagChunkMeta}>
-                            <span>Score: {chunk.score?.toFixed(3)}</span>
-                            <span>Stage: {chunk.stage}</span>
-                          </div>
-                        </div>
-                        <div className={styles.advancedRagChunkContent}>
-                          {chunk.content}
-                        </div>
-                        <div className={styles.advancedRagChunkFooter}>
-                          <span>ID: {chunk.id}</span>
-                          <span>Source: {chunk.source}</span>
-                          <span>Chunk: {chunk.chunk_index}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Web Sources Display (Gap 4) */}
-              {advancedResponse.web_sources?.length > 0 && (
-                <div className={styles.advancedRagSection}>
-                  <strong>🌐 Web Sources ({advancedResponse.source_type === 'kb_fallback_web' ? 'Fallback từ KB' : 'Tìm kiếm trực tiếp'}):</strong>
-                  <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {advancedResponse.web_sources.map((source, index) => (
-                      <a
-                        key={index}
-                        href={source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          background: 'rgba(59, 130, 246, 0.08)',
-                          borderLeft: '3px solid #3b82f6',
-                          color: '#3b82f6',
-                          textDecoration: 'none',
-                          fontSize: '13px',
-                          transition: 'background 0.2s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.15)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)'}
-                      >
-                        <span>🔗</span>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {source.title}
-                        </span>
-                        <span style={{ fontSize: '11px', opacity: 0.6 }}>↗</span>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Source Type Badge */}
-              {advancedResponse.source_type && (
-                <div style={{ marginTop: '6px', marginBottom: '4px' }}>
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '2px 10px',
-                    borderRadius: '12px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    background: advancedResponse.source_type === 'web_search' ? '#dbeafe' :
-                      advancedResponse.source_type === 'kb_fallback_web' ? '#fef3c7' :
-                        advancedResponse.source_type === 'rate_limited' ? '#fee2e2' : '#e0e7ff',
-                    color: advancedResponse.source_type === 'web_search' ? '#1d4ed8' :
-                      advancedResponse.source_type === 'kb_fallback_web' ? '#92400e' :
-                        advancedResponse.source_type === 'rate_limited' ? '#dc2626' : '#4338ca'
-                  }}>
-                    {advancedResponse.source_type === 'web_search' ? '🌐 Web Search' :
-                      advancedResponse.source_type === 'kb_fallback_web' ? '📭 KB → Web Fallback' :
-                        advancedResponse.source_type === 'rate_limited' ? '⚠️ Rate Limited' :
-                          advancedResponse.source_type === 'stream' ? '📚 Knowledge Base' : advancedResponse.source_type}
-                  </span>
-                </div>
-              )}
-              {advancedResponse.metadata && (
-                <div className={styles.advancedRagMetadata}>
-                  <div className={styles.advancedRagMetadataRow}>
-                    <strong>🤖 Model:</strong> {advancedResponse.metadata.model_used} |
-                    <strong> ⚡ Time:</strong> {advancedResponse.metadata.processing_time}ms |
-                    <strong> 📄 Context:</strong> {advancedResponse.metadata.context_length} chars
-                  </div>
-                  <div>
-                    <strong>🔗 Clusters:</strong> {advancedResponse.metadata.clusters} |
-                    <strong> 🧠 Reasoning Chains:</strong> {advancedResponse.metadata.reasoning_chains} |
-                    <strong> 📚 Total Chunks:</strong> {advancedResponse.metadata.total_chunks}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+          <AdvancedRAGAnalysis advancedResponse={advancedResponse} />
 
           <div ref={messagesEndRef} />
         </div>

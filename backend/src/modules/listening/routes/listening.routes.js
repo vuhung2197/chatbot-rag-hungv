@@ -13,6 +13,9 @@ router.get('/exercises/:id', verifyToken, listeningController.getExercise);
 // Lấy (stream) audio cho bài nghe dictation 
 router.get('/audio/:id', verifyToken, listeningController.getAudioStream);
 
+// AI sinh bài nghe dictation mới
+router.post('/generate', verifyToken, listeningController.generateExercise);
+
 // Nộp bài Dictation (Nghe chép chính tả)
 router.post('/submit-dictation', verifyToken, listeningController.submitDictation);
 

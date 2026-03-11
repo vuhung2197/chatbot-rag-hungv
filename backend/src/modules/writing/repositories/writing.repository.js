@@ -66,6 +66,21 @@ const writingRepository = {
         return rows[0]?.total || 0;
     },
 
+    // ==================== AI GENERATED EXERCISES ====================
+
+    /**
+     * Lưu bài tập do AI sinh vào DB (để cache cho các user khác)
+     */
+    async createExercise({ level, type, title, prompt, hints, min_words, max_words }) {
+        const [rows] = await pool.execute(
+            `INSERT INTO writing_exercises (level, type, title, prompt, hints, min_words, max_words)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING *`,
+            [level, type, title, prompt, JSON.stringify(hints), min_words, max_words]
+        );
+        return rows[0];
+    },
+
     // ==================== SUBMISSIONS ====================
 
     /**

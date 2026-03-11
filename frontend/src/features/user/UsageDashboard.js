@@ -10,6 +10,32 @@ import styles from '../../styles/components/UsageDashboard.module.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
+// ─── Extracted: Stats Summary Component ───
+function StatsSummary({ stats, darkMode, t }) {
+  const statItems = [
+    { label: t('usage.totalQueries'), value: stats.reduce((sum, s) => sum + (parseInt(s.total_queries) || 0), 0) },
+    { label: t('usage.totalFiles'), value: stats.reduce((sum, s) => sum + (parseInt(s.total_file_uploads) || 0), 0) },
+    { label: t('usage.totalSize'), value: stats.reduce((sum, s) => sum + (parseFloat(s.total_file_size) || 0), 0).toFixed(2) + ' MB' },
+    { label: t('usage.totalTokens'), value: stats.reduce((sum, s) => sum + (parseInt(s.total_tokens) || 0), 0).toLocaleString() },
+  ];
+
+  return (
+    <div className={`${styles.statsCard} ${darkMode ? styles.darkMode : ''}`}>
+      <h4 className={`${styles.statsTitle} ${darkMode ? styles.darkMode : ''}`}>
+        {t('usage.statistics')}
+      </h4>
+      <div className={styles.statsGrid}>
+        {statItems.map((item, i) => (
+          <div key={i} className={styles.statItem}>
+            <div className={`${styles.statLabel} ${darkMode ? styles.darkMode : ''}`}>{item.label}</div>
+            <div className={`${styles.statValue} ${darkMode ? styles.darkMode : ''}`}>{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function UsageDashboard({ darkMode = false, refreshTrigger }) {
   const { t, language } = useLanguage();
   const [usage, setUsage] = useState(null);
@@ -48,7 +74,7 @@ export default function UsageDashboard({ darkMode = false, refreshTrigger }) {
   const loadData = async () => {
     try {
       const token = localStorage.getItem('token');
-      
+
       const [usageRes, limitsRes, statsRes] = await Promise.all([
         axios.get(`${API_URL}/usage/today`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -113,54 +139,16 @@ export default function UsageDashboard({ darkMode = false, refreshTrigger }) {
 
       {/* Usage Charts */}
       {stats.length > 0 && (
-        <UsageChart 
-          stats={stats} 
-          period={period} 
-          darkMode={darkMode} 
+        <UsageChart
+          stats={stats}
+          period={period}
+          darkMode={darkMode}
         />
       )}
 
       {/* Statistics Summary */}
       {stats.length > 0 && (
-        <div className={`${styles.statsCard} ${darkMode ? styles.darkMode : ''}`}>
-          <h4 className={`${styles.statsTitle} ${darkMode ? styles.darkMode : ''}`}>
-            {t('usage.statistics')}
-          </h4>
-          <div className={styles.statsGrid}>
-            <div className={styles.statItem}>
-              <div className={`${styles.statLabel} ${darkMode ? styles.darkMode : ''}`}>
-                {t('usage.totalQueries')}
-              </div>
-              <div className={`${styles.statValue} ${darkMode ? styles.darkMode : ''}`}>
-                {stats.reduce((sum, s) => sum + (parseInt(s.total_queries) || 0), 0)}
-              </div>
-            </div>
-            <div className={styles.statItem}>
-              <div className={`${styles.statLabel} ${darkMode ? styles.darkMode : ''}`}>
-                {t('usage.totalFiles')}
-              </div>
-              <div className={`${styles.statValue} ${darkMode ? styles.darkMode : ''}`}>
-                {stats.reduce((sum, s) => sum + (parseInt(s.total_file_uploads) || 0), 0)}
-              </div>
-            </div>
-            <div className={styles.statItem}>
-              <div className={`${styles.statLabel} ${darkMode ? styles.darkMode : ''}`}>
-                {t('usage.totalSize')}
-              </div>
-              <div className={`${styles.statValue} ${darkMode ? styles.darkMode : ''}`}>
-                {stats.reduce((sum, s) => sum + (parseFloat(s.total_file_size) || 0), 0).toFixed(2)} MB
-              </div>
-            </div>
-            <div className={styles.statItem}>
-              <div className={`${styles.statLabel} ${darkMode ? styles.darkMode : ''}`}>
-                {t('usage.totalTokens')}
-              </div>
-              <div className={`${styles.statValue} ${darkMode ? styles.darkMode : ''}`}>
-                {stats.reduce((sum, s) => sum + (parseInt(s.total_tokens) || 0), 0).toLocaleString()}
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatsSummary stats={stats} darkMode={darkMode} t={t} />
       )}
 
       {stats.length === 0 && !loading && (

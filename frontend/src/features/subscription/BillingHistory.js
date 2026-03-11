@@ -165,8 +165,8 @@ export default function BillingHistory({ darkMode = false, inModal = false }) {
                     </td>
                     <td className={styles.billingCycle}>
                       {invoice.billing_cycle === 'yearly'
-                        ? (t('subscription.yearly') || 'Yearly')
-                        : (t('subscription.monthly') || 'Monthly')}
+                        ? (t('subscription.billingCycle.yearly') || 'Yearly')
+                        : (t('subscription.billingCycle.monthly') || 'Monthly')}
                     </td>
                     <td className={styles.period}>
                       {formatDate(invoice.period_start)} - {formatDate(invoice.period_end)}

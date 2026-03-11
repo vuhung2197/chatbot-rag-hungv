@@ -14,10 +14,10 @@ export function advancedSemanticChunking(content, options = {}) {
 
   // 1. Phân tích cấu trúc văn bản
   const structure = analyzeDocumentStructure(content);
-  
+
   // 2. Tạo semantic boundaries
   const boundaries = findSemanticBoundaries(content, structure);
-  
+
   // 3. Chia chunk theo boundaries
   const chunks = createSemanticChunks(content, boundaries, {
     minChunkSize,
@@ -32,88 +32,74 @@ export function advancedSemanticChunking(content, options = {}) {
  * Phân tích cấu trúc văn bản để nhận diện các phần quan trọng
  */
 function analyzeDocumentStructure(content) {
-  const structure = {
-    sections: [],
-    paragraphs: [],
-    lists: [],
-    caseStudies: []
-  };
-
+  const structure = { sections: [], paragraphs: [], lists: [], caseStudies: [] };
   const lines = content.split('\n');
-  let currentSection = null;
-  let currentParagraph = '';
-  let inList = false;
+  let state = { currentSection: null, currentParagraph: '', inList: false };
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
-    
-    // Nhận diện tiêu đề
-    if (line.match(/^#{1,6}\s/) || line.match(/^\d+\.\s/)) {
-      if (currentParagraph) {
-        structure.paragraphs.push({
-          content: currentParagraph.trim(),
-          startLine: i - currentParagraph.split('\n').length,
-          endLine: i - 1
-        });
-        currentParagraph = '';
-      }
-      
-      currentSection = {
-        title: line,
-        startLine: i,
-        type: line.match(/^#{1,6}\s/) ? 'heading' : 'numbered'
-      };
-      structure.sections.push(currentSection);
-    }
-    // Nhận diện danh sách
-    else if (line.match(/^[-•*]\s/) || line.match(/^\d+\)\s/)) {
-      if (!inList) {
-        inList = true;
-        structure.lists.push({
-          startLine: i,
-          items: []
-        });
-      }
-      structure.lists[structure.lists.length - 1].items.push({
-        content: line,
-        line: i
-      });
-    }
-    // Nhận diện case study
-    else if (line.toLowerCase().includes('case study') || 
-             line.toLowerCase().includes('ví dụ') ||
-             line.toLowerCase().includes('ứng dụng')) {
-      structure.caseStudies.push({
-        title: line,
-        startLine: i
-      });
-    }
-    // Đoạn văn thường
-    else if (line.length > 0) {
-      currentParagraph += `${line  }\n`;
-    }
-    // Dòng trống - kết thúc đoạn
-    else if (currentParagraph.trim()) {
-      structure.paragraphs.push({
-        content: currentParagraph.trim(),
-        startLine: i - currentParagraph.split('\n').length,
-        endLine: i - 1
-      });
-      currentParagraph = '';
-      inList = false;
-    }
+    processDocumentLine(line, i, structure, state);
   }
 
-  // Thêm đoạn cuối
-  if (currentParagraph.trim()) {
+  if (state.currentParagraph.trim()) {
     structure.paragraphs.push({
-      content: currentParagraph.trim(),
-      startLine: lines.length - currentParagraph.split('\n').length,
+      content: state.currentParagraph.trim(),
+      startLine: lines.length - state.currentParagraph.split('\n').length,
       endLine: lines.length - 1
     });
   }
 
   return structure;
+}
+
+function processDocumentLine(line, i, structure, state) {
+  if (line.match(/^#{1,6}\s/) || line.match(/^\d+\.\s/)) {
+    handleHeadingLine(line, i, structure, state);
+  }
+  else if (line.match(/^[-•*]\s/) || line.match(/^\d+\)\s/)) {
+    handleListLine(line, i, structure, state);
+  }
+  else if (line.toLowerCase().includes('case study') || line.toLowerCase().includes('ví dụ') || line.toLowerCase().includes('ứng dụng')) {
+    structure.caseStudies.push({ title: line, startLine: i });
+  }
+  else if (line.length > 0) {
+    state.currentParagraph += `${line}\n`;
+  }
+  else if (state.currentParagraph.trim()) {
+    structure.paragraphs.push({
+      content: state.currentParagraph.trim(),
+      startLine: i - state.currentParagraph.split('\n').length,
+      endLine: i - 1
+    });
+    state.currentParagraph = '';
+    state.inList = false;
+  }
+}
+
+function handleHeadingLine(line, i, structure, state) {
+  if (state.currentParagraph) {
+    structure.paragraphs.push({
+      content: state.currentParagraph.trim(),
+      startLine: i - state.currentParagraph.split('\n').length,
+      endLine: i - 1
+    });
+    state.currentParagraph = '';
+  }
+
+  state.currentSection = {
+    title: line,
+    startLine: i,
+    type: line.match(/^#{1,6}\s/) ? 'heading' : 'numbered'
+  };
+  structure.sections.push(state.currentSection);
+}
+
+function handleListLine(line, i, structure, state) {
+  if (!state.inList) {
+    state.inList = true;
+    structure.lists.push({ startLine: i, items: [] });
+  }
+  structure.lists[structure.lists.length - 1].items.push({ content: line, line: i });
 }
 
 /**
@@ -140,7 +126,7 @@ function findSemanticBoundaries(content, structure) {
         type: 'paragraph',
         line: paragraph.endLine,
         priority: 'medium',
-        content: `${paragraph.content.substring(0, 100)  }...`
+        content: `${paragraph.content.substring(0, 100)}...`
       });
     }
   });
@@ -166,7 +152,7 @@ function createSemanticChunks(content, boundaries, options) {
   const { minChunkSize, maxChunkSize, overlapRatio } = options;
   const lines = content.split('\n');
   const chunks = [];
-  
+
   let currentChunk = '';
   let currentStartLine = 0;
   let lastBoundary = null;
@@ -174,30 +160,30 @@ function createSemanticChunks(content, boundaries, options) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const wordCount = currentChunk.split(/\s+/).length;
-    
+
     // Kiểm tra boundary
     const boundary = boundaries.find(b => b.line === i);
-    
+
     if (boundary && boundary.priority === 'high') {
       // Chia chunk tại tiêu đề quan trọng
       if (currentChunk.trim() && wordCount >= minChunkSize) {
         chunks.push(createChunkMetadata(currentChunk.trim(), currentStartLine, i - 1, lastBoundary));
       }
-      currentChunk = `${line  }\n`;
+      currentChunk = `${line}\n`;
       currentStartLine = i;
       lastBoundary = boundary;
     }
     else if (wordCount >= maxChunkSize) {
       // Chia chunk khi quá dài
       chunks.push(createChunkMetadata(currentChunk.trim(), currentStartLine, i - 1, lastBoundary));
-      
+
       // Tạo overlap
       const overlapText = createOverlap(currentChunk, overlapRatio);
-      currentChunk = `${overlapText + line  }\n`;
+      currentChunk = `${overlapText + line}\n`;
       currentStartLine = i - overlapText.split('\n').length;
     }
     else {
-      currentChunk += `${line  }\n`;
+      currentChunk += `${line}\n`;
     }
   }
 
@@ -215,7 +201,7 @@ function createSemanticChunks(content, boundaries, options) {
 function createChunkMetadata(content, startLine, endLine, boundary) {
   const wordCount = content.split(/\s+/).length;
   const sentenceCount = (content.match(/[.!?]+/g) || []).length;
-  
+
   return {
     content,
     metadata: {

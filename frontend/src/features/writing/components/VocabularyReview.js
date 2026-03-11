@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { writingService } from '../writingService';
 import VocabMatchGame from './VocabMatchGame';
+import VocabFillBlankGame from './VocabFillBlankGame';
 
 const styles = {
     container: {
@@ -147,8 +148,13 @@ export default function VocabularyReview({ darkMode, onBack }) {
                     <div
                         style={{ ...styles.modeCard, borderColor: '#7137ea' }}
                         onClick={() => setMode('flashcard')}
+                        onKeyDown={(e) => e.key === 'Enter' && setMode('flashcard')}
+                        role="button"
+                        tabIndex={0}
                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🗂️</div>
                         <h3 style={{ color: '#7137ea' }}>Flashcard</h3>
@@ -158,12 +164,33 @@ export default function VocabularyReview({ darkMode, onBack }) {
                     <div
                         style={{ ...styles.modeCard, borderColor: '#10b981' }}
                         onClick={() => setMode('match')}
+                        onKeyDown={(e) => e.key === 'Enter' && setMode('match')}
+                        role="button"
+                        tabIndex={0}
                         onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
                         onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
                     >
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎮</div>
                         <h3 style={{ color: '#10b981' }}>Nối Từ Siêu Tốc</h3>
                         <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>Luyện phản xạ nối cặp từ - nghĩa trong 60 giây.</p>
+                    </div>
+
+                    <div
+                        style={{ ...styles.modeCard, borderColor: '#f59e0b' }}
+                        onClick={() => setMode('fillblank')}
+                        onKeyDown={(e) => e.key === 'Enter' && setMode('fillblank')}
+                        role="button"
+                        tabIndex={0}
+                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onFocus={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                        onBlur={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                        <div style={{ fontSize: '3rem', marginBottom: '16px' }}>✍️</div>
+                        <h3 style={{ color: '#f59e0b' }}>Điền Từ Vào Câu</h3>
+                        <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>Đọc câu và điền từ còn thiếu vào chỗ trống.</p>
                     </div>
                 </div>
 
@@ -172,6 +199,13 @@ export default function VocabularyReview({ darkMode, onBack }) {
                 </button>
             </div>
         );
+    }
+
+    if (mode === 'fillblank') {
+        return <VocabFillBlankGame words={reviewList} darkMode={darkMode} onComplete={(score) => {
+            setCurrentIndex(reviewList.length); // mark all done
+            setMode(null);
+        }} />;
     }
 
     if (mode === 'match') {
@@ -194,7 +228,7 @@ export default function VocabularyReview({ darkMode, onBack }) {
             </div>
 
             {/* FLASHCARD */}
-            <div style={styles.flashcard} onClick={() => setIsFlipped(!isFlipped)}>
+            <div style={styles.flashcard} onClick={() => setIsFlipped(!isFlipped)} onKeyDown={(e) => e.key === 'Enter' && setIsFlipped(!isFlipped)} role="button" tabIndex={0}>
                 {/* Mặt Trước (Front) */}
                 <div style={{ ...styles.cardFace(isFlipped), ...styles.cardFront(isFlipped), borderColor: currentWord.item_type === 'grammar' ? '#e11d48' : currentWord.item_type === 'pronunciation' ? '#d97706' : '#7137ea' }}>
                     {currentWord.item_type === 'grammar' ? (
@@ -231,6 +265,8 @@ export default function VocabularyReview({ darkMode, onBack }) {
                         </>
                     ) : (
                         <>
+                            <div style={{ ...styles.wordBig, fontSize: '2rem', color: '#7137ea', marginBottom: '4px' }}>{currentWord.word}</div>
+                            {currentWord.pos && <div style={{ color: '#a78bfa', fontSize: '0.95rem', fontStyle: 'italic', marginBottom: '12px' }}>({currentWord.pos})</div>}
                             <div style={styles.wordDef}>{currentWord.definition}</div>
                             {currentWord.translation && (
                                 <div style={{ ...styles.wordDef, color: '#10b981', fontWeight: 'bold', marginTop: '8px' }}>

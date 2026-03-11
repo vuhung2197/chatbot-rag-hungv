@@ -24,6 +24,11 @@ export const writingService = {
         return response.data.exercise;
     },
 
+    generateExercise: async (level, type) => {
+        const response = await axios.post(`${API_URL}/writing/generate`, { level, type }, getConfig());
+        return response.data.exercise;
+    },
+
     // ==================== SUBMISSIONS ====================
     submitWriting: async (exerciseId, content) => {
         const response = await axios.post(`${API_URL}/writing/submit`, {

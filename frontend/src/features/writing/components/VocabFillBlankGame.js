@@ -308,7 +308,6 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
             {/* Hint tags */}
             <div style={styles.hintArea}>
                 {current.pos && <span style={styles.hintTag('#7137ea')}>{current.pos}</span>}
-                {current.translation && <span style={styles.hintTag('#10b981')}>🇻🇳 {current.translation}</span>}
                 {current.level && <span style={styles.hintTag('#f59e0b')}>{current.level}</span>}
             </div>
 
@@ -343,14 +342,16 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
             </div>
 
             {/* Definition hint - level 1+ */}
-            {hintLevel >= 1 && current.definition && (
+            {hintLevel >= 1 && (current.definition || current.translation) && (
                 <div style={{
                     padding: '10px 16px', borderRadius: '10px',
                     backgroundColor: '#f59e0b14', border: '1px solid #f59e0b30',
                     color: 'var(--text-primary, #334155)', fontSize: '0.95rem',
-                    maxWidth: '600px', textAlign: 'center', fontStyle: 'italic'
+                    maxWidth: '600px', textAlign: 'center', fontStyle: 'italic',
+                    display: 'flex', flexDirection: 'column', gap: '4px'
                 }}>
-                    📖 {current.definition}
+                    {current.definition && <div>📖 {current.definition}</div>}
+                    {current.translation && <div>🇻🇳 {current.translation}</div>}
                 </div>
             )}
 
@@ -380,7 +381,7 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                         transition: 'all 0.2s'
                     }}
                 >
-                    {hintLevel === 0 ? '💡 Xem gợi ý (định nghĩa)' : hintLevel === 1 ? '💡 Xem thêm chữ cái' : '🔓 Xem đáp án'}
+                    {hintLevel === 0 ? '💡 Xem gợi ý (Nghĩa tiếng Anh/Việt)' : hintLevel === 1 ? '💡 Xem thêm chữ cái' : '🔓 Xem đáp án'}
                 </button>
             )}
 
@@ -420,7 +421,10 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                         <>
                             <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>✅ Chính xác!</div>
                             <div style={{ color: '#065f46', fontSize: '1rem' }}>
-                                <strong>{current.correctAnswer}</strong> — {current.definition}
+                                <strong>{current.correctAnswer}</strong>
+                                {current.phonetic && <span style={{ marginLeft: '8px', color: '#64748b' }}>/{current.phonetic}/</span>}
+                                {current.definition && <div style={{ marginTop: '8px' }}>📖 {current.definition}</div>}
+                                {current.translation && <div style={{ marginTop: '4px' }}>🇻🇳 {current.translation}</div>}
                             </div>
                         </>
                     ) : (
@@ -431,9 +435,14 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                             </div>
                             <div style={{ color: '#065f46', fontSize: '1.05rem', fontWeight: 'bold' }}>
                                 Đáp án: <span style={{ color: '#7137ea' }}>{current.correctAnswer}</span>
+                                {current.phonetic && <span style={{ marginLeft: '8px', color: '#64748b' }}>/{current.phonetic}/</span>}
                             </div>
                             <div style={{ color: 'var(--text-primary, #334155)', fontSize: '0.95rem', marginTop: '8px', fontStyle: 'italic' }}>
                                 "{current.example_sentence}"
+                            </div>
+                            <div style={{ color: 'var(--text-primary, #334155)', fontSize: '0.95rem', marginTop: '8px', textAlign: 'center' }}>
+                                {current.definition && <div>📖 {current.definition}</div>}
+                                {current.translation && <div style={{ marginTop: '4px' }}>🇻🇳 {current.translation}</div>}
                             </div>
                         </>
                     )}

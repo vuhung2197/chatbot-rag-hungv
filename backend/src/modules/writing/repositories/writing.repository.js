@@ -301,7 +301,7 @@ const writingRepository = {
         const sortOrder = order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
 
         const [rows] = await pool.execute(
-            `SELECT id, word, definition, translation, example_sentence, source, level, mastery,
+            `SELECT id, word, pos, phonetic, definition, translation, example_sentence, source, level, mastery,
               next_review_at, review_count, created_at, item_type, grammar_error, grammar_correction
        FROM user_vocabulary
        WHERE user_id = $1
@@ -317,7 +317,7 @@ const writingRepository = {
      */
     async getVocabularyForReview(userId, limit = 20) {
         const [rows] = await pool.execute(
-            `SELECT id, word, definition, translation, example_sentence, level, mastery, review_count, item_type, grammar_error, grammar_correction
+            `SELECT id, word, pos, phonetic, definition, translation, example_sentence, level, mastery, review_count, item_type, grammar_error, grammar_correction
        FROM user_vocabulary
        WHERE user_id = $1 AND next_review_at <= NOW() AND mastery < 5
        ORDER BY next_review_at ASC

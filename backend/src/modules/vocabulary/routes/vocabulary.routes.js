@@ -16,6 +16,7 @@ router.post('/add-multiple', verifyToken, vocabularyController.addMultipleSystem
 
 // 4. Get User's dictionary (mixed with collected errors)
 router.get('/user', verifyToken, vocabularyController.getUserVocabulary);
+router.get('/topics', verifyToken, vocabularyController.getUserTopics);
 
 // 5. Spaced Repetition Logic - Get Due Reviews
 router.get('/review', verifyToken, vocabularyController.getReviewWords);

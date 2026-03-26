@@ -10,6 +10,7 @@ import SpeakingTab from './features/speaking/SpeakingTab';
 import LearningTab from './features/learning/LearningTab';
 import VocabularyHub from './features/vocabulary/VocabularyHub';
 import AnalyticsDashboard from './features/analytics/AnalyticsDashboard';
+import ExportImport from './features/user/ExportImport';
 import Login from './features/auth/Login';
 import Register from './features/auth/Register';
 import UsageCounter from './features/user/UsageCounter';
@@ -101,6 +102,7 @@ function GlobalNav({ view, setView, role }) {
       <button onClick={() => setView('learning')} style={navStyle('learning')}>🎓 Learning Hub</button>
       <button onClick={() => setView('analytics')} style={navStyle('analytics')}>📊 Analytics</button>
       <button onClick={() => setView('vocabulary')} style={navStyle('vocabulary')}>📓 Sổ Từ Vựng</button>
+      <button onClick={() => setView('export-import')} style={navStyle('export-import')}>💾 Export/Import</button>
       {role === 'admin' && (
         <button onClick={() => setView('knowledgeadmin')} style={navStyle('knowledgeadmin')}>Knowledge Admin</button>
       )}
@@ -465,6 +467,7 @@ export default function App() {
           {view === 'learning' && <LearningTab darkMode={darkMode} />}
           {view === 'analytics' && <AnalyticsDashboard darkMode={darkMode} onNavigate={setView} />}
           {view === 'vocabulary' && <VocabularyHub darkMode={darkMode} />}
+          {view === 'export-import' && <ExportImport darkMode={darkMode} />}
         </>
       )}
     </>

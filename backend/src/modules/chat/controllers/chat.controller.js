@@ -205,10 +205,13 @@ export async function chat(req, res) {
         return res.status(StatusCodes.BAD_REQUEST).json({ reply: 'No message!' });
 
     try {
+        console.log('🎯 Controller: Calling processChat with userId:', userId);
         const result = await chatService.processChat({ userId, message, model, conversationId });
+        console.log('✅ Controller: processChat returned, sending response');
         res.json(result);
     } catch (err) {
         console.error('❌ Critical Error in Chat Controller:', err);
+        console.error('Error stack:', err.stack);
         res.status(500).json({ reply: 'Đã xảy ra lỗi nghiêm trọng phía máy chủ.' });
     }
 }

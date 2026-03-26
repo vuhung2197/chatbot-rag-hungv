@@ -1,0 +1,173 @@
+{
+  "export_version": "1.0",
+  "exported_at": "2026-03-26T10:00:00.000Z",
+  "user": {
+    "name": "Test User",
+    "email": "test@example.com",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "language": "vi"
+  },
+  "vocabulary": [
+    {
+      "word": "abandon",
+      "definition": "to leave someone or something behind",
+      "translation": "từ bỏ, bỏ rơi",
+      "level": "B1",
+      "topic": "general",
+      "mastery": 3,
+      "review_count": 5,
+      "next_review_at": "2026-03-27T10:00:00.000Z",
+      "created_at": "2026-03-20T10:00:00.000Z"
+    },
+    {
+      "word": "achieve",
+      "definition": "to succeed in doing or gaining something",
+      "translation": "đạt được, hoàn thành",
+      "level": "A2",
+      "topic": "education",
+      "mastery": 4,
+      "review_count": 8,
+      "next_review_at": "2026-03-28T10:00:00.000Z",
+      "created_at": "2026-03-18T10:00:00.000Z"
+    },
+    {
+      "word": "benefit",
+      "definition": "an advantage or profit gained from something",
+      "translation": "lợi ích",
+      "level": "B2",
+      "topic": "business",
+      "mastery": 2,
+      "review_count": 3,
+      "next_review_at": "2026-03-26T15:00:00.000Z",
+      "created_at": "2026-03-22T10:00:00.000Z"
+    }
+  ],
+  "listening": {
+    "total_completed": 5,
+    "average_score": 78.5,
+    "submissions": [
+      {
+        "exercise_id": 1,
+        "exercise_title": "Daily Conversation",
+        "level": "A2",
+        "score_total": 85.00,
+        "completed_at": "2026-03-25T14:30:00.000Z"
+      },
+      {
+        "exercise_id": 2,
+        "exercise_title": "Business Meeting",
+        "level": "B1",
+        "score_total": 72.50,
+        "completed_at": "2026-03-24T10:15:00.000Z"
+      },
+      {
+        "exercise_id": 3,
+        "exercise_title": "News Report",
+        "level": "B2",
+        "score_total": 68.00,
+        "completed_at": "2026-03-23T16:45:00.000Z"
+      }
+    ]
+  },
+  "reading": {
+    "total_completed": 4,
+    "average_score": 82.3,
+    "submissions": [
+      {
+        "passage_id": 1,
+        "score_total": 90.00,
+        "completed_at": "2026-03-25T11:20:00.000Z"
+      },
+      {
+        "passage_id": 2,
+        "score_total": 78.00,
+        "completed_at": "2026-03-24T09:30:00.000Z"
+      },
+      {
+        "passage_id": 3,
+        "score_total": 80.00,
+        "completed_at": "2026-03-22T14:00:00.000Z"
+      }
+    ]
+  },
+  "speaking": {
+    "total_completed": 3,
+    "average_score": 75.0,
+    "submissions": [
+      {
+        "topic_id": 1,
+        "score_total": 80.00,
+        "completed_at": "2026-03-25T15:00:00.000Z"
+      },
+      {
+        "topic_id": 2,
+        "score_total": 70.00,
+        "completed_at": "2026-03-23T13:30:00.000Z"
+      },
+      {
+        "topic_id": 3,
+        "score_total": 75.00,
+        "completed_at": "2026-03-21T10:45:00.000Z"
+      }
+    ]
+  },
+  "writing": {
+    "total_completed": 6,
+    "average_score": 81.7,
+    "submissions": [
+      {
+        "exercise_id": 1,
+        "exercise_title": "Email Writing",
+        "level": "B1",
+        "score_total": 85.00,
+        "completed_at": "2026-03-25T16:30:00.000Z"
+      },
+      {
+        "exercise_id": 2,
+        "exercise_title": "Essay Writing",
+        "level": "B2",
+        "score_total": 78.00,
+        "completed_at": "2026-03-24T11:00:00.000Z"
+      },
+      {
+        "exercise_id": 3,
+        "exercise_title": "Report Writing",
+        "level": "C1",
+        "score_total": 82.00,
+        "completed_at": "2026-03-23T14:20:00.000Z"
+      }
+    ]
+  },
+  "learning_history": [
+    {
+      "category": "grammar",
+      "level": "B1",
+      "title": "Present Perfect Tense",
+      "score": 85,
+      "created_at": "2026-03-25T10:00:00.000Z"
+    },
+    {
+      "category": "pattern",
+      "level": "A2",
+      "title": "Making Suggestions",
+      "score": 90,
+      "created_at": "2026-03-24T14:30:00.000Z"
+    },
+    {
+      "category": "pronunciation",
+      "level": "B2",
+      "title": "Word Stress",
+      "score": 78,
+      "created_at": "2026-03-23T09:15:00.000Z"
+    }
+  ],
+  "learning_streaks": {
+    "current_streak": 7,
+    "longest_streak": 15,
+    "last_activity_date": "2026-03-26",
+    "total_exercises": 45,
+    "total_words_learned": 120,
+    "avg_score": 82.50,
+    "badges": ["7_day_streak", "50_words_master", "grammar_expert"]
+  }
+}

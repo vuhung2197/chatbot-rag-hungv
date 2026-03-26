@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"import\\(''pg''\\).then\\(async \\({default:pkg}\\)=>{const {Pool}=pkg;import\\(''dotenv''\\).then\\(d=>{d.default.config\\({path:''../.env''}\\);const p=new Pool\\({host:process.env.DB_HOST,user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_DATABASE,port:parseInt\\(process.env.DB_PORT\\)}\\);p.query\\(\"\"SELECT table_name FROM information_schema.tables WHERE table_schema=''public'' ORDER BY table_name\"\"\\).then\\(r=>{console.log\\(''Tables:''\\);r.rows.forEach\\(t=>console.log\\(''-'',t.table_name\\)\\);p.end\\(\\);}\\)}\\)}\\)\")",
+      "Bash(node -e \"import\\(''pg''\\).then\\(async \\({default:pkg}\\)=>{const {Pool}=pkg;import\\(''dotenv''\\).then\\(d=>{d.default.config\\({path:''../.env''}\\);const p=new Pool\\({host:process.env.DB_HOST,user:process.env.DB_USER,password:process.env.DB_PASSWORD,database:process.env.DB_DATABASE,port:parseInt\\(process.env.DB_PORT\\)}\\);p.query\\(\"\"SELECT column_name, data_type FROM information_schema.columns WHERE table_name=''user_vocabulary''\"\"\\).then\\(r=>{console.log\\(''user_vocabulary columns:''\\);r.rows.forEach\\(c=>console.log\\(''-'',c.column_name,'':'',c.data_type\\)\\);p.end\\(\\);}\\)}\\)}\\)\")",
+      "Bash(node test-mcp-integration.js)",
+      "Bash(powershell -Command \"Get-Service | Where-Object { $_Name -like ''*postgres*'' } | Select-Object Name, DisplayName, Status\")",
+      "Read(//c/Program Files/**)",
+      "Bash(where psql:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker restart:*)"
+    ]
+  }
+}

@@ -11,6 +11,7 @@ import authRoutes from '#modules/auth/routes/auth.routes.js';
 import userRoutes from '#modules/user/routes/user.routes.js';
 import passwordRoutes from '#modules/user/routes/password.routes.js';
 import sessionRoutes from '#modules/user/routes/session.routes.js';
+import exportImportRoutes from '#modules/user/routes/export-import.routes.js';
 import chatRoutes from '#modules/chat/routes/chat.routes.js';
 import advancedChatRoutes from '#modules/chat/routes/advancedChat.routes.js';
 import conversationRoutes from '#modules/chat/routes/conversation.routes.js';
@@ -57,6 +58,8 @@ app.use('/auth', authRoutes);
 app.use('/auth/password', passwordRoutes);
 app.use('/auth/sessions', sessionRoutes);
 app.use('/user', userRoutes);
+app.use('/user', exportImportRoutes);
+
 
 app.use('/chat', chatRoutes);
 app.use('/advanced-chat', advancedChatRoutes);
@@ -89,5 +92,5 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Backend running at http://localhost:${PORT}`);
   // Start background tasks
-  subscriptionWorker.startSubscriptionWorker();
+  // subscriptionWorker.startSubscriptionWorker(); // Temporarily disabled
 });

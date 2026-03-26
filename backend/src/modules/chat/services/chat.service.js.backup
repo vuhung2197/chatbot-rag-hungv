@@ -14,6 +14,7 @@ import {
 import { callLLM } from '#services/llmService.js';
 import { performWebSearch } from '#services/webSearch.service.js';
 import { classifyIntent, INTENTS } from '#services/intentRouter.js';
+import mcpClient from '#services/mcpClient.js';
 
 // ==================== HELPER FUNCTIONS ====================
 
@@ -540,22 +541,22 @@ class ChatService {
 
             // Listening details
             const [listeningStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM listening_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM listening_submissions WHERE user_id = ?`, [userId]
             );
 
             // Reading details
             const [readingStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM reading_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM reading_submissions WHERE user_id = ?`, [userId]
             );
 
             // Speaking details
             const [speakingStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM speaking_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM speaking_submissions WHERE user_id = ?`, [userId]
             );
 
             // Writing details
             const [writingStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
             );
 
             const progress = progressRows[0];
@@ -586,13 +587,86 @@ WRITING:
 
             const systemPrompt = `Bạn là trợ lý học tiếng Anh. Hãy trả lời câu hỏi về tiến độ học tập dựa trên dữ liệu sau:\n\n${context}`;
 
-            sendEvent('status', { content: '💡 Đang tổng hợp thông tin...' });
             const reply = await callLLM(modelConfig, [
                 { role: 'system', content: systemPrompt },
                 ...history.slice(-4),
                 { role: 'user', content: message }
             ], 0.3, 500);
 
+            const processTime = Date.now() - t0;
+            const reasoningSteps = [
+                'Intent: USER_PROGRESS_QUERY',
+                'Data source: Direct Database Query',
+                `Processing time: ${processTime}ms`
+            ];
+
+            if (conversationId) {
+                const finalConversationId = await saveChatAndTrack(this, {
+                    userId, conversationId, message, reply,
+                    metadata: { processing_time: processTime, model: modelConfig.name, source: 'db_direct' },
+                    usageType: 'progress_query', usageData: { tokens: context.length }
+                });
+                return { reply, conversationId: finalConversationId, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'db_direct' };
+            }
+            return { reply, chunks_used: [], reasoning_steps: reasoningSteps, source_type: 'db_direct' };
+        } catch (error) {
+            console.error('❌ Progress Query Error:', error);
+            console.error('Error stack:', error.stack);
+            return { reply: `Xin lỗi, không thể lấy thông tin tiến độ học tập. Lỗi: ${error.message}`, chunks_used: [], reasoning_steps: ['DB Error: ' + error.message] };
+        }
+    }
+
+            // Listening details
+            const [listeningStats] = await pool.execute(
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM listening_submissions WHERE user_id = ?`, [userId]
+            );
+
+            // Reading details
+            const [readingStats] = await pool.execute(
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM reading_submissions WHERE user_id = ?`, [userId]
+            );
+
+            // Speaking details
+            const [speakingStats] = await pool.execute(
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM speaking_submissions WHERE user_id = ?`, [userId]
+            );
+
+            // Writing details
+            const [writingStats] = await pool.execute(
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
+            );
+
+            const progress = progressRows[0];
+            const context = `Thông tin tiến độ học tập:
+
+TỪ VỰNG:
+- Tổng số: ${progress.vocabulary_count || 0} từ
+- Đã thành thạo: ${progress.mastered_words || 0} từ
+- Theo level: ${vocabByLevel.map(v => `${v.level}: ${v.count}`).join(', ') || 'Chưa có'}
+- Theo chủ đề: ${vocabByTopic.map(v => `${v.topic}: ${v.count}`).join(', ') || 'Chưa có'}
+- Từ gần đây: ${recentVocab.map(v => `${v.word} (${v.level}, mastery: ${v.mastery})`).join(', ') || 'Chưa có'}
+
+LISTENING:
+- Bài hoàn thành: ${listeningStats[0].total || 0}
+- Điểm trung bình: ${listeningStats[0].avg_score ? Math.round(listeningStats[0].avg_score) : 'N/A'}
+
+READING:
+- Bài hoàn thành: ${readingStats[0].total || 0}
+- Điểm trung bình: ${readingStats[0].avg_score ? Math.round(readingStats[0].avg_score) : 'N/A'}
+
+SPEAKING:
+- Bài hoàn thành: ${speakingStats[0].total || 0}
+- Điểm trung bình: ${speakingStats[0].avg_score ? Math.round(speakingStats[0].avg_score) : 'N/A'}
+
+WRITING:
+- Bài hoàn thành: ${writingStats[0].total || 0}
+- Điểm trung bình: ${writingStats[0].avg_score ? Math.round(writingStats[0].avg_score) : 'N/A'}`;
+
+            sendEvent('status', { content: '💡 Đang tổng hợp thông tin...' });
+            const reply = await callLLM(modelConfig, [
+                { role: 'system', content: `Bạn là trợ lý học tiếng Anh. Trả lời dựa trên:\n\n${context}` },
+                ...history.slice(-4), { role: 'user', content: message }
+            ], 0.3, 500);
             sendEvent('text', { content: reply });
             return { reply, chunksUsed: [], sourceType: 'db_direct', reasoningDetail: ['Data source: Direct Database Query'] };
         } catch (error) {
@@ -601,6 +675,31 @@ WRITING:
             sendEvent('text', { content: errorMsg });
             return { reply: errorMsg, chunksUsed: [], reasoningDetail: ['DB Error'] };
         }
+    }
+
+    async getHistory(userId) {
+        const [rows] = await pool.execute(
+            `SELECT id, question, bot_reply, is_answered, created_at 
+       FROM user_questions 
+       WHERE user_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT 50`,
+            [userId]
+        );
+        return rows;
+    }
+
+    async getAdvancedRAGStats() {
+        const [stats] = await pool.execute(`
+      SELECT 
+        COUNT(*) as total_questions,
+        AVG(CAST(metadata->>'total_chunks' AS NUMERIC)) as avg_chunks,
+        AVG(CAST(metadata->>'processing_time' AS NUMERIC)) as avg_processing_time,
+        COUNT(CASE WHEN CAST(metadata->>'reasoning_chains' AS NUMERIC) > 0 THEN 1 END) as complex_questions
+      FROM user_questions 
+      WHERE metadata IS NOT NULL
+    `);
+        return stats[0];
     }
 
     // ─── Handler: User Progress Query ───
@@ -634,22 +733,22 @@ WRITING:
 
             // Listening details
             const [listeningStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM listening_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM listening_submissions WHERE user_id = ?`, [userId]
             );
 
             // Reading details
             const [readingStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM reading_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM reading_submissions WHERE user_id = ?`, [userId]
             );
 
             // Speaking details
             const [speakingStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM speaking_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM speaking_submissions WHERE user_id = ?`, [userId]
             );
 
             // Writing details
             const [writingStats] = await pool.execute(
-                `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
+                `SELECT AVG(score) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
             );
 
             const progress = progressRows[0];

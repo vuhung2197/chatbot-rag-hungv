@@ -59,10 +59,22 @@ class VocabularyController {
         try {
             console.log(`[VOCAB-API] getUserVocabulary called for user ${req.user.id}`);
             const itemType = req.query.type || 'vocabulary'; // vocabulary, pronunciation, grammar (or empty for all)
-            const result = await vocabularyService.getUserVocabulary(req.user.id, itemType);
+            const topic = req.query.topic || null;
+            const result = await vocabularyService.getUserVocabulary(req.user.id, itemType, topic);
             res.status(200).json({ success: true, ...result });
         } catch (error) {
             console.error('Error getting user dictionary:', error);
+            res.status(500).json({ success: false, message: 'Server error' });
+        }
+    }
+
+    // 4b. Get user's distinct topics
+    async getUserTopics(req, res) {
+        try {
+            const topics = await vocabularyService.getUserTopics(req.user.id);
+            res.status(200).json({ success: true, count: topics.length, data: topics });
+        } catch (error) {
+            console.error('Error getting user topics:', error);
             res.status(500).json({ success: false, message: 'Server error' });
         }
     }

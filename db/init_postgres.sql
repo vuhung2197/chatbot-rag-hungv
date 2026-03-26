@@ -1251,3 +1251,15 @@ INSERT INTO writing_exercises (level, type, title, prompt, hints, min_words, max
 ('C1', 'essay', 'The gig economy', 'The "gig economy" (freelance, short-term contracts) is replacing traditional full-time jobs. Discuss the advantages and disadvantages of this trend and give your own opinion.', '["Use advanced vocabulary", "Ensure a clear, logical structure with complex sentences"]', 250, 500, 'The modern workforce is undergoing a profound transformation, moving away from traditional permanent employment towards the "gig economy," characterized by short-term contracts and freelance work. This paradigm shift presents significant benefits for both workers and businesses, yet it also raises substantial concerns regarding job security.\n\nOne of the most compelling advantages of the gig economy is the unprecedented flexibility it affords individuals. Freelancers can dictate their own schedules, choose projects that align with their interests, and often work remotely from anywhere in the world. This autonomy allows for a much healthier work-life balance compared to the rigid constraints of a conventional nine-to-five job. Concurrently, businesses benefit from this model as it provides them with an agile workforce. Companies can scale up or down rapidly depending on market demands without the long-term financial commitments associated with full-time staff.\n\nConversely, the most glaring detriment of the gig economy is the alarming lack of stability. Independent contractors are not entitled to standard employment benefits, such as paid sick leave, employer-sponsored health insurance, or pension contributions. The unpredictability of income can lead to financial anxiety, as individuals must constantly hustle to secure their next contract. Furthermore, the absence of collective bargaining power leaves gig workers vulnerable to exploitation and stagnation in wage growth.\n\nIn my view, while the gig economy champions flexibility and entrepreneurial spirit, it currently shifts too much risk onto the individual. Unless policymakers intervene to create a new regulatory framework that provides a safety net—perhaps through portable benefits that follow the worker rather than the job—the long-term viability of this model remains questionable. Ultimately, an ideal workforce should harmonize the agility of freelance work with the security of traditional employment.', TRUE)
 
 ON CONFLICT DO NOTHING;
+
+-- =============================================================================
+-- Migration: Add topic column to user_vocabulary
+-- =============================================================================
+ALTER TABLE user_vocabulary
+ADD COLUMN IF NOT EXISTS topic VARCHAR(50);
+
+-- Update existing user_vocabulary rows with topic from system_vocabulary
+UPDATE user_vocabulary uv
+SET topic = sv.topic
+FROM system_vocabulary sv
+WHERE uv.word = sv.word AND uv.topic IS NULL;

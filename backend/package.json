@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.21",
+    "@modelcontextprotocol/sdk": "^1.28.0",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",

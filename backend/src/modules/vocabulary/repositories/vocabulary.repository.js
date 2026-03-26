@@ -53,8 +53,8 @@ class VocabularyRepository {
 
         // Insert to user_vocabulary
         const query = `
-            INSERT INTO user_vocabulary (user_id, word, pos, phonetic, definition, translation, example_sentence, level, source, source_id, item_type)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'system', $9, 'vocabulary')
+            INSERT INTO user_vocabulary (user_id, word, pos, phonetic, definition, translation, example_sentence, level, source, source_id, item_type, topic)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'system', $9, 'vocabulary', $10)
             ON CONFLICT (user_id, word, item_type) DO UPDATE SET
                 mastery = 0,
                 next_review_at = NOW(),
@@ -62,19 +62,23 @@ class VocabularyRepository {
             RETURNING *;
         `;
         const params = [
-            userId, sw.word, sw.pos, sw.phonetic, sw.definition, sw.translation, sw.example_sentence, sw.level, sw.id
+            userId, sw.word, sw.pos, sw.phonetic, sw.definition, sw.translation, sw.example_sentence, sw.level, sw.id, sw.topic
         ];
         const [rows] = await pool.query(query, params);
         return rows[0];
     }
 
-    async getUserVocabulary(userId, itemType = null, masteryLevel = null) {
+    async getUserVocabulary(userId, itemType = null, topic = null, masteryLevel = null) {
         let query = `SELECT * FROM user_vocabulary WHERE user_id = $1`;
         const params = [userId];
 
         if (itemType) {
             params.push(itemType);
             query += ` AND item_type = $${params.length}`;
+        }
+        if (topic) {
+            params.push(topic);
+            query += ` AND topic = $${params.length}`;
         }
         if (masteryLevel !== null) {
             params.push(masteryLevel);
@@ -90,6 +94,17 @@ class VocabularyRepository {
 
         const [rows] = await pool.query(query, params);
         return rows;
+    }
+
+    async getUserTopics(userId) {
+        const query = `
+            SELECT DISTINCT topic 
+            FROM user_vocabulary 
+            WHERE user_id = $1 AND topic IS NOT NULL AND topic != ''
+            ORDER BY topic ASC
+        `;
+        const [rows] = await pool.query(query, [userId]);
+        return rows.map(r => r.topic);
     }
 
     async getWordsDueForReview(userId) {

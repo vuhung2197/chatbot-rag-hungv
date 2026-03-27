@@ -63,7 +63,7 @@ function ExportImport() {
     <div className="max-w-2xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Export/Import Dữ Liệu Học Tập</h2>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+      <div className="bg-black dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
         {/* Export Section */}
         <div>
           <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-100">📥 Export Dữ Liệu</h3>

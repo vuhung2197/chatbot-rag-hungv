@@ -11,6 +11,8 @@ export default function VocabularyHub({ darkMode }) {
     const [stats, setStats] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedLevel, setSelectedLevel] = useState('A1');
+    const [topics, setTopics] = useState([]);
+    const [selectedTopic, setSelectedTopic] = useState('');
 
     // UI state for practicing
     const [practiceIndex, setPracticeIndex] = useState(0);
@@ -30,6 +32,10 @@ export default function VocabularyHub({ darkMode }) {
     const loadData = async () => {
         setIsLoading(true);
         try {
+            // Load topics
+            const topicsData = await vocabularyService.getTopics();
+            setTopics(topicsData.data || []);
+
             // Load user's words & stats
             const userData = await vocabularyService.getUserVocabulary('');
             setMyWords(userData.words || []);
@@ -153,6 +159,7 @@ export default function VocabularyHub({ darkMode }) {
                     <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{word.phonetic}</span>
                     <button onClick={() => playText(word.word)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>🔊</button>
                     {word.level && <span style={{ fontSize: '0.75rem', background: 'var(--border-color)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)' }}>{word.level}</span>}
+                    {word.topic && <span style={{ fontSize: '0.75rem', background: '#e0e7ff', color: '#4f46e5', padding: '2px 6px', borderRadius: '4px', marginLeft: '4px' }}>🏷️ {word.topic}</span>}
                 </div>
                 <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                     <span style={{ fontStyle: 'italic', marginRight: '6px' }}>({word.pos})</span>
@@ -232,16 +239,27 @@ export default function VocabularyHub({ darkMode }) {
 
             {view === 'explore' && (
                 <div>
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span style={{ color: 'var(--text-primary)', fontWeight: 'bold' }}>Chọn cấp độ:</span>
                         {['A1', 'A2', 'B1', 'B2', 'C1'].map(l => (
                             <button key={l} onClick={() => setSelectedLevel(l)} style={{ padding: '6px 12px', borderRadius: '6px', border: selectedLevel === l ? '2px solid var(--accent-color)' : '1px solid var(--border-color)', background: selectedLevel === l ? 'var(--accent-color)' : 'var(--card-bg)', color: selectedLevel === l ? 'white' : 'var(--text-primary)', cursor: 'pointer' }}>
                                 {l}
                             </button>
                         ))}
+                        <span style={{ color: 'var(--text-primary)', fontWeight: 'bold', marginLeft: '16px' }}>Chủ đề:</span>
+                        <select 
+                            value={selectedTopic} 
+                            onChange={e => setSelectedTopic(e.target.value)}
+                            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)' }}
+                        >
+                            <option value="">Tất cả chủ đề</option>
+                            {topics.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {systemWords.map(w => renderWordCard(w, (
+                        {systemWords
+                            .filter(w => !selectedTopic || w.topic === selectedTopic)
+                            .map(w => renderWordCard(w, (
                             w.is_added ?
                                 <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>✓ Đã học</span> :
                                 <button onClick={() => handleAddWord(w.id)} style={{ padding: '8px 16px', background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>+ Thêm</button>
@@ -252,16 +270,29 @@ export default function VocabularyHub({ darkMode }) {
 
             {view === 'mistakes' && (
                 <div>
-                    <h3 style={{ color: 'var(--text-primary)' }}>Sổ tay từ vựng / Lỗi sai của bạn</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>Nơi lưu trữ các từ bạn tự thêm, cũng như các lỗi ngữ pháp / phát âm mà AI bắt được trong quá trình luyện tập.</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                            <h3 style={{ color: 'var(--text-primary)', margin: '0 0 8px 0' }}>Sổ tay từ vựng / Lỗi sai của bạn</h3>
+                            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>Nơi lưu trữ các từ bạn tự thêm, cũng như các lỗi ngữ pháp / phát âm mà AI bắt được trong quá trình luyện tập.</p>
+                        </div>
+                        <select 
+                            value={selectedTopic} 
+                            onChange={e => setSelectedTopic(e.target.value)}
+                            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-primary)', marginTop: '4px' }}
+                        >
+                            <option value="">Tất cả chủ đề</option>
+                            {topics.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                    </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px' }}>
-                        {myWords.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>Chưa có từ nào.</p> :
-                            myWords.map(w => (
+                        {myWords.filter(w => !selectedTopic || w.topic === selectedTopic).length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>Chưa có từ nào.</p> :
+                            myWords.filter(w => !selectedTopic || w.topic === selectedTopic).map(w => (
                                 <div key={w.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                         <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                                             {w.word}
+                                            {w.topic && <span style={{ marginLeft: 10, fontSize: '0.8rem', background: '#e0e7ff', color: '#4f46e5', padding: '2px 8px', borderRadius: '10px' }}>🏷️ {w.topic}</span>}
                                             {w.item_type === 'pronunciation' && <span style={{ marginLeft: 10, fontSize: '0.8rem', background: '#ec4899', color: 'white', padding: '2px 8px', borderRadius: '10px' }}>⚠️ Lỗi Phát Âm</span>}
                                             {w.item_type === 'grammar' && <span style={{ marginLeft: 10, fontSize: '0.8rem', background: 'var(--warning)', color: 'white', padding: '2px 8px', borderRadius: '10px' }}>⚠️ Lỗi Ngữ Pháp</span>}
                                         </div>

@@ -22,8 +22,8 @@ class VocabularyService {
         return added;
     }
 
-    async getUserVocabulary(userId, itemType = 'vocabulary') {
-        const words = await vocabularyRepository.getUserVocabulary(userId, itemType);
+    async getUserVocabulary(userId, itemType = 'vocabulary', topic = null) {
+        const words = await vocabularyRepository.getUserVocabulary(userId, itemType, topic);
         const stats = await vocabularyRepository.getVocabularyStats(userId);
 
         return {
@@ -34,6 +34,10 @@ class VocabularyService {
 
     async getWordsDueForReview(userId) {
         return vocabularyRepository.getWordsDueForReview(userId);
+    }
+
+    async getUserTopics(userId) {
+        return vocabularyRepository.getUserTopics(userId);
     }
 
     async updateMastery(userId, wordId, isCorrect) {

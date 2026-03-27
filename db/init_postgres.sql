@@ -563,10 +563,7 @@ LIMIT 100;
 -- 3. Seeds minimal/initial phoneme data
 -- =============================================
 
--- 1. Update Constraint on speaking_topics
--- PostgreSQL doesn't allow direct alteration of CHECK constraints, we drop it and re-add.
-ALTER TABLE speaking_topics DROP CONSTRAINT speaking_topics_type_check;
-ALTER TABLE speaking_topics ADD CONSTRAINT speaking_topics_type_check CHECK (type IN ('shadowing', 'topic', 'reflex', 'pronunciation'));
+
 
 -- 2. Create IPA Phonemes reference table
 CREATE TABLE IF NOT EXISTS ipa_phonemes (
@@ -653,10 +650,7 @@ DO $$ BEGIN
     END IF;
 END $$;
 
--- Fix user_vocabulary: Add missing columns if any
-ALTER TABLE user_vocabulary ADD COLUMN IF NOT EXISTS translation TEXT;
-ALTER TABLE user_vocabulary ADD COLUMN IF NOT EXISTS phonetic VARCHAR(50);
-ALTER TABLE user_vocabulary ADD COLUMN IF NOT EXISTS pos VARCHAR(20);
+
 
 -- 2. Seed system vocabulary data (A1-C1)
 INSERT INTO system_vocabulary (word, pos, phonetic, definition, translation, example_sentence, level, topic)
@@ -1035,7 +1029,7 @@ ON CONFLICT DO NOTHING;
 -- 1. Bảng kho chủ đề / câu luyện nói
 CREATE TABLE IF NOT EXISTS speaking_topics (
     id SERIAL PRIMARY KEY,
-    type VARCHAR(20) NOT NULL CHECK (type IN ('shadowing', 'topic')),
+    type VARCHAR(20) NOT NULL CHECK (type IN ('shadowing', 'topic', 'reflex', 'pronunciation')),
     level VARCHAR(2) NOT NULL CHECK (level IN ('A1','A2','B1','B2','C1','C2')),
     prompt_text TEXT NOT NULL,
     audio_url VARCHAR(255),
@@ -1181,6 +1175,9 @@ CREATE TABLE IF NOT EXISTS user_vocabulary (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     word VARCHAR(100) NOT NULL,
+    translation TEXT,
+    phonetic VARCHAR(50),
+    pos VARCHAR(20),
     definition TEXT,
     example_sentence TEXT,
     source VARCHAR(50) DEFAULT 'manual',
@@ -1191,7 +1188,10 @@ CREATE TABLE IF NOT EXISTS user_vocabulary (
     review_count INT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, word)
+    item_type VARCHAR(20) DEFAULT 'vocabulary' CHECK (item_type IN ('vocabulary', 'grammar', 'pronunciation')),
+    grammar_error TEXT,
+    grammar_correction TEXT,
+    UNIQUE(user_id, word, item_type)
 );
 
 CREATE INDEX IF NOT EXISTS idx_uv_user ON user_vocabulary(user_id);
@@ -1208,8 +1208,7 @@ CREATE TRIGGER update_user_vocabulary_updated_at
 
 
 -- Migration: seed_reflex_topics.sql
-ALTER TABLE speaking_topics DROP CONSTRAINT IF EXISTS speaking_topics_type_check;
-ALTER TABLE speaking_topics ADD CONSTRAINT speaking_topics_type_check CHECK (type IN ('shadowing', 'topic', 'reflex'));
+
 
 INSERT INTO speaking_topics (type, level, prompt_text, is_active)
 VALUES 
@@ -1225,78 +1224,7 @@ VALUES
     ('reflex', 'C1', 'Việc ứng dụng trí tuệ nhân tạo sẽ tạo ra một cuộc cách mạng trong y tế.', true);
 
 
--- Migration: fix_balance_precision.sql
--- Fix wallet balance precision for multi-currency support
--- This migration increases balance precision to support both VND and USD
 
--- Backup existing data first (recommended)
--- CREATE TABLE user_wallets_backup AS SELECT * FROM user_wallets;
-
--- Modify balance column to support more decimal places
--- DECIMAL(15, 2) allows up to 999,999,999,999.99
--- This supports:
--- - VND: up to 999 billion (no decimals needed)
--- - USD: up to 999 billion with 2 decimal places
-ALTER TABLE user_wallets 
-ALTER COLUMN balance TYPE DECIMAL(15, 2),
-ALTER COLUMN balance SET NOT NULL,
-ALTER COLUMN balance SET DEFAULT 0.00;
-
--- Also update wallet_transactions table
-ALTER TABLE wallet_transactions
-ALTER COLUMN amount TYPE DECIMAL(15, 2),
-ALTER COLUMN amount SET NOT NULL,
-ALTER COLUMN balance_before TYPE DECIMAL(15, 2),
-ALTER COLUMN balance_after TYPE DECIMAL(15, 2);
-
--- Verify changes
-SELECT 
-    table_name,
-    column_name,
-    data_type,
-    numeric_precision,
-    numeric_scale,
-    is_nullable,
-    column_default
-FROM information_schema.columns
-WHERE table_schema = 'public'
-  AND table_name IN ('user_wallets', 'wallet_transactions')
-  AND column_name IN ('balance', 'amount', 'balance_before', 'balance_after')
-ORDER BY table_name, ordinal_position;
-
--- Recreate dropped views
-CREATE OR REPLACE VIEW v_user_wallet_summary AS
-SELECT 
-    uw.user_id,
-    u.name,
-    u.email,
-    uw.balance,
-    uw.currency,
-    uw.status,
-    COUNT(wt.id) as total_transactions,
-    SUM(CASE WHEN wt.type = 'deposit' THEN wt.amount ELSE 0 END) as total_deposited,
-    SUM(CASE WHEN wt.type = 'withdrawal' THEN wt.amount ELSE 0 END) as total_withdrawn,
-    SUM(CASE WHEN wt.type IN ('bet_baucua', 'bet_slots') THEN wt.amount ELSE 0 END) as total_bet,
-    SUM(CASE WHEN wt.type IN ('win_baucua', 'win_slots') THEN wt.amount ELSE 0 END) as total_won
-FROM user_wallets uw
-JOIN users u ON uw.user_id = u.id
-LEFT JOIN wallet_transactions wt ON uw.id = wt.wallet_id AND wt.status = 'completed'
-GROUP BY uw.user_id, u.name, u.email, uw.balance, uw.currency, uw.status;
-
-CREATE OR REPLACE VIEW v_recent_transactions AS
-SELECT 
-    wt.id,
-    wt.user_id,
-    u.name,
-    wt.type,
-    wt.amount,
-    uw.currency,
-    wt.status,
-    wt.created_at
-FROM wallet_transactions wt
-JOIN users u ON wt.user_id = u.id
-JOIN user_wallets uw ON wt.wallet_id = uw.id
-ORDER BY wt.created_at DESC;
 
 -- =============================================
 -- SEED: Bài mẫu để test Writing Practice (A1-C1)
@@ -1323,3 +1251,15 @@ INSERT INTO writing_exercises (level, type, title, prompt, hints, min_words, max
 ('C1', 'essay', 'The gig economy', 'The "gig economy" (freelance, short-term contracts) is replacing traditional full-time jobs. Discuss the advantages and disadvantages of this trend and give your own opinion.', '["Use advanced vocabulary", "Ensure a clear, logical structure with complex sentences"]', 250, 500, 'The modern workforce is undergoing a profound transformation, moving away from traditional permanent employment towards the "gig economy," characterized by short-term contracts and freelance work. This paradigm shift presents significant benefits for both workers and businesses, yet it also raises substantial concerns regarding job security.\n\nOne of the most compelling advantages of the gig economy is the unprecedented flexibility it affords individuals. Freelancers can dictate their own schedules, choose projects that align with their interests, and often work remotely from anywhere in the world. This autonomy allows for a much healthier work-life balance compared to the rigid constraints of a conventional nine-to-five job. Concurrently, businesses benefit from this model as it provides them with an agile workforce. Companies can scale up or down rapidly depending on market demands without the long-term financial commitments associated with full-time staff.\n\nConversely, the most glaring detriment of the gig economy is the alarming lack of stability. Independent contractors are not entitled to standard employment benefits, such as paid sick leave, employer-sponsored health insurance, or pension contributions. The unpredictability of income can lead to financial anxiety, as individuals must constantly hustle to secure their next contract. Furthermore, the absence of collective bargaining power leaves gig workers vulnerable to exploitation and stagnation in wage growth.\n\nIn my view, while the gig economy champions flexibility and entrepreneurial spirit, it currently shifts too much risk onto the individual. Unless policymakers intervene to create a new regulatory framework that provides a safety net—perhaps through portable benefits that follow the worker rather than the job—the long-term viability of this model remains questionable. Ultimately, an ideal workforce should harmonize the agility of freelance work with the security of traditional employment.', TRUE)
 
 ON CONFLICT DO NOTHING;
+
+-- =============================================================================
+-- Migration: Add topic column to user_vocabulary
+-- =============================================================================
+ALTER TABLE user_vocabulary
+ADD COLUMN IF NOT EXISTS topic VARCHAR(50);
+
+-- Update existing user_vocabulary rows with topic from system_vocabulary
+UPDATE user_vocabulary uv
+SET topic = sv.topic
+FROM system_vocabulary sv
+WHERE uv.word = sv.word AND uv.topic IS NULL;

@@ -8,11 +8,16 @@ import { deleteHistoryItem } from '../controllers/conversation.controller.js';
 const router = express.Router();
 
 // Middleware to populate user if token exists (optional auth)
-// We reuse verifyToken but we need a "soft" version that doesn't reject if no token
-const optionalAuth = (req, res, next) => {
+const optionalAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
-        verifyToken(req, res, next);
+        try {
+            await verifyToken(req, res, () => {});
+            next();
+        } catch (error) {
+            // Token invalid, continue without user
+            next();
+        }
     } else {
         next();
     }

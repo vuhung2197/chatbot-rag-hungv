@@ -202,6 +202,7 @@ export default function Chat({ darkMode = false }) {
   const [loadingStatus, setLoadingStatus] = useState('Đang suy nghĩ...');
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const [advancedResponse, setAdvancedResponse] = useState(null);
   const [showConversations, setShowConversations] = useState(false);
@@ -425,6 +426,14 @@ export default function Chat({ darkMode = false }) {
 
           <div className={styles.headerButtons}>
             <button
+              onClick={() => setShowGuide(!showGuide)}
+              className={styles.headerButton}
+            >
+              <i className="fas fa-question-circle"></i>
+              Hướng dẫn
+            </button>
+
+            <button
               onClick={() => setShowConversations(!showConversations)}
               className={`${styles.headerButton} ${showConversations ? styles.headerButtonActive : ''}`}
             >
@@ -472,6 +481,34 @@ export default function Chat({ darkMode = false }) {
             )}
           </div>
         </div>
+
+        {/* Guide Section */}
+        {showGuide && (
+          <div style={{ padding: '16px', margin: '16px', borderRadius: '8px', background: darkMode ? '#374151' : '#EFF6FF', border: '1px solid #3B82F6' }}>
+            <h4 style={{ fontWeight: 'bold', marginBottom: '12px' }}>📚 Bạn có thể hỏi chatbot:</h4>
+            <div style={{ fontSize: '14px' }}>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>🎯 Tiến độ học tập:</strong>
+                <ul style={{ marginLeft: '20px', marginTop: '4px' }}>
+                  <li>"Tôi đã học bao nhiêu từ vựng?"</li>
+                  <li>"Điểm listening của tôi thế nào?"</li>
+                </ul>
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+                <strong>🌐 Thông tin thời gian thực:</strong>
+                <ul style={{ marginLeft: '20px', marginTop: '4px' }}>
+                  <li>"Thời tiết Hà Nội hôm nay"</li>
+                </ul>
+              </div>
+              <div>
+                <strong>📖 Kiến thức:</strong>
+                <ul style={{ marginLeft: '20px', marginTop: '4px' }}>
+                  <li>"RAG là gì?"</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Chat Messages */}
         <div className={styles.messagesContainer}>

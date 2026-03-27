@@ -34,9 +34,19 @@ export const vocabularyService = {
     },
 
     // Từ đang học
-    getUserVocabulary: async (type = '') => {
-        const url = type ? `${API_URL}/vocabulary/user?type=${type}` : `${API_URL}/vocabulary/user`;
+    getUserVocabulary: async (type = '', topic = '') => {
+        let url = `${API_URL}/vocabulary/user`;
+        const params = new URLSearchParams();
+        if (type) params.append('type', type);
+        if (topic) params.append('topic', topic);
+        if (params.toString()) url += `?${params.toString()}`;
+        
         const res = await axios.get(url, getConfig());
+        return res.data;
+    },
+
+    getTopics: async () => {
+        const res = await axios.get(`${API_URL}/vocabulary/topics`, getConfig());
         return res.data;
     },
 

@@ -1,0 +1,51 @@
+{
+  "export_version": "1.0",
+  "exported_at": "2026-03-26T14:00:00Z",
+  "user": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "timezone": "Asia/Ho_Chi_Minh",
+    "language": "vi"
+  },
+  "vocabulary": [
+    {
+      "word": "apple",
+      "definition": "A round fruit",
+      "translation": "Quả táo",
+      "level": "A1",
+      "topic": "Food",
+      "mastery": 3,
+      "review_count": 5,
+      "last_reviewed_at": "2026-03-25T10:00:00Z",
+      "next_review_at": "2026-03-30T10:00:00Z"
+    }
+  ],
+  "listening": {
+    "total_completed": 10,
+    "average_score": 85.5,
+    "submissions": [
+      {
+        "exercise_id": 1,
+        "exercise_title": "Greetings at Airport",
+        "level": "A1",
+        "score_total": 90,
+        "completed_at": "2026-03-20T10:00:00Z"
+      }
+    ]
+  },
+  "reading": {
+    "total_completed": 8,
+    "average_score": 78.3,
+    "submissions": []
+  },
+  "speaking": {
+    "total_completed": 5,
+    "average_score": 82.0,
+    "submissions": []
+  },
+  "writing": {
+    "total_completed": 6,
+    "average_score": 75.5,
+    "submissions": []
+  }
+}

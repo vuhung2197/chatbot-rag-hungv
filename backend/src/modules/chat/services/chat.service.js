@@ -558,6 +558,16 @@ class ChatService {
                 `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
             );
 
+            // Learning history
+            const [learningHistory] = await pool.execute(
+                `SELECT category, level, title, score, created_at FROM learning_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`, [userId]
+            );
+
+            // Learning streaks
+            const [learningStreaks] = await pool.execute(
+                `SELECT current_streak, longest_streak, last_activity_date, total_exercises, total_words_learned, avg_score, badges FROM learning_streaks WHERE user_id = ?`, [userId]
+            );
+
             const progress = progressRows[0];
             const context = `Thông tin tiến độ học tập:
 
@@ -582,7 +592,18 @@ SPEAKING:
 
 WRITING:
 - Bài hoàn thành: ${writingStats[0].total || 0}
-- Điểm trung bình: ${writingStats[0].avg_score ? Math.round(writingStats[0].avg_score) : 'N/A'}`;
+- Điểm trung bình: ${writingStats[0].avg_score ? Math.round(writingStats[0].avg_score) : 'N/A'}
+
+LEARNING HUB:
+- Lịch sử học tập: ${learningHistory.map(h => `${h.category}/${h.level}/${h.title} (${h.score} điểm)`).join(', ') || 'Chưa có'}
+
+LEARNING STREAKS:
+${learningStreaks[0] ? `- Chuỗi ngày học hiện tại: ${learningStreaks[0].current_streak} ngày
+- Chuỗi ngày học dài nhất: ${learningStreaks[0].longest_streak} ngày
+- Tổng bài tập: ${learningStreaks[0].total_exercises}
+- Tổng từ đã học: ${learningStreaks[0].total_words_learned}
+- Điểm trung bình: ${learningStreaks[0].avg_score}
+- Huy hiệu: ${Array.isArray(learningStreaks[0].badges) ? learningStreaks[0].badges.join(', ') : (typeof learningStreaks[0].badges === 'string' ? JSON.parse(learningStreaks[0].badges).join(', ') : 'Chưa có')}` : '- Chưa có dữ liệu'}`;
 
             const systemPrompt = `Bạn là trợ lý học tiếng Anh. Hãy trả lời câu hỏi về tiến độ học tập dựa trên dữ liệu sau:\n\n${context}`;
 
@@ -652,6 +673,16 @@ WRITING:
                 `SELECT AVG(score_total) as avg_score, COUNT(*) as total FROM writing_submissions WHERE user_id = ?`, [userId]
             );
 
+            // Learning history
+            const [learningHistory] = await pool.execute(
+                `SELECT category, level, title, score, created_at FROM learning_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 10`, [userId]
+            );
+
+            // Learning streaks
+            const [learningStreaks] = await pool.execute(
+                `SELECT current_streak, longest_streak, last_activity_date, total_exercises, total_words_learned, avg_score, badges FROM learning_streaks WHERE user_id = ?`, [userId]
+            );
+
             const progress = progressRows[0];
             const context = `Thông tin tiến độ học tập:
 
@@ -676,7 +707,18 @@ SPEAKING:
 
 WRITING:
 - Bài hoàn thành: ${writingStats[0].total || 0}
-- Điểm trung bình: ${writingStats[0].avg_score ? Math.round(writingStats[0].avg_score) : 'N/A'}`;
+- Điểm trung bình: ${writingStats[0].avg_score ? Math.round(writingStats[0].avg_score) : 'N/A'}
+
+LEARNING HUB:
+- Lịch sử học tập: ${learningHistory.map(h => `${h.category}/${h.level}/${h.title} (${h.score} điểm)`).join(', ') || 'Chưa có'}
+
+LEARNING STREAKS:
+${learningStreaks[0] ? `- Chuỗi ngày học hiện tại: ${learningStreaks[0].current_streak} ngày
+- Chuỗi ngày học dài nhất: ${learningStreaks[0].longest_streak} ngày
+- Tổng bài tập: ${learningStreaks[0].total_exercises}
+- Tổng từ đã học: ${learningStreaks[0].total_words_learned}
+- Điểm trung bình: ${learningStreaks[0].avg_score}
+- Huy hiệu: ${Array.isArray(learningStreaks[0].badges) ? learningStreaks[0].badges.join(', ') : (typeof learningStreaks[0].badges === 'string' ? JSON.parse(learningStreaks[0].badges).join(', ') : 'Chưa có')}` : '- Chưa có dữ liệu'}`;
 
             const systemPrompt = `Bạn là trợ lý học tiếng Anh. Hãy trả lời câu hỏi về tiến độ học tập dựa trên dữ liệu sau:\n\n${context}`;
 

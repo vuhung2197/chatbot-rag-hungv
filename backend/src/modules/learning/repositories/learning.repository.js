@@ -50,7 +50,15 @@ export const learningRepository = {
              GROUP BY category`,
             [userId]
         );
-        return rows;
+
+        const [streaks] = await pool.query(
+            `SELECT current_streak, longest_streak, last_activity_date, total_exercises, total_words_learned, avg_score, badges
+             FROM learning_streaks
+             WHERE user_id = $1`,
+            [userId]
+        );
+
+        return { stats: rows, streaks: streaks[0] || null };
     }
 };
 

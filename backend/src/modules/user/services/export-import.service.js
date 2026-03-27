@@ -105,6 +105,15 @@ class ExportImportService {
         try {
             await connection.beginTransaction();
 
+            // Delete old data first
+            await connection.query(`DELETE FROM user_vocabulary WHERE user_id = $1`, [userId]);
+            await connection.query(`DELETE FROM learning_history WHERE user_id = $1`, [userId]);
+            await connection.query(`DELETE FROM learning_streaks WHERE user_id = $1`, [userId]);
+            await connection.query(`DELETE FROM listening_submissions WHERE user_id = $1`, [userId]);
+            await connection.query(`DELETE FROM reading_submissions WHERE user_id = $1`, [userId]);
+            await connection.query(`DELETE FROM speaking_submissions WHERE user_id = $1`, [userId]);
+            await connection.query(`DELETE FROM writing_submissions WHERE user_id = $1`, [userId]);
+
             // Import vocabulary
             if (data.vocabulary && data.vocabulary.length > 0) {
                 for (const vocab of data.vocabulary) {

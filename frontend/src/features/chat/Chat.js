@@ -11,7 +11,7 @@ import styles from '../../styles/components/Chat.module.css';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 // ─── Helper: Process SSE data event ───
-function processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId }) {
+function processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId, onNewConversation }) {
   const result = { botReply: null, metadata: null, error: null };
   if (data.type === 'status') {
     setLoadingStatus(data.content);
@@ -24,7 +24,13 @@ function processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedRespon
   } else if (data.type === 'done') {
     setAdvancedResponse(data);
     result.metadata = data;
-    if (data.conversationId) setCurrentConversationId(data.conversationId);
+    if (data.conversationId) {
+      setCurrentConversationId(prev => {
+        const isNew = !prev;
+        if (isNew && onNewConversation) onNewConversation();
+        return data.conversationId;
+      });
+    }
   } else if (data.type === 'error') {
     result.error = 'Đã xảy ra lỗi: ' + data.message;
   }
@@ -207,8 +213,26 @@ export default function Chat({ darkMode = false }) {
   const [advancedResponse, setAdvancedResponse] = useState(null);
   const [showConversations, setShowConversations] = useState(false);
   const [currentConversationId, setCurrentConversationId] = useState(null);
+  const conversationsListRef = useRef(null);
   const messagesEndRef = useRef(null);
   const lastMessageRef = useRef(null);
+  const sidebarRef = useRef(null);
+  const conversationsBtnRef = useRef(null);
+
+  // Đóng sidebar khi click ra ngoài
+  useEffect(() => {
+    if (!showConversations) return;
+    function handleClickOutside(e) {
+      if (
+        sidebarRef.current && !sidebarRef.current.contains(e.target) &&
+        conversationsBtnRef.current && !conversationsBtnRef.current.contains(e.target)
+      ) {
+        setShowConversations(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showConversations]);
 
   // Load messages khi chọn conversation
   useEffect(() => {
@@ -365,7 +389,10 @@ export default function Chat({ darkMode = false }) {
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
-              const result = processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId });
+              const result = processSSEEvent(data, {
+                setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
+                onNewConversation: () => conversationsListRef.current?.fetchConversations()
+              });
               if (result.botReply) botReply = result.botReply;
               if (result.metadata) metadata = result.metadata;
               if (result.error) botReply = result.error;
@@ -395,11 +422,17 @@ export default function Chat({ darkMode = false }) {
   return (
     <div className={`${styles.container} ${showConversations ? styles.sidebarOpen : ''}`}>
       {/* Conversations Sidebar */}
-      <div className={styles.sidebar}>
+      <div className={styles.sidebar} ref={sidebarRef}>
         <ConversationsList
+          ref={conversationsListRef}
           darkMode={darkMode}
           onSelectConversation={(id) => {
             setCurrentConversationId(id);
+            if (!id) {
+              setHistory([]);
+              setAdvancedResponse(null);
+              setShowConversations(false);
+            }
           }}
           currentConversationId={currentConversationId}
           onClose={() => setShowConversations(false)}
@@ -434,6 +467,7 @@ export default function Chat({ darkMode = false }) {
             </button>
 
             <button
+              ref={conversationsBtnRef}
               onClick={() => setShowConversations(!showConversations)}
               className={`${styles.headerButton} ${showConversations ? styles.headerButtonActive : ''}`}
             >

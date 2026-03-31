@@ -1,5 +1,5 @@
 // 📁 src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Chat from './features/chat/Chat';
 import KnowledgeAdmin from './features/knowledge/KnowledgeAdmin';
@@ -85,20 +85,142 @@ function useAuthParams({ showToast, setRole, setIsSettingPassword, setIsResettin
 
 // ─── Sub-component: Global Nav ───
 function GlobalNav({ view, setView, role }) {
+  const [showPracticeMenu, setShowPracticeMenu] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowPracticeMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const practiceViews = ['writing', 'listening', 'reading', 'speaking'];
+  const isPracticeActive = practiceViews.includes(view);
+
+  const ACTIVE_COLOR = 'rgb(113, 55, 234)';
+
   const navStyle = (activeView) => ({
-    background: view === activeView ? (['speaking', 'learning'].includes(activeView) ? '#ec4899' : activeView === 'analytics' ? '#eab308' : activeView === 'vocabulary' ? '#10b981' : '#7137ea') : '#f6f9fc',
+    background: view === activeView ? ACTIVE_COLOR : '#f6f9fc',
     color: view === activeView ? '#fff' : '#333',
-    border: `1px solid ${['speaking', 'learning'].includes(activeView) ? '#ec4899' : activeView === 'analytics' ? '#eab308' : activeView === 'vocabulary' ? '#10b981' : '#7137ea'}`,
-    borderRadius: 8, padding: '8px 16px', cursor: 'pointer'
+    border: `1px solid ${ACTIVE_COLOR}`,
+    borderRadius: 8, padding: '8px 16px', cursor: 'pointer', position: 'relative'
+  });
+
+  const practiceButtonStyle = {
+    background: isPracticeActive ? ACTIVE_COLOR : '#f6f9fc',
+    color: isPracticeActive ? '#fff' : '#333',
+    border: `1px solid ${ACTIVE_COLOR}`,
+    borderRadius: 8,
+    padding: '8px 16px',
+    cursor: 'pointer',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6
+  };
+
+  const dropdownStyle = {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    marginTop: 8,
+    background: '#fff',
+    border: '1px solid #e5e7eb',
+    borderRadius: 8,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    zIndex: 1000,
+    minWidth: 180,
+    overflow: 'hidden',
+    color: 'rgb(51, 51, 51)'
+  };
+
+  const dropdownItemStyle = (isActive) => ({
+    padding: '10px 16px',
+    cursor: 'pointer',
+    background: isActive ? ACTIVE_COLOR : '#fff',
+    color: isActive ? '#fff' : '#333',
+    borderBottom: '1px solid #f3f4f6',
+    transition: 'background 0.2s',
+    fontSize: 14,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
   });
 
   return (
-    <nav style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10 }}>
+    <nav style={{ marginBottom: 20, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap', padding: '0 16px' }}>
       <button onClick={() => setView('chat')} style={navStyle('chat')}>Knowledge Search</button>
-      <button onClick={() => setView('writing')} style={navStyle('writing')}>✍️ Writing Practice</button>
-      <button onClick={() => setView('listening')} style={navStyle('listening')}>🎧 Listening Practice</button>
-      <button onClick={() => setView('reading')} style={navStyle('reading')}>📖 Reading Practice</button>
-      <button onClick={() => setView('speaking')} style={navStyle('speaking')}>🎙️ Speaking Practice</button>
+
+      <div ref={dropdownRef} style={{ position: 'relative' }}>
+        <button
+          onClick={() => setShowPracticeMenu(!showPracticeMenu)}
+          style={practiceButtonStyle}
+        >
+          📚 Practice
+          <span style={{ fontSize: 10 }}>{showPracticeMenu ? '▲' : '▼'}</span>
+        </button>
+        {showPracticeMenu && (
+          <div style={dropdownStyle}>
+            <div
+              style={dropdownItemStyle(view === 'writing')}
+              onClick={() => { setView('writing'); setShowPracticeMenu(false); }}
+              onMouseEnter={(e) => {
+                if (view !== 'writing') e.currentTarget.style.background = '#f3f4f6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = view === 'writing' ? ACTIVE_COLOR : '#fff';
+                e.currentTarget.style.color = view === 'writing' ? '#fff' : '#333';
+              }}
+            >
+              ✍️ Writing Practice
+            </div>
+            <div
+              style={dropdownItemStyle(view === 'listening')}
+              onClick={() => { setView('listening'); setShowPracticeMenu(false); }}
+              onMouseEnter={(e) => {
+                if (view !== 'listening') e.currentTarget.style.background = '#f3f4f6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = view === 'listening' ? ACTIVE_COLOR : '#fff';
+                e.currentTarget.style.color = view === 'listening' ? '#fff' : '#333';
+              }}
+            >
+              🎧 Listening Practice
+            </div>
+            <div
+              style={dropdownItemStyle(view === 'reading')}
+              onClick={() => { setView('reading'); setShowPracticeMenu(false); }}
+              onMouseEnter={(e) => {
+                if (view !== 'reading') e.currentTarget.style.background = '#f3f4f6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = view === 'reading' ? ACTIVE_COLOR : '#fff';
+                e.currentTarget.style.color = view === 'reading' ? '#fff' : '#333';
+              }}
+            >
+              📖 Reading Practice
+            </div>
+            <div
+              style={{...dropdownItemStyle(view === 'speaking'), borderBottom: 'none'}}
+              onClick={() => { setView('speaking'); setShowPracticeMenu(false); }}
+              onMouseEnter={(e) => {
+                if (view !== 'speaking') e.currentTarget.style.background = '#f3f4f6';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = view === 'speaking' ? ACTIVE_COLOR : '#fff';
+                e.currentTarget.style.color = view === 'speaking' ? '#fff' : '#333';
+              }}
+            >
+              🎙️ Speaking Practice
+            </div>
+          </div>
+        )}
+      </div>
+
       <button onClick={() => setView('learning')} style={navStyle('learning')}>🎓 Learning Hub</button>
       <button onClick={() => setView('analytics')} style={navStyle('analytics')}>📊 Analytics</button>
       <button onClick={() => setView('vocabulary')} style={navStyle('vocabulary')}>📓 Sổ Từ Vựng</button>

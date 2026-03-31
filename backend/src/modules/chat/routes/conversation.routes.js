@@ -2,6 +2,7 @@ import express from 'express';
 import { verifyToken } from '#shared/middlewares/auth.middleware.js';
 import {
     getConversations,
+    getArchivedConversations,
     renameConversation,
     archiveConversation,
     pinConversation,
@@ -16,6 +17,7 @@ const router = express.Router();
 router.use(verifyToken);
 
 router.get('/', getConversations);
+router.get('/archived', getArchivedConversations);
 router.post('/', createConversation);
 router.get('/:conversationId/messages', getConversationMessages);
 router.put('/:conversationId/rename', renameConversation);

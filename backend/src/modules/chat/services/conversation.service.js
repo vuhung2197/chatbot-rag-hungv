@@ -33,18 +33,19 @@ class ConversationService {
      */
     async getUserConversations(userId) {
         const [rows] = await pool.execute(
-            `SELECT 
+            `SELECT
         conversation_id,
-        COALESCE(MAX(CASE WHEN conversation_title IS NOT NULL AND conversation_title != '' THEN conversation_title END), 
+        COALESCE(MAX(CASE WHEN conversation_title IS NOT NULL AND conversation_title != '' THEN conversation_title END),
                  MAX(conversation_title)) as conversation_title,
         COUNT(*) as message_count,
         MAX(created_at) as last_message_at,
         MIN(created_at) as created_at,
         COALESCE(MAX(is_archived::int)::boolean, FALSE) as is_archived,
         COALESCE(MAX(is_pinned::int)::boolean, FALSE) as is_pinned
-       FROM user_questions 
+       FROM user_questions
        WHERE user_id = ? AND conversation_id IS NOT NULL
        GROUP BY conversation_id
+       HAVING COALESCE(MAX(is_archived::int)::boolean, FALSE) = FALSE
        ORDER BY is_pinned DESC, last_message_at DESC
        LIMIT 100`,
             [userId]
@@ -53,10 +54,36 @@ class ConversationService {
     }
 
     /**
+     * Get archived conversations
+     * @param {number} userId
+     */
+    async getArchivedConversations(userId) {
+        const [rows] = await pool.execute(
+            `SELECT
+        conversation_id,
+        COALESCE(MAX(CASE WHEN conversation_title IS NOT NULL AND conversation_title != '' THEN conversation_title END),
+                 MAX(conversation_title)) as conversation_title,
+        COUNT(*) as message_count,
+        MAX(created_at) as last_message_at,
+        MIN(created_at) as created_at,
+        COALESCE(MAX(is_archived::int)::boolean, FALSE) as is_archived,
+        COALESCE(MAX(is_pinned::int)::boolean, FALSE) as is_pinned
+       FROM user_questions
+       WHERE user_id = ? AND conversation_id IS NOT NULL
+       GROUP BY conversation_id
+       HAVING COALESCE(MAX(is_archived::int)::boolean, FALSE) = TRUE
+       ORDER BY last_message_at DESC
+       LIMIT 100`,
+            [userId]
+        );
+        return rows;
+    }
+
+    /**
      * Rename conversation
-     * @param {number} userId 
-     * @param {string} conversationId 
-     * @param {string} title 
+     * @param {number} userId
+     * @param {string} conversationId
+     * @param {string} title
      */
     async renameConversation(userId, conversationId, title) {
         const [result] = await pool.execute(

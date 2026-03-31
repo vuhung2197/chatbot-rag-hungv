@@ -316,13 +316,21 @@ const writingRepository = {
      * Lấy từ cần ôn tập hôm nay
      */
     async getVocabularyForReview(userId, limit = 20) {
+        // Lấy theo SRS nhưng cap tối đa 50% mỗi level để tránh bài quá dễ/khó
+        const maxPerLevel = Math.ceil(limit * 0.5);
+
         const [rows] = await pool.execute(
             `SELECT id, word, pos, phonetic, definition, translation, example_sentence, level, mastery, review_count, item_type, grammar_error, grammar_correction
-       FROM user_vocabulary
-       WHERE user_id = $1 AND next_review_at <= NOW() AND mastery < 5
-       ORDER BY next_review_at ASC
-       LIMIT $2`,
-            [userId, limit]
+             FROM (
+               SELECT *,
+                 ROW_NUMBER() OVER (PARTITION BY COALESCE(level, 'none') ORDER BY next_review_at ASC) AS rn
+               FROM user_vocabulary
+               WHERE user_id = $1 AND next_review_at <= NOW() AND mastery < 5
+             ) ranked
+             WHERE rn <= $2
+             ORDER BY next_review_at ASC
+             LIMIT $3`,
+            [userId, maxPerLevel, limit]
         );
         return rows;
     },
@@ -337,6 +345,14 @@ const writingRepository = {
        WHERE id = $3 AND user_id = $4
        RETURNING *`,
             [mastery, nextReviewAt, id, userId]
+        );
+        return rows[0] || null;
+    },
+
+    async getVocabularyById(id, userId) {
+        const [rows] = await pool.execute(
+            'SELECT * FROM user_vocabulary WHERE id = $1 AND user_id = $2',
+            [id, userId]
         );
         return rows[0] || null;
     },

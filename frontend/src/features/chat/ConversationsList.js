@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 import axios from 'axios';
 import { useToastContext } from '../../context/ToastContext';
 import { useConfirmContext } from '../../context/ConfirmContext';
@@ -11,7 +11,7 @@ import styles from '../../styles/components/ConversationsList.module.css';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 // ─── Sub-component: Conversations Header ───
-function ConversationsHeader({ onSelectConversation, fetchConversations, onClose, darkMode }) {
+function ConversationsHeader({ onSelectConversation, fetchConversations, onClose, darkMode, showArchived, setShowArchived }) {
   return (
     <>
       <div className={styles.sidebarActions}>
@@ -19,8 +19,26 @@ function ConversationsHeader({ onSelectConversation, fetchConversations, onClose
           <i className="fas fa-plus"></i> Dòng trò chuyện mới
         </button>
       </div>
+
+      <div className={styles.tabsContainer}>
+        <button
+          className={`${styles.tab} ${!showArchived ? styles.tabActive : ''}`}
+          onClick={() => setShowArchived(false)}
+        >
+          <i className="fas fa-comments"></i> Hoạt động
+        </button>
+        <button
+          className={`${styles.tab} ${showArchived ? styles.tabActive : ''}`}
+          onClick={() => setShowArchived(true)}
+        >
+          <i className="fas fa-archive"></i> Đã lưu trữ
+        </button>
+      </div>
+
       <div className={`${styles.header} ${darkMode ? styles.darkMode : ''}`}>
-        <h4 className={`${styles.headerTitle} ${darkMode ? styles.darkMode : ''}`}>Lịch sử chat</h4>
+        <h4 className={`${styles.headerTitle} ${darkMode ? styles.darkMode : ''}`}>
+          {showArchived ? 'Đã lưu trữ' : 'Lịch sử chat'}
+        </h4>
         <div className={styles.headerActions}>
           <button onClick={fetchConversations} className={`${styles.refreshButton} ${darkMode ? styles.darkMode : ''}`} title="Làm mới">
             <i className="fas fa-sync-alt"></i>
@@ -97,28 +115,37 @@ function ConversationItem({
   );
 }
 
-export default function ConversationsList({ darkMode, onSelectConversation, currentConversationId, onClose }) {
+const ConversationsList = forwardRef(function ConversationsList({ darkMode, onSelectConversation, currentConversationId, onClose }, ref) {
   const { error: showError } = useToastContext();
   const { confirm } = useConfirmContext();
   const [conversations, setConversations] = useState([]);
+  const [archivedConversations, setArchivedConversations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null);
   const [editTitle, setEditTitle] = useState('');
   const [error, setError] = useState(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     fetchConversations();
-  }, []);
+  }, [showArchived]);
 
   const fetchConversations = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const res = await axios.get(`${API_URL}/conversations`, {
+      const endpoint = showArchived ? `${API_URL}/conversations/archived` : `${API_URL}/conversations`;
+      const res = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setConversations(res.data.conversations || []);
+
+      if (showArchived) {
+        setArchivedConversations(res.data.conversations || []);
+      } else {
+        setConversations(res.data.conversations || []);
+      }
       setError(null);
     } catch (err) {
       console.error('Error fetching conversations:', err);
@@ -164,13 +191,15 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
         { archived: !isArchived },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setConversations(prev =>
-        prev.map(c =>
-          c.conversation_id === conversationId
-            ? { ...c, is_archived: !isArchived }
-            : c
-        )
-      );
+      // Nếu lưu trữ (archive), ẩn khỏi danh sách; nếu bỏ lưu trữ thì ẩn khỏi archived
+      if (!isArchived) {
+        setConversations(prev => prev.filter(c => c.conversation_id !== conversationId));
+        if (currentConversationId === conversationId && onSelectConversation) {
+          onSelectConversation(null);
+        }
+      } else {
+        setArchivedConversations(prev => prev.filter(c => c.conversation_id !== conversationId));
+      }
     } catch (err) {
       console.error('Error archiving conversation:', err);
       showError('Không thể lưu trữ cuộc trò chuyện');
@@ -185,13 +214,20 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
         { pinned: !isPinned },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setConversations(prev =>
-        prev.map(c =>
+      setConversations(prev => {
+        const updated = prev.map(c =>
           c.conversation_id === conversationId
             ? { ...c, is_pinned: !isPinned }
             : c
-        )
-      );
+        );
+        // Sắp xếp lại: ghim lên đầu, sau đó theo thời gian
+        return updated.sort((a, b) => {
+          if (a.is_pinned !== b.is_pinned) {
+            return b.is_pinned ? 1 : -1;
+          }
+          return new Date(b.last_message_at) - new Date(a.last_message_at);
+        });
+      });
     } catch (err) {
       console.error('Error pinning conversation:', err);
       showError('Không thể ghim cuộc trò chuyện');
@@ -243,29 +279,11 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
     return date.toLocaleDateString('vi-VN');
   };
 
-  if (loading) {
-    return (
-      <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''}`}>
-        Đang tải...
-      </div>
-    );
-  }
+  useImperativeHandle(ref, () => ({
+    fetchConversations
+  }));
 
-  if (error) {
-    return (
-      <div className={messages.error}>
-        {error}
-      </div>
-    );
-  }
-
-  if (conversations.length === 0) {
-    return (
-      <div className={`${shared.emptyState} ${darkMode ? shared.darkMode : ''}`}>
-        Chưa có cuộc trò chuyện nào
-      </div>
-    );
-  }
+  const displayList = showArchived ? archivedConversations : conversations;
 
   return (
     <div className={`${styles.container} ${darkMode ? styles.darkMode : ''}`}>
@@ -274,30 +292,44 @@ export default function ConversationsList({ darkMode, onSelectConversation, curr
         fetchConversations={fetchConversations}
         onClose={onClose}
         darkMode={darkMode}
+        showArchived={showArchived}
+        setShowArchived={setShowArchived}
       />
 
-      <div className={styles.conversationsList}>
-        {conversations.map((conv) => (
-          <ConversationItem
-            key={conv.conversation_id}
-            conv={conv}
-            currentConversationId={currentConversationId}
-            editingId={editingId}
-            editTitle={editTitle}
-            setEditTitle={setEditTitle}
-            setEditingId={setEditingId}
-            handleRename={handleRename}
-            startEdit={startEdit}
-            handlePin={handlePin}
-            handleArchive={handleArchive}
-            handleDelete={handleDelete}
-            onSelectConversation={onSelectConversation}
-            formatDate={formatDate}
-            darkMode={darkMode}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className={`${shared.loading} ${darkMode ? shared.darkMode : ''}`}>Đang tải...</div>
+      ) : error ? (
+        <div className={messages.error}>{error}</div>
+      ) : displayList.length === 0 ? (
+        <div className={`${shared.emptyState} ${darkMode ? shared.darkMode : ''}`}>
+          {showArchived ? 'Không có cuộc trò chuyện nào đã lưu trữ' : 'Chưa có cuộc trò chuyện nào'}
+        </div>
+      ) : (
+        <div className={styles.conversationsList}>
+          {displayList.map((conv) => (
+            <ConversationItem
+              key={conv.conversation_id}
+              conv={conv}
+              currentConversationId={currentConversationId}
+              editingId={editingId}
+              editTitle={editTitle}
+              setEditTitle={setEditTitle}
+              setEditingId={setEditingId}
+              handleRename={handleRename}
+              startEdit={startEdit}
+              handlePin={handlePin}
+              handleArchive={handleArchive}
+              handleDelete={handleDelete}
+              onSelectConversation={onSelectConversation}
+              formatDate={formatDate}
+              darkMode={darkMode}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
-}
+});
+
+export default ConversationsList;
 

@@ -1,5 +1,5 @@
-import pool from '#db';
-import currencyService from '#services/currencyService.js';
+import walletService from '../services/wallet.service.js';
+import walletRepository from '../repositories/wallet.repository.js';
 
 // ============================================
 // BANK ACCOUNT MANAGEMENT
@@ -16,24 +16,19 @@ export async function addBankAccount(req, res) {
             return res.status(400).json({ message: 'Missing required bank information' });
         }
 
-        const [existing] = await pool.execute(
-            'SELECT id FROM bank_accounts WHERE user_id = ? AND bank_code = ? AND account_number = ?',
-            [userId, bank_code, account_number]
-        );
+        const existing = await walletRepository.findBankAccount(userId, bank_code, account_number);
+        if (existing) return res.status(400).json({ message: 'Bank account already exists' });
 
-        if (existing.length > 0) return res.status(400).json({ message: 'Bank account already exists' });
-
-        const [rows] = await pool.execute(
-            `INSERT INTO bank_accounts 
-            (user_id, bank_code, bank_name, account_number, account_holder_name, branch_name, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'active') RETURNING id`,
-            [userId, bank_code, bank_name, account_number, account_holder_name, branch_name || null]
-        );
+        const result = await walletRepository.createBankAccount({
+            userId, bankCode: bank_code, bankName: bank_name,
+            accountNumber: account_number, accountHolderName: account_holder_name,
+            branchName: branch_name
+        });
 
         res.json({
             message: 'Bank account added successfully',
             bank_account: {
-                id: rows[0].id,
+                id: result.id,
                 bank_code,
                 bank_name,
                 account_number,
@@ -53,10 +48,7 @@ export async function getBankAccounts(req, res) {
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-        const [accounts] = await pool.execute(
-            'SELECT * FROM bank_accounts WHERE user_id = ? AND status != ?',
-            [userId, 'deleted']
-        );
+        const accounts = await walletRepository.getBankAccounts(userId);
         res.json({ bank_accounts: accounts });
     } catch (error) {
         console.error('❌ Error getting bank accounts:', error);
@@ -70,17 +62,10 @@ export async function deleteBankAccount(req, res) {
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
         const accountId = req.params.id;
 
-        const [accounts] = await pool.execute(
-            'SELECT id FROM bank_accounts WHERE id = ? AND user_id = ?',
-            [accountId, userId]
-        );
+        const account = await walletRepository.findBankAccountById(accountId, userId);
+        if (!account) return res.status(404).json({ message: 'Bank account not found' });
 
-        if (accounts.length === 0) return res.status(404).json({ message: 'Bank account not found' });
-
-        await pool.execute(
-            'UPDATE bank_accounts SET status = ? WHERE id = ?',
-            ['deleted', accountId]
-        );
+        await walletRepository.deleteBankAccount(accountId);
         res.json({ message: 'Bank account deleted successfully' });
     } catch (error) {
         console.error('❌ Error deleting bank account:', error);
@@ -100,18 +85,11 @@ export async function calculateWithdrawalFee(req, res) {
         const amount = parseFloat(req.body.amount);
         if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
 
-        // Fetch wallet currency to calculate fee properly
-        const [wallets] = await pool.execute('SELECT currency FROM user_wallets WHERE user_id = ?', [userId]);
-        if (wallets.length === 0) return res.status(404).json({ message: 'Wallet not found' });
+        // Fetch wallet to determine currency
+        const wallet = await walletRepository.findByUserId(userId);
+        if (!wallet) return res.status(404).json({ message: 'Wallet not found' });
 
-        const currency = wallets[0].currency;
-
-        // Default USD fee is $0.5
-        let fee = 0.5;
-        if (currency !== 'USD') {
-            fee = currencyService.convertCurrency(0.5, 'USD', currency);
-        }
-
+        const fee = walletService.calculateWithdrawalFee(wallet.currency);
         const netAmount = amount - fee;
 
         if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small to withdraw. Must be greater than fee.' });
@@ -120,7 +98,7 @@ export async function calculateWithdrawalFee(req, res) {
             amount,
             fee,
             net_amount: netAmount,
-            currency
+            currency: wallet.currency
         });
     } catch (error) {
         console.error('❌ Error calculating fee:', error);
@@ -134,103 +112,33 @@ export async function withdraw(req, res) {
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
         const { bank_account_id, amount } = req.body;
-
         if (!amount || amount <= 0) return res.status(400).json({ message: 'Invalid amount' });
 
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
+        const withdrawal = await walletService.processWithdrawal({
+            userId,
+            bankAccountId: bank_account_id,
+            amount: parseFloat(amount)
+        });
 
-        try {
-            const [wallets] = await connection.execute(
-                'SELECT id, balance, currency FROM user_wallets WHERE user_id = ? FOR UPDATE',
-                [userId]
-            );
-
-            if (wallets.length === 0) throw new Error('Wallet not found');
-            const wallet = wallets[0];
-
-            // Default USD fee is $0.5
-            let fee = 0.5;
-            if (wallet.currency !== 'USD') {
-                fee = currencyService.convertCurrency(0.5, 'USD', wallet.currency);
-            }
-
-            const netAmount = amount - fee;
-            if (netAmount <= 0) return res.status(400).json({ message: 'Amount too small. Must be greater than fee.' });
-
-            const amountToDeduct = parseFloat(amount); // Amount is already in wallet currency
-
-            if (parseFloat(wallet.balance) < amountToDeduct) {
-                await connection.rollback();
-                return res.status(400).json({
-                    message: 'Insufficient balance',
-                    balance: wallet.balance,
-                    currency: wallet.currency,
-                    required: amountToDeduct
-                });
-            }
-
-            const newBalance = parseFloat(wallet.balance) - amountToDeduct;
-            await connection.execute(
-                'UPDATE user_wallets SET balance = ?, updated_at = NOW() WHERE id = ?',
-                [newBalance, wallet.id]
-            );
-
-            // Convert amount to USD for the withdrawal_requests table if required, 
-            // but the system mostly treats it as raw numbers. Let's keep it in wallet currency.
-            const [txRows] = await connection.execute(
-                `INSERT INTO wallet_transactions 
-                (wallet_id, user_id, type, amount, balance_before, balance_after, 
-                 description, status, metadata)
-                VALUES (?, ?, 'withdrawal', ?, ?, ?, ?, ?, ?) RETURNING id`,
-                [
-                    wallet.id,
-                    userId,
-                    -amountToDeduct,
-                    wallet.balance,
-                    newBalance,
-                    'Withdrawal to Bank Account',
-                    'pending',
-                    JSON.stringify({
-                        bank_account_id,
-                        withdrawal_fee: fee,
-                        net_amount: netAmount,
-                        deducted_amount: amountToDeduct,
-                        deducted_currency: wallet.currency
-                    })
-                ]
-            );
-
-            const transactionId = txRows[0].id;
-
-            await connection.execute(
-                `INSERT INTO withdrawal_requests
-                (transaction_id, user_id, bank_account_id, amount, fee, net_amount, status)
-                VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-                [transactionId, userId, bank_account_id, amountToDeduct, fee, netAmount]
-            );
-
-            await connection.commit();
-
-            res.json({
-                message: 'Withdrawal request submitted',
-                withdrawal: {
-                    transaction_id: transactionId,
-                    amount: amountToDeduct,
-                    fee,
-                    net_amount: netAmount,
-                    status: 'pending'
-                }
+        res.json({
+            message: 'Withdrawal request submitted',
+            withdrawal
+        });
+    } catch (error) {
+        // Handle known operational errors
+        if (error.statusCode === 400) {
+            return res.status(400).json({
+                message: error.message,
+                ...error.details
             });
-
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
+        }
+        if (error.message === 'Amount too small. Must be greater than fee.') {
+            return res.status(400).json({ message: error.message });
+        }
+        if (error.message === 'Wallet not found') {
+            return res.status(404).json({ message: error.message });
         }
 
-    } catch (error) {
         console.error('❌ Error processing withdrawal:', error);
         res.status(500).json({ message: 'Error processing withdrawal' });
     }
@@ -241,10 +149,7 @@ export async function getWithdrawals(req, res) {
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ message: 'Unauthorized' });
 
-        const [withdrawals] = await pool.execute(
-            'SELECT * FROM v_withdrawal_history WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
-            [userId]
-        );
+        const withdrawals = await walletRepository.getWithdrawalHistory(userId);
         res.json({ withdrawals });
     } catch (error) {
         console.error('❌ Error getting withdrawals:', error);

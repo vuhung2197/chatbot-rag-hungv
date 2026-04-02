@@ -1,6 +1,10 @@
 import pool from '#db';
 import currencyService from '#services/currencyService.js';
-import { WALLET_STATUS, TRANSACTION_TYPE, TRANSACTION_STATUS, DEFAULTS, ACTIONS } from '../wallet.constants.js';
+import walletRepository from '../repositories/wallet.repository.js';
+import {
+    WALLET_STATUS, TRANSACTION_TYPE, TRANSACTION_STATUS,
+    DEFAULTS, ACTIONS, WITHDRAWAL_FEE_USD
+} from '../wallet.constants.js';
 
 class WalletService {
     /**
@@ -8,33 +12,24 @@ class WalletService {
      * @param {number} userId
      * @returns {Promise<Object>} Wallet object
      */
-    async getWalletOverview(userId) {
-        const [wallets] = await pool.execute(
-            `SELECT id, user_id, balance, currency, status, created_at, updated_at
-             FROM user_wallets
-             WHERE user_id = ?`,
-            [userId]
-        );
+    async getOrCreateWallet(userId, currency = DEFAULTS.CURRENCY) {
+        const wallet = await walletRepository.findByUserId(userId);
+        if (wallet) return wallet;
 
-        if (wallets.length === 0) {
-            // Create wallet if not exists
-            const [result] = await pool.execute(
-                'INSERT INTO user_wallets (user_id, balance, currency, status) VALUES (?, 0.00, ?, ?) RETURNING id',
-                [userId, DEFAULTS.CURRENCY, WALLET_STATUS.ACTIVE]
-            );
-
-            const [newWallet] = await pool.execute(
-                'SELECT id, user_id, balance, currency, status, created_at, updated_at FROM user_wallets WHERE id = ?',
-                [result.insertId]
-            );
-            return newWallet[0];
-        }
-
-        return wallets[0];
+        const result = await walletRepository.create(userId, currency);
+        const newWallet = await walletRepository.findById(result.id);
+        return newWallet;
     }
 
     /**
-     * Get transaction history
+     * Alias for backward compatibility — getWalletOverview calls getOrCreateWallet
+     */
+    async getWalletOverview(userId) {
+        return this.getOrCreateWallet(userId);
+    }
+
+    /**
+     * Get transaction history with pagination
      * @param {number} userId 
      * @param {Object} options { page, limit, type }
      */
@@ -42,34 +37,8 @@ class WalletService {
         limit = Math.max(1, Math.min(100, limit));
         const offset = (page - 1) * limit;
 
-        let query = `
-            SELECT 
-                id, wallet_id, type, amount, balance_before, balance_after,
-                description, reference_type, reference_id, payment_method,
-                payment_gateway_id, status, metadata, created_at
-            FROM wallet_transactions
-            WHERE user_id = ?
-        `;
-        const params = [userId];
-
-        if (type) {
-            query += ' AND type = ?';
-            params.push(type);
-        }
-
-        query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-
-        const [transactions] = await pool.execute(query, params);
-
-        // Get total count
-        let countQuery = 'SELECT COUNT(*) as total FROM wallet_transactions WHERE user_id = ?';
-        const countParams = [userId];
-        if (type) {
-            countQuery += ' AND type = ?';
-            countParams.push(type);
-        }
-        const [countResult] = await pool.execute(countQuery, countParams);
-        const total = countResult[0].total;
+        const transactions = await walletRepository.getTransactionsPaginated(userId, { type, limit, offset });
+        const total = await walletRepository.countTransactions(userId, type);
 
         return {
             transactions,
@@ -85,26 +54,9 @@ class WalletService {
      * @param {number} userId 
      */
     async getWalletStats(userId) {
-        const [stats] = await pool.execute(
-            `SELECT 
-                w.balance,
-                w.currency,
-                COUNT(DISTINCT wt.id) as total_transactions,
-                SUM(CASE WHEN wt.type = '${TRANSACTION_TYPE.DEPOSIT}' AND wt.status = '${TRANSACTION_STATUS.COMPLETED}' THEN wt.amount ELSE 0 END) as total_deposits,
-                SUM(CASE WHEN wt.type IN ('${TRANSACTION_TYPE.PURCHASE}', '${TRANSACTION_TYPE.SUBSCRIPTION}') AND wt.status = '${TRANSACTION_STATUS.COMPLETED}' THEN ABS(wt.amount) ELSE 0 END) as total_spent,
-                SUM(CASE WHEN wt.type = '${TRANSACTION_TYPE.DEPOSIT}' AND wt.status = '${TRANSACTION_STATUS.FAILED}' THEN wt.amount ELSE 0 END) as failed_deposit_amount,
-                SUM(CASE WHEN wt.type = '${TRANSACTION_TYPE.DEPOSIT}' AND wt.status = '${TRANSACTION_STATUS.PENDING}' THEN wt.amount ELSE 0 END) as pending_deposit_amount,
-                COUNT(CASE WHEN wt.type = '${TRANSACTION_TYPE.DEPOSIT}' AND wt.status = '${TRANSACTION_STATUS.FAILED}' THEN 1 END) as total_failed_deposits,
-                COUNT(CASE WHEN wt.type = '${TRANSACTION_TYPE.DEPOSIT}' AND wt.status = '${TRANSACTION_STATUS.PENDING}' THEN 1 END) as total_pending_deposits,
-                MAX(wt.created_at) as last_transaction_at
-            FROM user_wallets w
-            LEFT JOIN wallet_transactions wt ON w.id = wt.wallet_id
-            WHERE w.user_id = ?
-            GROUP BY w.id, w.balance, w.currency`,
-            [userId]
-        );
+        const stats = await walletRepository.getTransactionStats(userId);
 
-        if (stats.length === 0) {
+        if (!stats) {
             return {
                 balance: 0,
                 currency: DEFAULTS.CURRENCY,
@@ -119,11 +71,11 @@ class WalletService {
             };
         }
 
-        return stats[0];
+        return stats;
     }
 
     /**
-     * Update wallet currency
+     * Update wallet currency (with balance conversion)
      * @param {number} userId 
      * @param {string} newCurrency 
      */
@@ -135,16 +87,13 @@ class WalletService {
             throw new Error(`Unsupported currency: ${newCurrency}`);
         }
 
-        const wallet = await this.getWalletOverview(userId);
+        const wallet = await this.getOrCreateWallet(userId);
         if (!wallet) {
             throw new Error('Wallet not found');
         }
 
         if (wallet.currency === newCurrency) {
-            return {
-                updated: false,
-                wallet
-            };
+            return { updated: false, wallet };
         }
 
         const oldCurrency = wallet.currency;
@@ -152,36 +101,28 @@ class WalletService {
         const newBalance = currencyService.convertCurrency(oldBalance, oldCurrency, newCurrency);
 
         // Update wallet
-        await pool.execute(
-            'UPDATE user_wallets SET currency = ?, balance = ?, updated_at = NOW() WHERE id = ?',
-            [newCurrency, newBalance, wallet.id]
-        );
+        await walletRepository.updateCurrencyAndBalance(wallet.id, newCurrency, newBalance);
 
         // Log transaction
-        await pool.execute(
-            `INSERT INTO wallet_transactions 
-             (wallet_id, user_id, type, amount, balance_before, balance_after, 
-              description, status, metadata)
-             VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)`,
-            [
-                wallet.id,
-                userId,
-                TRANSACTION_TYPE.DEPOSIT,
-                oldBalance,
-                newBalance,
-                `Currency changed from ${oldCurrency} to ${newCurrency}`,
-                TRANSACTION_STATUS.COMPLETED,
-                JSON.stringify({
-                    action: ACTIONS.CURRENCY_CHANGE,
-                    old_currency: oldCurrency,
-                    new_currency: newCurrency,
-                    old_balance: oldBalance,
-                    new_balance: newBalance,
-                    exchange_rate: currencyService.getExchangeRate(oldCurrency, newCurrency),
-                    changed_at: new Date().toISOString()
-                })
-            ]
-        );
+        await walletRepository.createTransaction({
+            walletId: wallet.id,
+            userId,
+            type: TRANSACTION_TYPE.DEPOSIT,
+            amount: 0,
+            balanceBefore: oldBalance,
+            balanceAfter: newBalance,
+            description: `Currency changed from ${oldCurrency} to ${newCurrency}`,
+            status: TRANSACTION_STATUS.COMPLETED,
+            metadata: {
+                action: ACTIONS.CURRENCY_CHANGE,
+                old_currency: oldCurrency,
+                new_currency: newCurrency,
+                old_balance: oldBalance,
+                new_balance: newBalance,
+                exchange_rate: currencyService.getExchangeRate(oldCurrency, newCurrency),
+                changed_at: new Date().toISOString()
+            }
+        });
 
         return {
             updated: true,
@@ -192,6 +133,181 @@ class WalletService {
                 oldCurrency
             }
         };
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // DEPOSIT — Centralized credit logic (dùng chung cho mọi gateway)
+    // ═══════════════════════════════════════════════════════
+
+    /**
+     * Credit deposit vào wallet (dùng chung cho VNPay, MoMo, manual callback)
+     * @param {Object} params
+     * @param {number} params.transactionId - ID giao dịch pending
+     * @param {string} params.gatewayId - ID giao dịch bên gateway
+     * @param {Object} params.gatewayMetadata - Dữ liệu bổ sung từ gateway
+     * @returns {Object} { success, newBalance, creditedAmount, currency } hoặc { success: false, alreadyProcessed, status }
+     */
+    async creditDeposit({ transactionId, gatewayId, gatewayMetadata = {} }) {
+        const transaction = await walletRepository.findTransactionById(transactionId);
+        if (!transaction) throw new Error('Transaction not found');
+        if (transaction.status !== TRANSACTION_STATUS.PENDING) {
+            return { success: false, alreadyProcessed: true, status: transaction.status };
+        }
+
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            const wallet = await walletRepository.findByIdForUpdate(connection, transaction.wallet_id);
+            if (!wallet) throw new Error('Wallet not found');
+
+            let creditedAmount = parseFloat(transaction.amount);
+            if (wallet.currency !== 'USD') {
+                creditedAmount = currencyService.convertCurrency(creditedAmount, 'USD', wallet.currency);
+            }
+            const newBalance = parseFloat(wallet.balance) + creditedAmount;
+
+            await walletRepository.updateBalance(connection, wallet.id, newBalance);
+            await walletRepository.updateTransactionStatus(connection, transactionId, TRANSACTION_STATUS.COMPLETED, {
+                balanceAfter: newBalance,
+                paymentGatewayId: gatewayId,
+            });
+            await walletRepository.mergeTransactionMetadata(connection, transactionId, {
+                completed_at: new Date().toISOString(),
+                credited_amount: creditedAmount,
+                credited_currency: wallet.currency,
+                ...gatewayMetadata,
+            });
+
+            await connection.commit();
+            return { success: true, newBalance, creditedAmount, currency: wallet.currency };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    /**
+     * Đánh dấu deposit thất bại
+     * @param {number} transactionId
+     * @param {string} gatewayId
+     */
+    async failDeposit(transactionId, gatewayId) {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            await walletRepository.updateTransactionStatus(connection, transactionId, TRANSACTION_STATUS.FAILED, {
+                paymentGatewayId: gatewayId,
+            });
+            await walletRepository.mergeTransactionMetadata(connection, transactionId, {
+                failed_at: new Date().toISOString(),
+            });
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // WITHDRAWAL — Centralized fee calculation & deduction
+    // ═══════════════════════════════════════════════════════
+
+    /**
+     * Tính phí rút tiền theo wallet currency
+     * @param {string} walletCurrency
+     * @returns {number} fee in wallet currency
+     */
+    calculateWithdrawalFee(walletCurrency) {
+        if (walletCurrency !== 'USD') {
+            return currencyService.convertCurrency(WITHDRAWAL_FEE_USD, 'USD', walletCurrency);
+        }
+        return WITHDRAWAL_FEE_USD;
+    }
+
+    /**
+     * Xử lý rút tiền: trừ balance, tạo transaction + withdrawal request
+     * @param {Object} params
+     * @param {number} params.userId
+     * @param {number} params.bankAccountId
+     * @param {number} params.amount - Số tiền muốn rút (wallet currency)
+     * @returns {Object} withdrawal details
+     */
+    async processWithdrawal({ userId, bankAccountId, amount }) {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            const wallet = await walletRepository.findByUserIdForUpdate(connection, userId);
+            if (!wallet) throw new Error('Wallet not found');
+
+            const fee = this.calculateWithdrawalFee(wallet.currency);
+            const netAmount = amount - fee;
+            if (netAmount <= 0) throw new Error('Amount too small. Must be greater than fee.');
+
+            const amountToDeduct = parseFloat(amount);
+            if (parseFloat(wallet.balance) < amountToDeduct) {
+                throw Object.assign(new Error('Insufficient balance'), {
+                    statusCode: 400,
+                    details: {
+                        balance: wallet.balance,
+                        currency: wallet.currency,
+                        required: amountToDeduct
+                    }
+                });
+            }
+
+            const newBalance = parseFloat(wallet.balance) - amountToDeduct;
+            await walletRepository.updateBalance(connection, wallet.id, newBalance);
+
+            const txResult = await walletRepository.createTransaction({
+                walletId: wallet.id,
+                userId,
+                type: TRANSACTION_TYPE.WITHDRAW,
+                amount: -amountToDeduct,
+                balanceBefore: wallet.balance,
+                balanceAfter: newBalance,
+                description: 'Withdrawal to Bank Account',
+                status: TRANSACTION_STATUS.PENDING,
+                metadata: {
+                    bank_account_id: bankAccountId,
+                    withdrawal_fee: fee,
+                    net_amount: netAmount,
+                    deducted_amount: amountToDeduct,
+                    deducted_currency: wallet.currency
+                }
+            }, connection);
+
+            const transactionId = txResult.id;
+
+            await walletRepository.createWithdrawalRequest(connection, {
+                transactionId,
+                userId,
+                bankAccountId,
+                amount: amountToDeduct,
+                fee,
+                netAmount
+            });
+
+            await connection.commit();
+
+            return {
+                transaction_id: transactionId,
+                amount: amountToDeduct,
+                fee,
+                net_amount: netAmount,
+                status: TRANSACTION_STATUS.PENDING
+            };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 }
 

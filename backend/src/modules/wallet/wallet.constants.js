@@ -31,3 +31,11 @@ export const DEFAULTS = {
 export const ACTIONS = {
     CURRENCY_CHANGE: 'currency_change'
 };
+
+export const WITHDRAWAL_FEE_USD = 0.5;
+
+export const PAYMENT_METHOD = {
+    VNPAY: 'vnpay',
+    MOMO: 'momo',
+    BANK_TRANSFER: 'bank_transfer'
+};

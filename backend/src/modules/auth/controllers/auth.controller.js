@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import { google } from 'googleapis';
 import '#bootstrap/env.js';
 import { makeStateCookie, verifyStateCookie } from '#helpers/cookieState.js';

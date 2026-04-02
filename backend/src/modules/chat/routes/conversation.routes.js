@@ -1,5 +1,6 @@
 import express from 'express';
 import { verifyToken } from '#shared/middlewares/auth.middleware.js';
+import { validate } from '#shared/middlewares/validate.middleware.js';
 import {
     getConversations,
     getArchivedConversations,
@@ -10,6 +11,12 @@ import {
     getConversationMessages,
     createConversation
 } from '../controllers/conversation.controller.js';
+import {
+    conversationIdSchema,
+    renameConversationSchema,
+    archiveConversationSchema,
+    pinConversationSchema
+} from '../chat.schemas.js';
 
 const router = express.Router();
 
@@ -19,10 +26,10 @@ router.use(verifyToken);
 router.get('/', getConversations);
 router.get('/archived', getArchivedConversations);
 router.post('/', createConversation);
-router.get('/:conversationId/messages', getConversationMessages);
-router.put('/:conversationId/rename', renameConversation);
-router.put('/:conversationId/archive', archiveConversation);
-router.put('/:conversationId/pin', pinConversation);
-router.delete('/:conversationId', deleteConversation);
+router.get('/:conversationId/messages', validate(conversationIdSchema), getConversationMessages);
+router.put('/:conversationId/rename', validate(renameConversationSchema), renameConversation);
+router.put('/:conversationId/archive', validate(archiveConversationSchema), archiveConversation);
+router.put('/:conversationId/pin', validate(pinConversationSchema), pinConversation);
+router.delete('/:conversationId', validate(conversationIdSchema), deleteConversation);
 
 export default router;

@@ -9,7 +9,7 @@ import buttons from '../../styles/buttons.module.css';
 import messages from '../../styles/messages.module.css';
 import styles from '../../styles/components/Login.module.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 export default function Login({ onLogin }) {
   const { t } = useLanguage();
@@ -35,7 +35,16 @@ export default function Login({ onLogin }) {
         setError(data.message || 'Đăng nhập thất bại');
       }
     } catch (err) {
-      setError('Lỗi mạng hoặc máy chủ');
+      if (err.response && err.response.data) {
+        if (err.response.data.errors && err.response.data.errors.length > 0) {
+          const errorMessages = err.response.data.errors.map(e => e.message).join('. ');
+          setError(errorMessages);
+        } else {
+          setError(err.response.data.message || 'Đăng nhập thất bại');
+        }
+      } else {
+        setError('Lỗi mạng hoặc máy chủ');
+      }
     }
   }
 

@@ -260,13 +260,13 @@ res.redirect(`${frontendUrl}/wallet?payment=success&amount=${result.creditedAmou
 
 ### 1.4. Checklist refactor
 
-- [ ] Tạo `wallet.repository.js` với tất cả DB queries
-- [ ] Di chuyển logic `creditDeposit` vào `wallet.service.js`
-- [ ] Refactor `vnpay.controller.js` — gọi service thay vì truy vấn DB
-- [ ] Refactor `momo.controller.js` — gọi service thay vì truy vấn DB  
-- [ ] Refactor `deposit.controller.js` — gọi service thay vì truy vấn DB
-- [ ] Refactor `withdrawal.controller.js` — tách logic tính phí, trừ balance vào service
-- [ ] Xóa `getOrCreateWallet` duplicate trong `deposit.controller.js`
+- [x] Tạo `wallet.repository.js` với tất cả DB queries ✅ (2026-04-02)
+- [x] Di chuyển logic `creditDeposit` vào `wallet.service.js` ✅ (2026-04-02)
+- [x] Refactor `vnpay.controller.js` — gọi service thay vì truy vấn DB ✅ (2026-04-02)
+- [x] Refactor `momo.controller.js` — gọi service thay vì truy vấn DB ✅ (2026-04-02)
+- [x] Refactor `deposit.controller.js` — gọi service thay vì truy vấn DB ✅ (2026-04-02)
+- [x] Refactor `withdrawal.controller.js` — tách logic tính phí, trừ balance vào service ✅ (2026-04-02)
+- [x] Xóa `getOrCreateWallet` duplicate trong `deposit.controller.js` ✅ (2026-04-02)
 - [ ] Verify tất cả payment flows vẫn hoạt động
 
 > [!IMPORTANT]

@@ -6,7 +6,8 @@
       "Bash(npm install:*)",
       "Bash(node test-server.js)",
       "Bash(node test-db.js)",
-      "Bash(psql --version)"
+      "Bash(psql --version)",
+      "Bash(done)"
     ]
   }
 }

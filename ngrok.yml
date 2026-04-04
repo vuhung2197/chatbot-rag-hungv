@@ -1,0 +1,9 @@
+version: 2
+authtoken: $(ngrok config check | grep "Authtoken" | awk '{print $2}')
+tunnels:
+  frontend:
+    addr: 3000
+    proto: http
+  backend:
+    addr: 3001
+    proto: http

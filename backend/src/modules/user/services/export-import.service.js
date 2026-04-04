@@ -4,20 +4,20 @@ class ExportImportService {
     async exportUserData(userId) {
         try {
             // Get user info
-            const userRows = await pool.query(
+            const [userRows] = await pool.query(
                 'SELECT name, email, timezone, language FROM users WHERE id = $1',
                 [userId]
             );
 
             // Get vocabulary
-            const vocabRows = await pool.query(
+            const [vocabRows] = await pool.query(
                 `SELECT word, definition, translation, level, topic, mastery, review_count,
                 next_review_at, created_at FROM user_vocabulary WHERE user_id = $1`,
                 [userId]
             );
 
             // Get listening submissions
-            const listeningRows = await pool.query(
+            const [listeningRows] = await pool.query(
                 `SELECT ls.exercise_id, le.title as exercise_title, le.level, ls.score_total, ls.created_at as completed_at
                 FROM listening_submissions ls
                 LEFT JOIN listening_exercises le ON ls.exercise_id = le.id
@@ -26,21 +26,21 @@ class ExportImportService {
             );
 
             // Get reading submissions
-            const readingRows = await pool.query(
+            const [readingRows] = await pool.query(
                 `SELECT passage_id, score_total, created_at as completed_at
                 FROM reading_submissions WHERE user_id = $1`,
                 [userId]
             );
 
             // Get speaking submissions
-            const speakingRows = await pool.query(
+            const [speakingRows] = await pool.query(
                 `SELECT topic_id, score_total, created_at as completed_at
                 FROM speaking_submissions WHERE user_id = $1`,
                 [userId]
             );
 
             // Get writing submissions
-            const writingRows = await pool.query(
+            const [writingRows] = await pool.query(
                 `SELECT ws.exercise_id, we.title as exercise_title, we.level, ws.score_total, ws.created_at as completed_at
                 FROM writing_submissions ws
                 LEFT JOIN writing_exercises we ON ws.exercise_id = we.id
@@ -49,13 +49,13 @@ class ExportImportService {
             );
 
             // Get learning history
-            const learningHistoryRows = await pool.query(
+            const [learningHistoryRows] = await pool.query(
                 `SELECT category, level, title, score, created_at FROM learning_history WHERE user_id = $1`,
                 [userId]
             );
 
             // Get learning streaks
-            const learningStreaksRows = await pool.query(
+            const [learningStreaksRows] = await pool.query(
                 `SELECT current_streak, longest_streak, last_activity_date, total_exercises, total_words_learned, avg_score, badges FROM learning_streaks WHERE user_id = $1`,
                 [userId]
             );
@@ -63,30 +63,30 @@ class ExportImportService {
             return {
                 export_version: '1.0',
                 exported_at: new Date().toISOString(),
-                user: userRows.rows[0],
-                vocabulary: vocabRows.rows,
+                user: userRows[0],
+                vocabulary: vocabRows,
                 listening: {
-                    total_completed: listeningRows.rows.length,
-                    average_score: this._calculateAvg(listeningRows.rows, 'score_total'),
-                    submissions: listeningRows.rows
+                    total_completed: listeningRows.length,
+                    average_score: this._calculateAvg(listeningRows, 'score_total'),
+                    submissions: listeningRows
                 },
                 reading: {
-                    total_completed: readingRows.rows.length,
-                    average_score: this._calculateAvg(readingRows.rows, 'score_total'),
-                    submissions: readingRows.rows
+                    total_completed: readingRows.length,
+                    average_score: this._calculateAvg(readingRows, 'score_total'),
+                    submissions: readingRows
                 },
                 speaking: {
-                    total_completed: speakingRows.rows.length,
-                    average_score: this._calculateAvg(speakingRows.rows, 'score_total'),
-                    submissions: speakingRows.rows
+                    total_completed: speakingRows.length,
+                    average_score: this._calculateAvg(speakingRows, 'score_total'),
+                    submissions: speakingRows
                 },
                 writing: {
-                    total_completed: writingRows.rows.length,
-                    average_score: this._calculateAvg(writingRows.rows, 'score_total'),
-                    submissions: writingRows.rows
+                    total_completed: writingRows.length,
+                    average_score: this._calculateAvg(writingRows, 'score_total'),
+                    submissions: writingRows
                 },
-                learning_history: learningHistoryRows.rows,
-                learning_streaks: learningStreaksRows.rows[0] || null
+                learning_history: learningHistoryRows,
+                learning_streaks: learningStreaksRows[0] || null
             };
         } catch (error) {
             console.error('Export error:', error);

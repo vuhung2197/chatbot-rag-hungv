@@ -1,6 +1,6 @@
-import pool from '#db';
 import vnpayService from '#services/vnpayService.js';
-import currencyService from '#services/currencyService.js';
+import walletService from '../../services/wallet.service.js';
+import walletRepository from '../../repositories/wallet.repository.js';
 
 /**
  * VNPay Return URL Handler
@@ -27,84 +27,23 @@ export async function vnpayReturn(req, res) {
             return res.redirect(`${frontendUrl}/wallet?payment=failed&message=Invalid+order+ID`);
         }
 
-        const [transactions] = await pool.execute(
-            'SELECT * FROM wallet_transactions WHERE id = ?',
-            [transactionId]
-        );
-
-        if (transactions.length === 0) {
-            return res.redirect(`${frontendUrl}/wallet?payment=failed&message=Transaction+not+found`);
-        }
-
-        const transaction = transactions[0];
-        if (transaction.status !== 'pending') {
-            return res.redirect(`${frontendUrl}/wallet?payment=${transaction.status}`);
-        }
-
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-
-        try {
-            const [wallets] = await connection.execute(
-                'SELECT * FROM user_wallets WHERE id = ? FOR UPDATE',
-                [transaction.wallet_id]
-            );
-
-            if (wallets.length === 0) throw new Error('Wallet not found');
-            const wallet = wallets[0];
-
-            let creditedAmount = parseFloat(transaction.amount); // USD
-            if (wallet.currency !== 'USD') {
-                creditedAmount = currencyService.convertCurrency(creditedAmount, 'USD', wallet.currency);
+        const creditResult = await walletService.creditDeposit({
+            transactionId,
+            gatewayId: result.transactionNo,
+            gatewayMetadata: {
+                vnpay_transaction_no: result.transactionNo,
+                vnpay_bank_code: result.bankCode,
+                vnpay_pay_date: result.payDate,
             }
+        });
 
-            const newBalance = parseFloat(wallet.balance) + creditedAmount;
-
-            await connection.execute(
-                'UPDATE user_wallets SET balance = ?, updated_at = NOW() WHERE id = ?',
-                [newBalance, wallet.id]
-            );
-
-            await connection.execute(
-                `UPDATE wallet_transactions 
-                 SET status = 'completed', 
-                     balance_after = ?, 
-                     payment_gateway_id = ?,
-                     metadata = metadata || jsonb_build_object(
-                         'completed_at', ?::text,
-                         'vnpay_transaction_no', ?::text,
-                         'vnpay_bank_code', ?::text,
-                         'vnpay_pay_date', ?::text,
-                         'credited_amount', ?::text,
-                         'credited_currency', ?::text
-                     )
-                 WHERE id = ?`,
-                [
-                    newBalance,
-                    result.transactionNo,
-                    new Date().toISOString(),
-                    result.transactionNo,
-                    result.bankCode,
-                    result.payDate,
-                    creditedAmount,
-                    wallet.currency,
-                    transactionId
-                ]
-            );
-
-            await connection.commit();
-
-
-            console.log(`✅ Payment completed successfully for transaction ${transactionId}`);
-            console.log('Redirecting to frontend:', frontendUrl);
-            res.redirect(`${frontendUrl.trim()}/wallet?payment=success&amount=${creditedAmount}&currency=${wallet.currency}`);
-
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
+        if (!creditResult.success) {
+            return res.redirect(`${frontendUrl}/wallet?payment=${creditResult.status}`);
         }
+
+        console.log(`✅ Payment completed successfully for transaction ${transactionId}`);
+        console.log('Redirecting to frontend:', frontendUrl);
+        res.redirect(`${frontendUrl.trim()}/wallet?payment=success&amount=${creditResult.creditedAmount}&currency=${creditResult.currency}`);
 
     } catch (error) {
         console.error('❌ Error processing VNPay return:', error);
@@ -132,78 +71,23 @@ export async function vnpayIPN(req, res) {
 
         if (!transactionId) return res.json({ RspCode: '99', Message: 'Invalid order ID' });
 
-        const [transactions] = await pool.execute(
-            'SELECT * FROM wallet_transactions WHERE id = ?',
-            [transactionId]
-        );
-
-        if (transactions.length === 0) return res.json({ RspCode: '01', Message: 'Transaction not found' });
-
-        const transaction = transactions[0];
-        if (transaction.status !== 'pending') return res.json({ RspCode: '02', Message: 'Transaction already processed' });
-
-        const connection = await pool.getConnection();
-        await connection.beginTransaction();
-
-        try {
-            const [wallets] = await connection.execute(
-                'SELECT * FROM user_wallets WHERE id = ? FOR UPDATE',
-                [transaction.wallet_id]
-            );
-            if (wallets.length === 0) throw new Error('Wallet not found');
-
-            const wallet = wallets[0];
-            let creditedAmount = parseFloat(transaction.amount);
-            if (wallet.currency !== 'USD') {
-                creditedAmount = currencyService.convertCurrency(creditedAmount, 'USD', wallet.currency);
+        const creditResult = await walletService.creditDeposit({
+            transactionId,
+            gatewayId: result.transactionNo,
+            gatewayMetadata: {
+                vnpay_transaction_no: result.transactionNo,
+                vnpay_bank_code: result.bankCode,
+                vnpay_pay_date: result.payDate,
+                ipn_received_at: new Date().toISOString(),
             }
+        });
 
-            const newBalance = parseFloat(wallet.balance) + creditedAmount;
-
-            await connection.execute(
-                'UPDATE user_wallets SET balance = ?, updated_at = NOW() WHERE id = ?',
-                [newBalance, wallet.id]
-            );
-
-            await connection.execute(
-                `UPDATE wallet_transactions 
-                 SET status = 'completed', 
-                     balance_after = ?, 
-                     payment_gateway_id = ?,
-                     metadata = metadata || jsonb_build_object(
-                         'completed_at', ?::text,
-                         'vnpay_transaction_no', ?::text,
-                         'vnpay_bank_code', ?::text,
-                         'vnpay_pay_date', ?::text,
-                         'ipn_received_at', ?::text,
-                         'credited_amount', ?::text,
-                         'credited_currency', ?::text
-                     )
-                 WHERE id = ?`,
-                [
-                    newBalance,
-                    result.transactionNo,
-                    new Date().toISOString(),
-                    result.transactionNo,
-                    result.bankCode,
-                    result.payDate,
-                    new Date().toISOString(),
-                    creditedAmount,
-                    wallet.currency,
-                    transactionId
-                ]
-            );
-
-            await connection.commit();
-            console.log(`✅ VNPay IPN processed successfully for transaction ${transactionId}`);
-            res.json({ RspCode: '00', Message: 'Confirm Success' });
-
-        } catch (error) {
-            await connection.rollback();
-            throw error;
-        } finally {
-            connection.release();
+        if (!creditResult.success && creditResult.alreadyProcessed) {
+            return res.json({ RspCode: '02', Message: 'Transaction already processed' });
         }
+
+        console.log(`✅ VNPay IPN processed successfully for transaction ${transactionId}`);
+        res.json({ RspCode: '00', Message: 'Confirm Success' });
 
     } catch (error) {
         console.error('❌ Error processing VNPay IPN:', error);
@@ -221,19 +105,12 @@ export async function queryVNPayTransaction(req, res) {
 
         console.log(`🔍 Querying VNPay transaction: ${orderId}`);
 
-        const [transactions] = await pool.execute(
-            `SELECT wt.*, uw.user_id 
-             FROM wallet_transactions wt
-             JOIN user_wallets uw ON wt.wallet_id = uw.id
-             WHERE wt.metadata->>'order_id' = ? AND uw.user_id = ?`,
-            [orderId, userId]
-        );
+        const transaction = await walletRepository.findTransactionByOrderId(orderId, userId);
 
-        if (transactions.length === 0) {
+        if (!transaction) {
             return res.status(404).json({ success: false, message: 'Transaction not found' });
         }
 
-        const transaction = transactions[0];
         const metadata = typeof transaction.metadata === 'string' ? JSON.parse(transaction.metadata) : transaction.metadata;
         const transactionDate = metadata.vnpay_create_date || metadata.created_at;
 

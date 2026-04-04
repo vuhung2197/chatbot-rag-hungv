@@ -19,6 +19,24 @@ export async function getConversations(req, res) {
 }
 
 /**
+ * Get archived conversations for a user
+ */
+export async function getArchivedConversations(req, res) {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const conversations = await conversationService.getArchivedConversations(userId);
+        res.json({ conversations });
+    } catch (error) {
+        console.error('❌ Error getting archived conversations:', error);
+        res.status(500).json({ message: 'Error getting archived conversations' });
+    }
+}
+
+/**
  * Rename a conversation
  */
 export async function renameConversation(req, res) {

@@ -1,6 +1,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import '#bootstrap/env.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
@@ -34,15 +35,27 @@ import settingsRoutes from '#modules/settings/routes/settings.routes.js';
 import subscriptionWorker from '#services/subscriptionWorker.js';
 
 import errorHandler from '#middlewares/errorHandler.js';
+import { authLimiter, aiLimiter, webhookLimiter, apiLimiter } from '#shared/middlewares/rateLimiter.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Security headers
+app.use(helmet());
+
 // CORS configuration to allow credentials (cookies)
+const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:3000'];
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests) or from allowed origins
+    if (!origin || allowedOrigins.includes(origin) || origin.includes('ngrok') || origin.includes('loca.lt')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -52,6 +65,18 @@ app.use(cookieParser());
 
 // Serve static files (avatars)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Apply rate limiters
+app.use('/auth/login', authLimiter);
+app.use('/auth/register', authLimiter);
+app.use('/chat', aiLimiter);
+app.use('/advanced-chat', aiLimiter);
+app.use('/writing', aiLimiter);
+app.use('/reading', aiLimiter);
+app.use('/listening', aiLimiter);
+app.use('/speaking', aiLimiter);
+app.use('/payment/vnpay/ipn', webhookLimiter);
+app.use('/payment/momo/ipn', webhookLimiter);
 
 // Register Routes
 app.use('/auth', authRoutes);

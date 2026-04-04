@@ -1,5 +1,6 @@
 import express from 'express';
 import { verifyToken } from '#shared/middlewares/auth.middleware.js';
+import { validate } from '#shared/middlewares/validate.middleware.js';
 import {
     getWallet,
     getTransactions,
@@ -30,6 +31,17 @@ import {
     momoReturn,
     momoIPN
 } from '../controllers/gateways/momo.controller.js';
+import {
+    createDepositSchema,
+    withdrawSchema,
+    calculateFeeSchema,
+    addBankAccountSchema,
+    deleteBankAccountSchema,
+    updateCurrencySchema,
+    getTransactionsSchema,
+    getFailedPendingSchema,
+    queryVnpaySchema
+} from '../wallet.schemas.js';
 
 const router = express.Router();
 
@@ -55,25 +67,25 @@ router.use(verifyToken);
 
 // Core Wallet
 router.get('/', getWallet);
-router.get('/transactions', getTransactions);
+router.get('/transactions', validate(getTransactionsSchema), getTransactions);
 router.get('/stats', getWalletStats);
 router.get('/currencies', getCurrencies);
-router.put('/currency', updateWalletCurrency);
+router.put('/currency', validate(updateCurrencySchema), updateWalletCurrency);
 router.get('/payment-methods', getPaymentMethods);
 
 // Deposit
-router.post('/deposit', createDeposit);
-router.get('/deposits/failed-pending', getFailedAndPendingDeposits);
+router.post('/deposit', validate(createDepositSchema), createDeposit);
+router.get('/deposits/failed-pending', validate(getFailedPendingSchema), getFailedAndPendingDeposits);
 
 // Withdrawal & Banks
 router.get('/bank-accounts', getBankAccounts);
-router.post('/bank-accounts', addBankAccount);
-router.delete('/bank-accounts/:id', deleteBankAccount);
-router.post('/withdrawal/calculate-fee', calculateWithdrawalFee);
-router.post('/withdraw', withdraw);
+router.post('/bank-accounts', validate(addBankAccountSchema), addBankAccount);
+router.delete('/bank-accounts/:id', validate(deleteBankAccountSchema), deleteBankAccount);
+router.post('/withdrawal/calculate-fee', validate(calculateFeeSchema), calculateWithdrawalFee);
+router.post('/withdraw', validate(withdrawSchema), withdraw);
 router.get('/withdrawals', getWithdrawals);
 
 // Gateway Specific
-router.get('/vnpay/query/:orderId', queryVNPayTransaction);
+router.get('/vnpay/query/:orderId', validate(queryVnpaySchema), queryVNPayTransaction);
 
 export default router;

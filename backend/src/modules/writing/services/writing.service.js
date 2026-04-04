@@ -351,10 +351,8 @@ const writingService = {
 
         if (quality >= 3) {
             // Correct - increase mastery (max 5)
-            const [currentVocab] = await writingRepository.getVocabulary(userId, { limit: 1, offset: 0, sort: 'created_at', order: 'DESC' });
-
-            // Default increment
-            const currentMastery = currentVocab && typeof currentVocab.mastery !== 'undefined' ? currentVocab.mastery : 0;
+            const currentVocab = await writingRepository.getVocabularyById(vocabId, userId);
+            const currentMastery = currentVocab?.mastery ?? 0;
             const increment = quality >= 4 ? 2 : 1;
             newMastery = Math.min(5, currentMastery + increment);
         } else {

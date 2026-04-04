@@ -8,7 +8,7 @@ import buttons from '../../styles/buttons.module.css';
 import messages from '../../styles/messages.module.css';
 import styles from '../../styles/components/Register.module.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || '';
 
 export default function Register({ onRegister }) {
   const { success: showSuccess } = useToastContext();
@@ -35,7 +35,17 @@ export default function Register({ onRegister }) {
         setError(data.message || 'Đăng ký thất bại');
       }
     } catch (err) {
-      setError('Lỗi mạng hoặc máy chủ');
+      if (err.response && err.response.data) {
+        if (err.response.data.errors && err.response.data.errors.length > 0) {
+          // Join multiple validation errors into a single string
+          const errorMessages = err.response.data.errors.map(e => e.message).join('. ');
+          setError(errorMessages);
+        } else {
+          setError(err.response.data.message || 'Đăng ký thất bại');
+        }
+      } else {
+        setError('Lỗi mạng hoặc máy chủ');
+      }
     }
   }
 

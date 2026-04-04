@@ -36,7 +36,7 @@ class AuthService {
         }
 
         const [rows] = await pool.execute(
-            'INSERT INTO users (name, email, password_hash, role, avatar_url, email_verified) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+            'INSERT INTO users (name, email, password_hash, role, avatar_url, email_verified) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
             [name, email, passwordHash, role, picture, emailVerified]
         );
 

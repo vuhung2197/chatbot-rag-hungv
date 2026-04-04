@@ -1,4 +1,4 @@
-import pool from '#db';
+import subscriptionService from '../../../subscription/services/subscription.service.js';
 
 /**
  * Create payment intent for subscription upgrade
@@ -11,13 +11,10 @@ export async function createPaymentIntent(req, res) {
         const { tierName, billingCycle = 'monthly' } = req.body;
         if (!tierName) return res.status(400).json({ message: 'Tier name is required' });
 
-        const [tiers] = await pool.execute(
-            'SELECT * FROM subscription_tiers WHERE name = ?',
-            [tierName]
-        );
+        const tiers = await subscriptionService.getTiers();
+        const tier = tiers.find(t => t.name === tierName);
 
-        if (tiers.length === 0) return res.status(404).json({ message: 'Tier not found' });
-        const tier = tiers[0];
+        if (!tier) return res.status(404).json({ message: 'Tier not found' });
         const amount = billingCycle === 'yearly' && tier.price_yearly
             ? Number(tier.price_yearly)
             : Number(tier.price_monthly);

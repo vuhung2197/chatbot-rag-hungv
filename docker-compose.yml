@@ -98,6 +98,8 @@ services:
         condition: service_healthy
     networks:
       - chatbot-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     build: ./frontend

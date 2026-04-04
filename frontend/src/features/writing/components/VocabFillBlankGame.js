@@ -1,5 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { writingService } from '../writingService';
+
+// Thời gian đếm ngược theo CEFR level (giây)
+const TIMER_BY_LEVEL = {
+    A1: 30, A2: 45, B1: 60, B2: 75, C1: 90, C2: 115
+};
+const DEFAULT_TIMER = 75;
+
+function getTimerForLevel(level) {
+    if (!level) return DEFAULT_TIMER;
+    const key = level.toUpperCase().trim();
+    return TIMER_BY_LEVEL[key] ?? DEFAULT_TIMER;
+}
 
 // ─── Helpers ───
 
@@ -138,8 +150,41 @@ const styles = {
         gap: '24px',
         fontSize: '1rem',
         fontWeight: 'bold'
-    }
+    },
 };
+
+// ─── Timer Ring ───
+
+function TimerRing({ timeLeft, total }) {
+    const radius = 26;
+    const circumference = 2 * Math.PI * radius;
+    const pct = total > 0 ? timeLeft / total : 0;
+    const offset = circumference * (1 - pct);
+    const color = pct > 0.5 ? '#10b981' : pct > 0.25 ? '#f59e0b' : '#ef4444';
+
+    return (
+        <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+            <svg width="64" height="64" style={{ transform: 'rotate(-90deg)' }}>
+                <circle cx="32" cy="32" r={radius} fill="none" stroke="#e2e8f0" strokeWidth="5" />
+                <circle
+                    cx="32" cy="32" r={radius} fill="none"
+                    stroke={color} strokeWidth="5"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={offset}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 0.9s linear, stroke 0.3s' }}
+                />
+            </svg>
+            <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1rem', fontWeight: 'bold', color
+            }}>
+                {timeLeft}
+            </div>
+        </div>
+    );
+}
 
 // ─── Component ───
 
@@ -152,13 +197,43 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
     const [gameData, setGameData] = useState([]); // processed word data with blanked sentences
     const [gameOver, setGameOver] = useState(false);
     const [hintLevel, setHintLevel] = useState(0); // 0=none, 1=definition, 2=more letters
+    const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER);
+    const [timedOut, setTimedOut] = useState(false);
     const inputRef = useRef(null);
+    const timerRef = useRef(null);
 
     const themeVars = darkMode ? {
         '--card-bg': '#1e293b',
         '--border-color': '#334155',
         '--text-primary': '#f8fafc'
     } : {};
+
+    // Khởi động timer khi chuyển câu mới
+    const startTimer = useCallback((level) => {
+        clearInterval(timerRef.current);
+        const duration = getTimerForLevel(level);
+        setTimeLeft(duration);
+        setTimedOut(false);
+        timerRef.current = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timerRef.current);
+                    setTimedOut(true);
+                    setResult('wrong');
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, []);
+
+    // Dừng timer khi có kết quả
+    useEffect(() => {
+        if (result) clearInterval(timerRef.current);
+    }, [result]);
+
+    // Cleanup khi unmount
+    useEffect(() => () => clearInterval(timerRef.current), []);
 
     // Process words into fill-the-blank data
     useEffect(() => {
@@ -184,7 +259,8 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
         setCorrectCount(0);
         setWrongCount(0);
         setGameOver(false);
-    }, [words]);
+        if (processed.length > 0) startTimer(processed[0].level);
+    }, [words, startTimer]);
 
     // Auto-focus input when moving to next word
     useEffect(() => {
@@ -203,20 +279,10 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
 
         if (isCorrect) {
             setCorrectCount(prev => prev + 1);
-            // Update SRS - correct
-            try {
-                await writingService.submitReviewWord(current.id, 4);
-            } catch (e) {
-                console.error('SRS update error:', e);
-            }
+            try { await writingService.submitReviewWord(current.id, 4); } catch (e) { console.error('SRS update error:', e); }
         } else {
             setWrongCount(prev => prev + 1);
-            // Update SRS - wrong
-            try {
-                await writingService.submitReviewWord(current.id, 1);
-            } catch (e) {
-                console.error('SRS update error:', e);
-            }
+            try { await writingService.submitReviewWord(current.id, 1); } catch (e) { console.error('SRS update error:', e); }
         }
     };
 
@@ -225,10 +291,13 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
             setGameOver(true);
             return;
         }
-        setCurrentIndex(prev => prev + 1);
+        const nextIndex = currentIndex + 1;
+        setCurrentIndex(nextIndex);
         setUserInput('');
         setResult(null);
         setHintLevel(0);
+        setTimedOut(false);
+        startTimer(gameData[nextIndex].level);
     };
 
     const handleKeyDown = (e) => {
@@ -259,20 +328,46 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
     if (gameOver) {
         const total = correctCount + wrongCount;
         const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+        const passed = pct >= 80;
         return (
             <div style={{ ...styles.container, ...themeVars, justifyContent: 'center' }}>
-                <div style={{ fontSize: '4rem' }}>{pct >= 70 ? '🏆' : pct >= 40 ? '💪' : '📚'}</div>
-                <h2 style={{ color: pct >= 70 ? '#10b981' : '#f59e0b', margin: '0' }}>
-                    {pct >= 70 ? 'Xuất sắc!' : pct >= 40 ? 'Khá tốt!' : 'Cần ôn thêm!'}
+                <div style={{ fontSize: '4rem' }}>{passed ? '🏆' : pct >= 50 ? '💪' : '📚'}</div>
+                <h2 style={{ color: passed ? '#10b981' : '#ef4444', margin: '0' }}>
+                    {passed ? 'Xuất sắc! Đã hoàn thành!' : 'Chưa đạt — cần ôn thêm!'}
                 </h2>
                 <div style={styles.statsRow}>
                     <span style={{ color: '#10b981' }}>✅ {correctCount} đúng</span>
                     <span style={{ color: '#ef4444' }}>❌ {wrongCount} sai</span>
                     <span style={{ color: '#7137ea' }}>📊 {pct}%</span>
                 </div>
-                <button onClick={() => onComplete(correctCount)} style={styles.btnNext}>
-                    Hoàn thành
-                </button>
+                {!passed && (
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: '4px 0 0', textAlign: 'center' }}>
+                        Cần đạt tối thiểu 80% để hoàn thành bài ôn tập
+                    </p>
+                )}
+                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                    <button
+                        onClick={() => {
+                            setCurrentIndex(0);
+                            setUserInput('');
+                            setResult(null);
+                            setHintLevel(0);
+                            setCorrectCount(0);
+                            setWrongCount(0);
+                            setGameOver(false);
+                            setTimedOut(false);
+                            if (gameData.length > 0) startTimer(gameData[0].level);
+                        }}
+                        style={{ ...styles.btnNext, backgroundColor: passed ? '#64748b' : '#7137ea' }}
+                    >
+                        Làm lại
+                    </button>
+                    {passed && (
+                        <button onClick={() => onComplete(correctCount)} style={styles.btnNext}>
+                            Hoàn thành
+                        </button>
+                    )}
+                </div>
             </div>
         );
     }
@@ -280,6 +375,7 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
     // ─── Main Game ───
     const current = gameData[currentIndex];
     const progress = ((currentIndex + (result ? 1 : 0)) / gameData.length) * 100;
+    const totalTime = getTimerForLevel(current.level);
 
     return (
         <div style={{ ...styles.container, ...themeVars }}>
@@ -294,9 +390,12 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                 <h3 style={{ margin: 0, color: 'var(--text-primary, #1e293b)' }}>
                     ✍️ Điền Từ ({currentIndex + 1} / {gameData.length})
                 </h3>
-                <div style={styles.statsRow}>
-                    <span style={{ color: '#10b981', fontSize: '0.9rem' }}>✅ {correctCount}</span>
-                    <span style={{ color: '#ef4444', fontSize: '0.9rem' }}>❌ {wrongCount}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={styles.statsRow}>
+                        <span style={{ color: '#10b981', fontSize: '0.9rem' }}>✅ {correctCount}</span>
+                        <span style={{ color: '#ef4444', fontSize: '0.9rem' }}>❌ {wrongCount}</span>
+                    </div>
+                    <TimerRing timeLeft={timeLeft} total={totalTime} />
                 </div>
             </div>
 
@@ -429,10 +528,14 @@ export default function VocabFillBlankGame({ words, darkMode, onComplete }) {
                         </>
                     ) : (
                         <>
-                            <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>❌ Chưa đúng</div>
-                            <div style={{ color: '#991b1b', fontSize: '1rem', marginBottom: '8px' }}>
-                                Bạn viết: <strong style={{ textDecoration: 'line-through' }}>{userInput}</strong>
+                            <div style={{ fontSize: '1.5rem', marginBottom: '8px' }}>
+                                {timedOut ? '⏰ Hết giờ!' : '❌ Chưa đúng'}
                             </div>
+                            {!timedOut && (
+                                <div style={{ color: '#991b1b', fontSize: '1rem', marginBottom: '8px' }}>
+                                    Bạn viết: <strong style={{ textDecoration: 'line-through' }}>{userInput}</strong>
+                                </div>
+                            )}
                             <div style={{ color: '#065f46', fontSize: '1.05rem', fontWeight: 'bold' }}>
                                 Đáp án: <span style={{ color: '#7137ea' }}>{current.correctAnswer}</span>
                                 {current.phonetic && <span style={{ marginLeft: '8px', color: '#64748b' }}>/{current.phonetic}/</span>}

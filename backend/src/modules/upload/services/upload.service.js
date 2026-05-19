@@ -1,20 +1,18 @@
 import fs from 'fs';
 import path from 'path';
 import mammoth from 'mammoth';
-import pool from '#db';
 import { updateChunksForKnowledge } from '#services/updateChunks.js';
+import uploadRepository from '../repositories/upload.repository.js';
 
 class UploadService {
     async processFile(file) {
-        if (!file) {
-            throw new Error('No file uploaded');
-        }
+        if (!file) throw new Error('No file uploaded');
 
         const ext = path.extname(file.originalname).toLowerCase();
-        let content = '';
         const filePath = file.path;
 
         try {
+            let content = '';
             if (ext === '.docx') {
                 const result = await mammoth.extractRawText({ path: filePath });
                 content = result.value;
@@ -24,45 +22,17 @@ class UploadService {
                 throw new Error('Unsupported file format');
             }
 
-            // Chuyển đổi tiêu đề có dấu tiếng Việt
-            const rawName = Buffer.from(
-                path.basename(file.originalname, ext),
-                'latin1'
-            ).toString('utf8');
-            const title = rawName;
+            const title = Buffer.from(path.basename(file.originalname, ext), 'latin1').toString('utf8');
 
-            // 🔍 Kiểm tra xem title đã tồn tại chưa
-            const [rows] = await pool.execute(
-                'SELECT id FROM knowledge_base WHERE title = ? LIMIT 1',
-                [title]
-            );
-            if (rows.length > 0) {
-                throw new Error('File already uploaded and trained');
-            }
+            const existing = await uploadRepository.findKnowledgeByTitle(title);
+            if (existing) throw new Error('File already uploaded and trained');
 
-            // ✅ Lưu vào DB nếu chưa tồn tại
-            const [insertRows] = await pool.execute(
-                'INSERT INTO knowledge_base (title, content) VALUES (?, ?) RETURNING id',
-                [title, content]
-            );
+            const row = await uploadRepository.insertKnowledge(title, content);
+            await updateChunksForKnowledge(row.id, title, content);
 
-            const knowledgeId = insertRows[0].id;
-
-            // This is an external service/helper
-            await updateChunksForKnowledge(knowledgeId, title, content);
-
-            // Calculate file size in MB
-            const fileSizeMB = file.size / (1024 * 1024);
-
-            return {
-                knowledgeId,
-                title,
-                sizeMB: fileSizeMB
-            };
-
+            return { knowledgeId: row.id, title, sizeMB: file.size / (1024 * 1024) };
         } finally {
-            // Clean up the uploaded file
-            fs.unlink(filePath, (err) => {
+            fs.unlink(filePath, err => {
                 if (err) console.error('Error deleting temp file:', err);
             });
         }

@@ -1,5 +1,5 @@
-import pool from '#db';
 import axios from 'axios';
+import suggestionRepository from '../repositories/suggestion.repository.js';
 
 class SuggestionService {
     async suggestNextWord(prompt) {
@@ -33,13 +33,7 @@ class SuggestionService {
     async suggestDictionary(query) {
         const trimmedQuery = query?.trim().toLowerCase();
         if (!trimmedQuery) return [];
-
-        const [rows] = await pool.execute(
-            'SELECT DISTINCT word_en FROM dictionary WHERE word_en LIKE ? ORDER BY word_en LIMIT 10',
-            [`${trimmedQuery}%`]
-        );
-
-        return rows.map((row) => row.word_en);
+        return suggestionRepository.findDictionaryWords(trimmedQuery);
     }
 }
 

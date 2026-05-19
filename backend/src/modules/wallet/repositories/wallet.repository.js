@@ -304,6 +304,152 @@ class WalletRepository {
         );
     }
 
+    // ═══════════════════════════════════════════════════════
+    // ATOMIC TRANSACTION METHODS
+    // ═══════════════════════════════════════════════════════
+
+    /**
+     * Ghi nhận deposit thành công — lock wallet, cộng balance, cập nhật transaction
+     * @param {number} transactionId
+     * @param {string} gatewayId
+     * @param {Object} gatewayMetadata
+     * @param {Function} convertCurrencyFn - (amount, fromCurrency, toCurrency) => number
+     * @returns {{ newBalance, creditedAmount, currency }}
+     */
+    async creditDepositTransaction(transactionId, gatewayId, gatewayMetadata, convertCurrencyFn) {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            const transaction = await this.findTransactionById(transactionId);
+            if (!transaction) throw new Error('Transaction not found');
+
+            const wallet = await this.findByIdForUpdate(connection, transaction.wallet_id);
+            if (!wallet) throw new Error('Wallet not found');
+
+            let creditedAmount = parseFloat(transaction.amount);
+            if (wallet.currency !== 'USD') {
+                creditedAmount = convertCurrencyFn(creditedAmount, 'USD', wallet.currency);
+            }
+            const newBalance = parseFloat(wallet.balance) + creditedAmount;
+
+            await this.updateBalance(connection, wallet.id, newBalance);
+            await this.updateTransactionStatus(connection, transactionId, 'completed', {
+                balanceAfter: newBalance,
+                paymentGatewayId: gatewayId,
+            });
+            await this.mergeTransactionMetadata(connection, transactionId, {
+                completed_at: new Date().toISOString(),
+                credited_amount: creditedAmount,
+                credited_currency: wallet.currency,
+                ...gatewayMetadata,
+            });
+
+            await connection.commit();
+            return { newBalance, creditedAmount, currency: wallet.currency };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    /**
+     * Đánh dấu deposit thất bại
+     * @param {number} transactionId
+     * @param {string} gatewayId
+     */
+    async failDepositTransaction(transactionId, gatewayId) {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            await this.updateTransactionStatus(connection, transactionId, 'failed', {
+                paymentGatewayId: gatewayId,
+            });
+            await this.mergeTransactionMetadata(connection, transactionId, {
+                failed_at: new Date().toISOString(),
+            });
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
+    /**
+     * Xử lý rút tiền — lock wallet, trừ balance, tạo transaction + withdrawal request
+     * @param {Object} params
+     * @param {number} params.userId
+     * @param {number} params.bankAccountId
+     * @param {number} params.amount - Số tiền muốn rút (wallet currency)
+     * @param {Function} params.calculateFeeFn - (walletCurrency) => fee
+     * @returns {{ transactionId, amount, fee, netAmount, status }}
+     */
+    async processWithdrawalTransaction({ userId, bankAccountId, amount, calculateFeeFn }) {
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+        try {
+            const wallet = await this.findByUserIdForUpdate(connection, userId);
+            if (!wallet) throw new Error('Wallet not found');
+
+            const fee = calculateFeeFn(wallet.currency);
+            const netAmount = amount - fee;
+            if (netAmount <= 0) throw new Error('Amount too small. Must be greater than fee.');
+
+            const amountToDeduct = parseFloat(amount);
+            if (parseFloat(wallet.balance) < amountToDeduct) {
+                throw Object.assign(new Error('Insufficient balance'), {
+                    statusCode: 400,
+                    details: {
+                        balance: wallet.balance,
+                        currency: wallet.currency,
+                        required: amountToDeduct,
+                    },
+                });
+            }
+
+            const newBalance = parseFloat(wallet.balance) - amountToDeduct;
+            await this.updateBalance(connection, wallet.id, newBalance);
+
+            const txResult = await this.createTransaction({
+                walletId: wallet.id,
+                userId,
+                type: 'withdraw',
+                amount: -amountToDeduct,
+                balanceBefore: wallet.balance,
+                balanceAfter: newBalance,
+                description: 'Withdrawal to Bank Account',
+                status: 'pending',
+                metadata: {
+                    bank_account_id: bankAccountId,
+                    withdrawal_fee: fee,
+                    net_amount: netAmount,
+                    deducted_amount: amountToDeduct,
+                    deducted_currency: wallet.currency,
+                },
+            }, connection);
+
+            await this.createWithdrawalRequest(connection, {
+                transactionId: txResult.id,
+                userId,
+                bankAccountId,
+                amount: amountToDeduct,
+                fee,
+                netAmount,
+            });
+
+            await connection.commit();
+            return { transaction_id: txResult.id, amount: amountToDeduct, fee, net_amount: netAmount, status: 'pending' };
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
     /**
      * Lấy lịch sử rút tiền
      */

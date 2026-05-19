@@ -1,15 +1,12 @@
-import pool from '#db';
+import unansweredRepository from '../repositories/unanswered.repository.js';
 
 class UnansweredService {
     async getUnansweredQuestions() {
-        const [rows] = await pool.execute(
-            'SELECT id, question FROM unanswered_questions ORDER BY created_at DESC'
-        );
-        return rows;
+        return unansweredRepository.getAll();
     }
 
     async deleteUnanswered(id) {
-        await pool.execute('DELETE FROM unanswered_questions WHERE id = ?', [id]);
+        await unansweredRepository.deleteById(id);
         return { message: 'Đã xóa câu hỏi khỏi danh sách chưa trả lời.' };
     }
 }

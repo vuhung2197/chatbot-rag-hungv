@@ -1,4 +1,3 @@
-import pool from '#db';
 import { hashQuestion } from '#utils/hash.js';
 import conversationService from './conversation.service.js';
 import usageService from '#modules/usage/services/usage.service.js';
@@ -8,17 +7,15 @@ import { handleGreeting } from '../handlers/greeting.handler.js';
 import { handleLiveSearch } from '../handlers/live-search.handler.js';
 import { handleKnowledge } from '../handlers/knowledge.handler.js';
 import { handleProgress } from '../handlers/progress.handler.js';
+import chatRepository from '../repositories/chat.repository.js';
 
 class ChatService {
     async logUnanswered(question) {
         try {
             const hash = hashQuestion(question);
-            const [rows] = await pool.execute('SELECT 1 FROM unanswered_questions WHERE hash = ? LIMIT 1', [hash]);
-            if (rows.length === 0) {
-                await pool.execute(
-                    'INSERT INTO unanswered_questions (question, hash, created_at) VALUES (?, ?, NOW())',
-                    [question, hash]
-                );
+            const existing = await chatRepository.findUnansweredByHash(hash);
+            if (!existing) {
+                await chatRepository.insertUnanswered(question, hash);
             }
         } catch (e) {
             console.warn('⚠️ Không thể ghi log unanswered:', e.message);
@@ -28,12 +25,7 @@ class ChatService {
     async getChatHistory(userId, conversationId, limit = 6) {
         if (!conversationId || !userId) return [];
         try {
-            const [rows] = await pool.execute(
-                `SELECT question, bot_reply FROM user_questions
-                 WHERE user_id = ? AND conversation_id = ?
-                 ORDER BY created_at DESC LIMIT ?`,
-                [userId, conversationId, limit]
-            );
+            const rows = await chatRepository.getChatHistory(userId, conversationId, limit);
             const history = [];
             for (let i = rows.length - 1; i >= 0; i--) {
                 if (rows[i].question) history.push({ role: 'user', content: rows[i].question });
@@ -131,15 +123,9 @@ class ChatService {
     }
 
     async saveChat(userId, conversationId, question, reply, metadata) {
-        const [existing] = await pool.execute(
-            'SELECT COUNT(*) as count FROM user_questions WHERE user_id = ? AND conversation_id = ?',
-            [userId, conversationId]
-        );
-        const conversationTitle = existing[0].count === 0 ? question.trim().substring(0, 50) : null;
-        await pool.execute(
-            'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [userId, conversationId, conversationTitle, question, reply, true, JSON.stringify(metadata)]
-        );
+        const count = await chatRepository.countMessages(userId, conversationId);
+        const conversationTitle = count === 0 ? question.trim().substring(0, 50) : null;
+        await chatRepository.insertMessage(userId, conversationId, conversationTitle, question, reply, metadata);
     }
 
     async streamChat({ userId, message, model, conversationId }, sendEvent) {

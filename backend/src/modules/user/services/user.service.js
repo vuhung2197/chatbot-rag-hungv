@@ -1,9 +1,9 @@
-import pool from '#db';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import crypto from 'crypto';
 import { sendVerificationEmail } from '#services/emailService.js';
+import userRepository from '../repositories/user.repository.js';
 
 class UserService {
     getAvatarsDir() {
@@ -11,21 +11,10 @@ class UserService {
     }
 
     async getProfile(userId) {
-        const [rows] = await pool.execute(
-            `SELECT 
-        id, name, email, role, created_at,
-        avatar_url, display_name, bio, timezone, language,
-        email_verified, last_login_at, account_status, updated_at,
-        password_hash
-      FROM users 
-      WHERE id = ?`,
-            [userId]
-        );
+        const user = await userRepository.findById(userId);
+        if (!user) return null;
 
-        if (rows.length === 0) return null;
-
-        const user = rows[0];
-        const hasPassword = user.password_hash && user.password_hash.trim() !== '';
+        const hasPassword = Boolean(user.password_hash && user.password_hash.trim() !== '');
 
         return {
             id: user.id,
@@ -48,150 +37,79 @@ class UserService {
 
     async updateProfile(userId, data) {
         const { displayName, bio, timezone, language, email } = data;
+        const fields = {};
 
-        // Build update query
-        const updates = [];
-        const values = [];
-
-        if (displayName !== undefined) {
-            updates.push('display_name = ?');
-            values.push(displayName || null);
-        }
-        if (bio !== undefined) {
-            updates.push('bio = ?');
-            values.push(bio || null);
-        }
-        if (timezone !== undefined) {
-            updates.push('timezone = ?');
-            values.push(timezone);
-        }
-        if (language !== undefined) {
-            updates.push('language = ?');
-            values.push(language);
-        }
+        if (displayName !== undefined) fields.display_name = displayName || null;
+        if (bio !== undefined) fields.bio = bio || null;
+        if (timezone !== undefined) fields.timezone = timezone;
+        if (language !== undefined) fields.language = language;
 
         if (email !== undefined) {
-            const [currentUser] = await pool.execute(
-                'SELECT email FROM users WHERE id = ?',
-                [userId]
-            );
-
-            if (currentUser.length > 0 && email !== currentUser[0].email) {
-                // Check if email already exists
-                const [existing] = await pool.execute(
-                    'SELECT id FROM users WHERE email = ? AND id != ?',
-                    [email, userId]
-                );
-                if (existing.length > 0) {
-                    throw new Error('Email đã được sử dụng bởi tài khoản khác');
-                }
-
-                updates.push('email = ?');
-                values.push(email);
-                updates.push('email_verified = FALSE');
-                updates.push('email_verification_token = NULL');
+            const currentEmail = await userRepository.findEmailById(userId);
+            if (currentEmail !== null && email !== currentEmail) {
+                const conflict = await userRepository.findByEmail(email, userId);
+                if (conflict) throw new Error('Email đã được sử dụng bởi tài khoản khác');
+                fields.email = email;
+                fields.email_verified = false;
+                fields.email_verification_token = null;
             }
         }
 
-        if (updates.length === 0) return null;
+        if (Object.keys(fields).length === 0) return null;
 
-        values.push(userId);
-        await pool.execute(
-            `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
-            values
-        );
-
+        await userRepository.update(userId, fields);
         return { message: 'Profile updated successfully' };
     }
 
     async uploadAvatar(userId, file) {
-        // Create avatars directory if not exists
         const avatarsDir = this.getAvatarsDir();
         if (!fs.existsSync(avatarsDir)) {
             fs.mkdirSync(avatarsDir, { recursive: true });
         }
 
-        // Generate unique filename
         const filename = `${userId}_${Date.now()}.jpg`;
         const outputPath = path.join(avatarsDir, filename);
 
-        // Resize and optimize image using sharp
         await sharp(file.path)
-            .resize(200, 200, {
-                fit: 'cover',
-                position: 'center',
-            })
+            .resize(200, 200, { fit: 'cover', position: 'center' })
             .jpeg({ quality: 90 })
             .toFile(outputPath);
 
-        // Delete original temp file
-        if (fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-        }
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
 
-        // Get old avatar URL to delete old file
-        const [oldRows] = await pool.execute(
-            'SELECT avatar_url FROM users WHERE id = ?',
-            [userId]
-        );
-        const oldAvatarUrl = oldRows[0]?.avatar_url;
-
-        // Update database with new avatar URL
+        const oldAvatarUrl = await userRepository.findAvatarUrl(userId);
         const avatarUrl = `/uploads/avatars/${filename}`;
-        await pool.execute(
-            'UPDATE users SET avatar_url = ? WHERE id = ?',
-            [avatarUrl, userId]
-        );
+        await userRepository.update(userId, { avatar_url: avatarUrl });
 
-        // Delete old avatar file if exists
         if (oldAvatarUrl && oldAvatarUrl.startsWith('/uploads/avatars/')) {
             const oldPath = path.join(process.cwd(), oldAvatarUrl);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
+            if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
 
         return avatarUrl;
     }
 
     async deleteAvatar(userId) {
-        const [rows] = await pool.execute(
-            'SELECT avatar_url FROM users WHERE id = ?',
-            [userId]
-        );
-        const avatarUrl = rows[0]?.avatar_url;
-
-        await pool.execute(
-            'UPDATE users SET avatar_url = NULL WHERE id = ?',
-            [userId]
-        );
+        const avatarUrl = await userRepository.findAvatarUrl(userId);
+        await userRepository.update(userId, { avatar_url: null });
 
         if (avatarUrl && avatarUrl.startsWith('/uploads/avatars/')) {
             const filePath = path.join(process.cwd(), avatarUrl);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
 
         return { message: 'Avatar deleted successfully' };
     }
 
     async sendEmailVerification(userId) {
-        const [rows] = await pool.execute(
-            'SELECT email_verified, email FROM users WHERE id = ?',
-            [userId]
-        );
-
-        if (rows.length === 0) throw new Error('User not found');
-        if (rows[0].email_verified) throw new Error('Email đã được verify');
+        const row = await userRepository.findEmailVerificationStatus(userId);
+        if (!row) throw new Error('User not found');
+        if (row.email_verified) throw new Error('Email đã được verify');
 
         const token = crypto.randomBytes(32).toString('hex');
-        await pool.execute(
-            'UPDATE users SET email_verification_token = ? WHERE id = ?',
-            [token, userId]
-        );
+        await userRepository.update(userId, { email_verification_token: token });
 
-        const emailResult = await sendVerificationEmail(rows[0].email, token);
+        const emailResult = await sendVerificationEmail(row.email, token);
 
         if (!emailResult.success) {
             const verificationUrl = emailResult.verificationUrl ||
@@ -202,29 +120,25 @@ class UserService {
                 message: 'Verification email sent (check console for code - email service not configured)',
                 verificationUrl,
                 verificationCode: formattedToken,
-                serviceConfigured: false
+                serviceConfigured: false,
             };
         }
 
         return {
             message: 'Email verification đã được gửi thành công! Vui lòng kiểm tra email của bạn (bao gồm cả Spam folder).',
-            serviceConfigured: true
+            serviceConfigured: true,
         };
     }
 
     async verifyEmail(token) {
-        const [rows] = await pool.execute(
-            'SELECT id, email_verified FROM users WHERE email_verification_token = ?',
-            [token]
-        );
+        const row = await userRepository.findByVerificationToken(token);
+        if (!row) throw new Error('Token không hợp lệ hoặc đã hết hạn');
+        if (row.email_verified) throw new Error('Email đã được verify');
 
-        if (rows.length === 0) throw new Error('Token không hợp lệ hoặc đã hết hạn');
-        if (rows[0].email_verified) throw new Error('Email đã được verify');
-
-        await pool.execute(
-            'UPDATE users SET email_verified = TRUE, email_verification_token = NULL WHERE id = ?',
-            [rows[0].id]
-        );
+        await userRepository.update(row.id, {
+            email_verified: true,
+            email_verification_token: null,
+        });
 
         return { message: 'Email verified successfully' };
     }

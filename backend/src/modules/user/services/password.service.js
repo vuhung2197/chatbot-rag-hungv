@@ -1,74 +1,44 @@
-import pool from '#db';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from '#services/emailService.js';
+import userRepository from '../repositories/user.repository.js';
+import passwordRepository from '../repositories/password.repository.js';
 
 class PasswordService {
     async changePassword(userId, currentPassword, newPassword) {
-        // Get current user
-        const [rows] = await pool.execute(
-            'SELECT password_hash FROM users WHERE id = ?',
-            [userId]
-        );
+        const passwordHash = await userRepository.findPasswordHash(userId);
+        if (passwordHash === null) throw new Error('User not found');
 
-        if (rows.length === 0) throw new Error('User not found');
-
-        const userPasswordHash = rows[0].password_hash;
-
-        if (!userPasswordHash || userPasswordHash.trim() === '') {
+        if (!passwordHash || passwordHash.trim() === '') {
             throw new Error('NO_PASSWORD_SET');
         }
 
-        const isValid = await bcrypt.compare(currentPassword, userPasswordHash);
-        if (!isValid) {
-            throw new Error('Mật khẩu hiện tại không đúng');
-        }
+        const isValid = await bcrypt.compare(currentPassword, passwordHash);
+        if (!isValid) throw new Error('Mật khẩu hiện tại không đúng');
 
-        const isSame = await bcrypt.compare(newPassword, userPasswordHash);
-        if (isSame) {
-            throw new Error('Mật khẩu mới phải khác mật khẩu hiện tại');
-        }
+        const isSame = await bcrypt.compare(newPassword, passwordHash);
+        if (isSame) throw new Error('Mật khẩu mới phải khác mật khẩu hiện tại');
 
         const newHash = await bcrypt.hash(newPassword, 10);
-
-        await pool.execute(
-            'UPDATE users SET password_hash = ? WHERE id = ?',
-            [newHash, userId]
-        );
+        await userRepository.update(userId, { password_hash: newHash });
 
         return { message: 'Mật khẩu đã được thay đổi thành công' };
     }
 
     async requestPasswordReset(email) {
-        const [rows] = await pool.execute(
-            'SELECT id, email FROM users WHERE email = ?',
-            [email]
-        );
-
-        if (rows.length === 0) {
-            return {
-                message: 'Nếu email tồn tại, chúng tôi đã gửi link reset mật khẩu đến email của bạn'
-            };
+        const user = await userRepository.findByEmail(email);
+        if (!user) {
+            return { message: 'Nếu email tồn tại, chúng tôi đã gửi link reset mật khẩu đến email của bạn' };
         }
 
-        const user = rows[0];
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 1);
 
-        // Delete old unused tokens
-        await pool.execute(
-            'DELETE FROM password_reset_tokens WHERE user_id = ? AND used = FALSE',
-            [user.id]
-        );
+        await passwordRepository.deleteUnusedResetTokens(user.id);
+        await passwordRepository.createResetToken(user.id, token, expiresAt);
 
-        // Save token
-        await pool.execute(
-            'INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
-            [user.id, token, expiresAt]
-        );
-
-        const emailResult = await sendPasswordResetEmail(user.email, token);
+        const emailResult = await sendPasswordResetEmail(email, token);
 
         if (!emailResult.success) {
             const resetUrl = emailResult.resetUrl ||
@@ -79,65 +49,39 @@ class PasswordService {
                 message: 'Reset password email sent (check console for code - email service not configured)',
                 resetUrl,
                 resetCode: formattedToken,
-                serviceConfigured: false
+                serviceConfigured: false,
             };
         }
 
         return {
             message: 'Link reset mật khẩu đã được gửi đến email của bạn',
-            serviceConfigured: true
+            serviceConfigured: true,
         };
     }
 
     async resetPassword(token, newPassword) {
-        const [rows] = await pool.execute(
-            `SELECT prt.user_id, prt.expires_at, prt.used 
-       FROM password_reset_tokens prt
-       WHERE prt.token = ?`,
-            [token]
-        );
-
-        if (rows.length === 0) throw new Error('Token không hợp lệ hoặc đã hết hạn');
-
-        const tokenData = rows[0];
-
+        const tokenData = await passwordRepository.findResetToken(token);
+        if (!tokenData) throw new Error('Token không hợp lệ hoặc đã hết hạn');
         if (tokenData.used) throw new Error('Token đã được sử dụng');
         if (new Date() > new Date(tokenData.expires_at)) throw new Error('Token đã hết hạn');
 
         const newHash = await bcrypt.hash(newPassword, 10);
-
-        await pool.execute(
-            'UPDATE users SET password_hash = ? WHERE id = ?',
-            [newHash, tokenData.user_id]
-        );
-
-        await pool.execute(
-            'UPDATE password_reset_tokens SET used = TRUE WHERE token = ?',
-            [token]
-        );
+        await userRepository.update(tokenData.user_id, { password_hash: newHash });
+        await passwordRepository.markResetTokenUsed(token);
 
         return { message: 'Mật khẩu đã được reset thành công' };
     }
 
     async setPasswordForOAuthUser(userId, newPassword) {
-        const [rows] = await pool.execute(
-            'SELECT password_hash FROM users WHERE id = ?',
-            [userId]
-        );
+        const passwordHash = await userRepository.findPasswordHash(userId);
+        if (passwordHash === null) throw new Error('User not found');
 
-        if (rows.length === 0) throw new Error('User not found');
-
-        const userPasswordHash = rows[0].password_hash;
-        if (userPasswordHash && userPasswordHash.trim() !== '') {
+        if (passwordHash && passwordHash.trim() !== '') {
             throw new Error('ALREADY_HAS_PASSWORD');
         }
 
         const newHash = await bcrypt.hash(newPassword, 10);
-
-        await pool.execute(
-            'UPDATE users SET password_hash = ? WHERE id = ?',
-            [newHash, userId]
-        );
+        await userRepository.update(userId, { password_hash: newHash });
 
         return { message: 'Mật khẩu đã được thiết lập thành công' };
     }

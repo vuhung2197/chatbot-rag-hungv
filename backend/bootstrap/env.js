@@ -5,9 +5,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Point to project root .env file
 const rootDir = path.resolve(__dirname, '..', '..');
 const envPath = path.join(rootDir, '.env');
 
-console.log('Loading .env from:', envPath);
-dotenv.config({ path: envPath });
+// Fallback: nếu path resolve sai (ví dụ eval context), dùng /app/.env
+const resolvedPath = envPath.startsWith('/app') ? envPath : '/app/.env';
+
+console.log('Loading .env from:', resolvedPath);
+dotenv.config({ path: resolvedPath, override: false });

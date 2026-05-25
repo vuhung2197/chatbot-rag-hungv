@@ -57,10 +57,10 @@ async function migrateTable(mysqlConn, pgPool, tableName, transformer = (x) => x
         // 1. Get data from MySQL
         const [rows] = await mysqlConn.execute(`SELECT * FROM ${tableName}`);
         if (rows.length === 0) {
-            console.log('   ⚠️ Source table is empty. Skipping.');
+            console.log('⚠️ Source table is empty. Skipping.');
             return;
         }
-        console.log(`   Found ${rows.length} rows in MySQL.`);
+        console.log(`Found ${rows.length} rows in MySQL.`);
 
         // 2. Prepare data for Postgres
         // We assume column names match unless transformed
@@ -82,7 +82,7 @@ async function migrateTable(mysqlConn, pgPool, tableName, transformer = (x) => x
             // Unlike SQL Server, PG uses sequences. We can insert IDs explicitly, but we must update sequence later.
 
             for (const row of rows) {
-                const transformedRow = transformer({ ...row }); // copy
+                const transformedRow = transformer({ ...row });
 
                 const keys = Object.keys(transformedRow);
                 const values = Object.values(transformedRow);

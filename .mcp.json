@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "/Users/macbook/.npm-global/bin/codegraph",
+      "args": [
+        "mcp",
+        "--db",
+        "/Users/macbook/Desktop/Desktop - macbook’s MacBook Pro/chatbot-rag-hungv/.codegraph/graph.db"
+      ],
+      "env": {}
+    }
+  }
+}

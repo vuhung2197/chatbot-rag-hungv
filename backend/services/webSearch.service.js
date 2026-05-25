@@ -104,7 +104,7 @@ export async function performWebSearch(query, options = {}) {
 
     if (!apiKey) {
         console.warn('⚠️ WEB SEARCH DISABLED: Missing TAVILY_API_KEY in .env');
-        return 'Chức năng tìm kiếm web chưa được cấu hình (Thiếu API Key).';
+        return { context: 'Chức năng tìm kiếm web chưa được cấu hình (Thiếu API Key).', sources: [] };
     }
 
     try {
@@ -139,7 +139,7 @@ export async function performWebSearch(query, options = {}) {
 
     } catch (error) {
         console.error('❌ Web Search Error:', error.response?.data || error.message);
-        return 'Xin lỗi, tôi gặp lỗi khi cố gắng tìm kiếm trên internet. Vui lòng thử lại sau.';
+        return { context: 'Xin lỗi, tôi gặp lỗi khi cố gắng tìm kiếm trên internet. Vui lòng thử lại sau.', sources: [] };
     }
 }
 

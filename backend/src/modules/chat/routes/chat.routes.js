@@ -14,11 +14,9 @@ const optionalAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader) {
         try {
-            await verifyToken(req, res, () => {});
-            next();
+            await verifyToken(req, res, next);
         } catch (error) {
-            // Token invalid, continue without user
-            next();
+            if (!res.headersSent) next();
         }
     } else {
         next();

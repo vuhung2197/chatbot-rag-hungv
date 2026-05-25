@@ -8,12 +8,17 @@ export async function callLLM(model, messages, _temperature = 0.2, _maxTokens = 
         throw new Error('Invalid model configuration: missing url or name');
     }
 
-    const baseUrl = model.url;
+    // Khi chạy trong Docker, localhost/127.0.0.1 của client trỏ về Mac host
+    // cần đổi thành host.docker.internal để container kết nối được
+    const resolvedUrl = model.url
+        .replace('localhost', 'host.docker.internal')
+        .replace('127.0.0.1', 'host.docker.internal');
+
     const nameModel = model.name;
     const temperatureModel = model.temperature !== undefined ? model.temperature : _temperature;
     const maxTokensModel = model.maxTokens !== undefined ? model.maxTokens : _maxTokens;
 
-    const normalizedUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const normalizedUrl = resolvedUrl.endsWith('/') ? resolvedUrl.slice(0, -1) : resolvedUrl;
     const fullUrl = `${normalizedUrl}/chat/completions`;
 
     console.log('🔗 Calling LLM:', {

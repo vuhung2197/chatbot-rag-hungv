@@ -6,6 +6,7 @@ import { chat, history, streamChat } from '../controllers/chat.controller.js';
 import { suggest } from '../controllers/suggestion.controller.js';
 import { deleteHistoryItem } from '../controllers/conversation.controller.js';
 import { chatSchema, deleteHistoryItemSchema } from '../chat.schemas.js';
+import { chatAsync } from '../controllers/chatAsync.controller.js';
 
 const router = express.Router();
 
@@ -28,5 +29,8 @@ router.post('/stream', optionalAuth, validate(chatSchema), streamChat); // New s
 router.get('/history', verifyToken, history);
 router.delete('/history/:id', verifyToken, validate(deleteHistoryItemSchema), deleteHistoryItem);
 router.get('/suggest', suggest);
+
+// Kafka async endpoint — returns requestId immediately, result via WebSocket
+router.post('/async', optionalAuth, validate(chatSchema), chatAsync);
 
 export default router;

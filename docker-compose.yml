@@ -90,11 +90,14 @@ services:
       - VNPAY_URL=${VNPAY_URL}
       - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAFKA_BROKERS=kafka:9092
     volumes:
       - ./backend:/app
       - /app/node_modules
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     networks:
       - chatbot-network
@@ -119,6 +122,85 @@ services:
       - chatbot-network
     depends_on:
       - backend
+
+  # ============================================
+  # Kafka (KRaft mode — no Zookeeper)
+  # ============================================
+  kafka:
+    image: bitnami/kafka:3.7
+    container_name: chatbot-kafka
+    restart: unless-stopped
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    ports:
+      - "9094:9094"
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # Kafka UI — Monitor topics, consumers, lag
+  # ============================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: chatbot-kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    networks:
+      - chatbot-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # ============================================
+  # Chat Worker — Kafka consumer (separate process)
+  # ============================================
+  chat-worker:
+    build: ./backend
+    container_name: chatbot-chat-worker
+    restart: unless-stopped
+    command: node src/workers/chatConsumer.js
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - DB_DATABASE=${POSTGRES_DB:-chatbot}
+      - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAFKA_BROKERS=kafka:9092
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # ============================================
   # SonarQube Database (separate from app DB)
@@ -193,4 +275,7 @@ volumes:
     driver: local
   sonarqube_logs:
     name: chatbot_sonarqube_logs
+    driver: local
+  kafka_data:
+    name: chatbot_kafka_data
     driver: local

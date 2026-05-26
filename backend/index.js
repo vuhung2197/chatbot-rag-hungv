@@ -35,6 +35,11 @@ import settingsRoutes from '#modules/settings/routes/settings.routes.js';
 import subscriptionWorker from '#services/subscriptionWorker.js';
 
 import errorHandler from '#middlewares/errorHandler.js';
+import { createServer } from 'http';
+import { WebSocketServer } from 'ws';
+import kafkaClient from './src/kafka/kafkaClient.js';
+import { TOPICS } from './src/kafka/topics.js';
+import { ensureTopics } from './src/kafka/admin.js';
 import { authLimiter, aiLimiter, webhookLimiter, apiLimiter } from '#shared/middlewares/rateLimiter.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -113,9 +118,67 @@ app.context = app; // For rare cases passing app context
 // Error Handler
 app.use(errorHandler);
 
+// ─── WebSocket: map requestId → subscriber set ───────────────────────────────
+const requestSubscriptions = new Map();
+
+// ─── Kafka: consume chat-responses and push to waiting WebSocket clients ──────
+async function startResponseConsumer() {
+  const consumer = kafkaClient.consumer({ groupId: 'api-response-pusher' });
+  await consumer.connect();
+  await consumer.subscribe({ topic: TOPICS.CHAT_RESPONSES, fromBeginning: false });
+
+  await consumer.run({
+    eachMessage: async ({ message }) => {
+      const requestId = message.key?.toString();
+      const payload = JSON.parse(message.value.toString());
+
+      const subscribers = requestSubscriptions.get(requestId);
+      if (subscribers) {
+        for (const ws of subscribers) {
+          if (ws.readyState === 1) ws.send(JSON.stringify(payload));
+        }
+        requestSubscriptions.delete(requestId);
+      }
+    },
+  });
+}
+
+// ─── HTTP + WebSocket server ──────────────────────────────────────────────────
+const server = createServer(app);
+const wss = new WebSocketServer({ server, path: '/ws' });
+
+wss.on('connection', (ws) => {
+  ws.on('message', (raw) => {
+    try {
+      const msg = JSON.parse(raw.toString());
+      if (msg.type === 'subscribe' && msg.requestId) {
+        if (!requestSubscriptions.has(msg.requestId)) {
+          requestSubscriptions.set(msg.requestId, new Set());
+        }
+        requestSubscriptions.get(msg.requestId).add(ws);
+      }
+    } catch (_) {}
+  });
+
+  ws.on('close', () => {
+    for (const [id, subs] of requestSubscriptions.entries()) {
+      subs.delete(ws);
+      if (subs.size === 0) requestSubscriptions.delete(id);
+    }
+  });
+});
+
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`Backend running at http://localhost:${PORT}`);
-  // Start background tasks
+  console.log(`WebSocket  running at ws://localhost:${PORT}/ws`);
   // subscriptionWorker.startSubscriptionWorker(); // Temporarily disabled
+
+  try {
+    await ensureTopics();
+    await startResponseConsumer();
+    console.log('✅ Kafka integration ready');
+  } catch (err) {
+    console.warn('⚠️  Kafka not available — async /chat/async endpoint will return 503:', err.message);
+  }
 });

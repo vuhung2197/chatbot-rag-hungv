@@ -66,6 +66,7 @@ export const options = {
 };
 
 const BASE_URL = __ENV.BASE_URL || 'http://localhost:3001';
+const LOAD_TEST_TOKEN = __ENV.LOAD_TEST_TOKEN || 'k6-load-test-secret-2026';
 
 const MESSAGES = [
   'Hello, how are you?',
@@ -85,7 +86,7 @@ export default function () {
     `${BASE_URL}/chat/async`,
     JSON.stringify({ message }),
     {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-load-test': LOAD_TEST_TOKEN },
       tags: { endpoint: 'async' },
     }
   );
@@ -107,7 +108,7 @@ export default function () {
     `${BASE_URL}/chat`,
     JSON.stringify({ message }),
     {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-load-test': LOAD_TEST_TOKEN },
       tags: { endpoint: 'sync' },
       timeout: '30s',
     }

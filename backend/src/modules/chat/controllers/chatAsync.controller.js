@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 import { publishMessage } from '../../../kafka/producer.js';
 import { TOPICS } from '../../../kafka/topics.js';
@@ -16,7 +16,7 @@ export async function chatAsync(req, res) {
     return res.status(StatusCodes.BAD_REQUEST).json({ error: 'No message provided' });
   }
 
-  const requestId = uuidv4();
+  const requestId = randomUUID();
 
   try {
     await publishMessage(TOPICS.CHAT_REQUESTS, requestId, {

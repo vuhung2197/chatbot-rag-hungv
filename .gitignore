@@ -1,0 +1,21 @@
+# Environment files — never commit secrets
+.env
+*.env
+backend/.env
+backend/.env.*
+
+# Test artifacts
+test/results/
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Codegraph index
+.codegraph/
+
+# Claude worktrees
+.claude/worktrees/

@@ -89,6 +89,8 @@ services:
       - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -96,6 +98,8 @@ services:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - chatbot-network
@@ -180,7 +184,7 @@ services:
     build: ./backend
     container_name: chatbot-chat-worker
     restart: unless-stopped
-    command: node src/workers/chatConsumer.js
+    command: sh -c "npm list ioredis >/dev/null 2>&1 || npm install ioredis --legacy-peer-deps; node src/workers/chatConsumer.js"
     environment:
       - DB_HOST=postgres
       - DB_PORT=5432
@@ -191,6 +195,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -198,6 +204,8 @@ services:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - chatbot-network
@@ -249,6 +257,25 @@ services:
       - chatbot-network
 
 # ============================================
+  # ============================================
+  # Redis — lưu kết quả async job (polling + chống race) & cache
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 # Networks
 # ============================================
 networks:
@@ -280,4 +307,7 @@ volumes:
     driver: local
   kafka_data:
     name: chatbot_kafka_data
+    driver: local
+  redis_data:
+    name: chatbot_redis_data
     driver: local

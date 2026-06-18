@@ -2,7 +2,11 @@ import rateLimit from 'express-rate-limit';
 
 const makeSkip = () => (req) => {
   const token = process.env.LOAD_TEST_TOKEN;
-  return !!token && req.headers['x-load-test'] === token;
+  if (token && req.headers['x-load-test'] === token) return true;
+  // Bỏ qua endpoint polling kết quả async (GET /chat/result/:jobId) — chỉ đọc Redis,
+  // cần poll nhiều lần nên KHÔNG tính vào giới hạn AI.
+  if (req.method === 'GET' && /\/chat\/result\//.test(req.originalUrl || '')) return true;
+  return false;
 };
 
 export const authLimiter = rateLimit({

@@ -89,7 +89,7 @@ const usageRepository = {
         const [rows] = await pool.execute(
             `SELECT COUNT(*) as count FROM user_questions
              WHERE user_id = ? AND DATE(created_at) = ?
-             AND (metadata LIKE '%"source":"web_search"%' OR metadata LIKE '%"source":"kb_fallback_web"%')`,
+             AND (metadata->>'source' = 'web_search' OR metadata->>'source' = 'kb_fallback_web')`,
             [userId, today]
         );
         return parseInt(rows[0]?.count ?? 0);

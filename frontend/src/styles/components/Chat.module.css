@@ -40,17 +40,21 @@
 .header {
   background-color: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-  padding: 16px 24px;
+  padding: 14px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .logo {
@@ -91,20 +95,23 @@
 
 .headerButtons {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .headerButton {
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 8px 14px;
+  border-radius: 10px;
+  padding: 7px 12px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: #ffffff;
   color: #374151;

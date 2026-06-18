@@ -40,6 +40,7 @@ import { WebSocketServer } from 'ws';
 import kafkaClient from './src/kafka/kafkaClient.js';
 import { TOPICS } from './src/kafka/topics.js';
 import { ensureTopics } from './src/kafka/admin.js';
+import { saveJobResult, getRedisSubscriber, STREAM_CHANNEL_PREFIX } from './src/redis/redisClient.js';
 import { authLimiter, aiLimiter, webhookLimiter, apiLimiter } from '#shared/middlewares/rateLimiter.middleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -121,17 +122,52 @@ app.use(errorHandler);
 // ─── WebSocket: map requestId → subscriber set ───────────────────────────────
 const requestSubscriptions = new Map();
 
+// ─── Hybrid streaming: relay Redis pub/sub (chat:stream:*) → WebSocket ────────
+// Worker stream từng token lên Redis; ở đây nghe rồi forward về client theo requestId.
+function startStreamRelay() {
+  const sub = getRedisSubscriber();
+  sub.psubscribe(`${STREAM_CHANNEL_PREFIX}*`, (err) => {
+    if (err) console.error('⚠️ psubscribe stream failed:', err.message);
+    else console.log('✅ Stream relay subscribed:', `${STREAM_CHANNEL_PREFIX}*`);
+  });
+  sub.on('pmessage', (_pattern, channel, message) => {
+    const requestId = channel.slice(STREAM_CHANNEL_PREFIX.length);
+    const subscribers = requestSubscriptions.get(requestId);
+    if (!subscribers) return;
+    for (const ws of subscribers) {
+      if (ws.readyState === 1) ws.send(message); // message = JSON {type, ...} y như SSE
+    }
+    // Kết thúc luồng -> dọn subscription
+    try { if (JSON.parse(message).type === 'done') requestSubscriptions.delete(requestId); } catch { /* ignore */ }
+  });
+}
+
 // ─── Kafka: consume chat-responses and push to waiting WebSocket clients ──────
 async function startResponseConsumer() {
-  const consumer = kafkaClient.consumer({ groupId: 'api-response-pusher' });
+  const consumer = kafkaClient.consumer({
+    groupId: 'api-response-pusher',
+    sessionTimeout: 60000,
+    heartbeatInterval: 5000,
+    maxWaitTimeInMs: 5000,
+    retry: { retries: Infinity, restartOnFailure: async () => true }, // tự phục hồi sau crash
+  });
+  consumer.on(consumer.events.CRASH, ({ payload }) => {
+    console.error(`⚠️ [api-response-pusher] crash: ${payload?.error?.message} — tự khởi động lại.`);
+  });
   await consumer.connect();
   await consumer.subscribe({ topic: TOPICS.CHAT_RESPONSES, fromBeginning: false });
 
   await consumer.run({
     eachMessage: async ({ message }) => {
       const requestId = message.key?.toString();
-      const payload = JSON.parse(message.value.toString());
+      const raw = message.value.toString();
+      const payload = JSON.parse(raw);
 
+      // Lưu kết quả vào Redis TRƯỚC (TTL) -> chống race (client subscribe muộn vẫn lấy được
+      // qua polling) + cho phép polling GET /chat/result/:jobId + scale đa-instance.
+      await saveJobResult(requestId, raw);
+
+      // Push tức thì cho client đang mở WebSocket (nếu có)
       const subscribers = requestSubscriptions.get(requestId);
       if (subscribers) {
         for (const ws of subscribers) {
@@ -180,5 +216,12 @@ server.listen(PORT, async () => {
     console.log('✅ Kafka integration ready');
   } catch (err) {
     console.warn('⚠️  Kafka not available — async /chat/async endpoint will return 503:', err.message);
+  }
+
+  // Relay token stream (mô hình lai) — độc lập với Kafka
+  try {
+    startStreamRelay();
+  } catch (err) {
+    console.warn('⚠️  Stream relay not started:', err.message);
   }
 });

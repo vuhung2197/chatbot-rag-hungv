@@ -229,22 +229,3 @@ Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua emai
     return { success: false, error: error.message, resetUrl };
   }
 }
-
-/**
- * Test email configuration
- */
-export async function testEmailConfig() {
-  const emailTransporter = getTransporter();
-
-  if (!emailTransporter) {
-    return { success: false, message: 'Email service not configured' };
-  }
-
-  try {
-    await emailTransporter.verify();
-    return { success: true, message: 'Email configuration is valid' };
-  } catch (error) {
-    return { success: false, message: error.message };
-  }
-}
-

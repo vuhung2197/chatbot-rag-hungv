@@ -41,6 +41,7 @@
     "googleapis": "^154.1.0",
     "helmet": "^8.1.0",
     "http-status-codes": "^2.3.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.2",
     "kafkajs": "^2.2.4",
     "mammoth": "^1.9.1",

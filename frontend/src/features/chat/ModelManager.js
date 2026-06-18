@@ -14,7 +14,7 @@ const defaultForm = {
   maxTokens: 512,
 };
 
-const ModelManagerPage = ({ onSelectModel, onClose }) => {
+const ModelManagerPage = ({ onSelectModel, onSelectUtilityModel, utilityModel, onClose }) => {
   const [models, setModels] = useState([]);
   const [form, setForm] = useState(defaultForm);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -58,6 +58,15 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
       updated.push(form);
     }
     saveModels(updated);
+
+    // Nếu đang sửa chính model đang được sử dụng, đồng bộ luôn model active
+    // để URL/config mới được gửi lên backend mà không cần bấm "Chọn" lại.
+    // onSelectModel (ở component cha) lo việc ghi localStorage.
+    if (editingIndex !== null && selectedModel?.name === form.name) {
+      setSelectedModel(form);
+      onSelectModel(form);
+    }
+
     setForm(defaultForm);
     setEditingIndex(null);
   };
@@ -68,8 +77,17 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
   };
 
   const handleDelete = index => {
+    const removed = models[index];
     const updated = models.filter((_, i) => i !== index);
     saveModels(updated);
+
+    // Nếu xoá đúng model đang được sử dụng, dọn luôn model active để
+    // backend không nhận config trỏ tới model đã bị xoá (stale).
+    // onSelectModel(null) (ở component cha) lo việc xoá localStorage.
+    if (selectedModel?.name === removed.name) {
+      setSelectedModel(null);
+      onSelectModel(null);
+    }
   };
 
   return (
@@ -86,7 +104,7 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
             </div>
             <div className={styles.selectedModelContent}>
               <div className={styles.selectedModelLabel}>
-                Model đang sử dụng:
+                Model chính (trả lời):
               </div>
               <div className={styles.selectedModelName}>
                 {selectedModel.name}
@@ -94,6 +112,29 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
               <div className={styles.selectedModelUrl}>
                 {selectedModel.url}
               </div>
+            </div>
+          </div>
+        )}
+
+        {onSelectUtilityModel && (
+          <div className={styles.selectedModelInfo}>
+            <div className={styles.selectedModelIcon}>⚡</div>
+            <div className={styles.selectedModelContent}>
+              <div className={styles.selectedModelLabel}>
+                Model phụ (phân loại/viết lại câu hỏi — nên chọn model nhẹ/nhanh):
+              </div>
+              <div className={styles.selectedModelName}>
+                {utilityModel ? utilityModel.name : '(chưa chọn — dùng chung model chính)'}
+              </div>
+              {utilityModel && (
+                <button
+                  type="button"
+                  className={`${buttons.button} ${buttons.buttonSmall} ${buttons.buttonSecondary}`}
+                  onClick={() => onSelectUtilityModel(null)}
+                >
+                  Bỏ chọn model phụ
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -177,6 +218,11 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
                       ✓ ĐANG SỬ DỤNG
                     </span>
                   )}
+                  {utilityModel?.name === m.name && (
+                    <span className={styles.badge}>
+                      ⚡ MODEL PHỤ
+                    </span>
+                  )}
                 </div>
                 <div className={styles.modelUrl}>{m.url}</div>
                 <div className={styles.modelMeta}>
@@ -201,12 +247,20 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
                   onClick={() => {
                     onSelectModel(m);
                     setSelectedModel(m);
-                    localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
                     onClose();
                   }}
                 >
                   {selectedModel?.name === m.name ? '✓ Đã chọn' : 'Chọn'}
                 </button>
+                {onSelectUtilityModel && (
+                  <button
+                    className={`${buttons.button} ${buttons.buttonSmall} ${utilityModel?.name === m.name ? buttons.buttonSuccess : buttons.buttonSecondary}`}
+                    onClick={() => onSelectUtilityModel(m)}
+                    title="Dùng model này cho phân loại ý định & viết lại câu hỏi (nên chọn model nhẹ/nhanh)"
+                  >
+                    {utilityModel?.name === m.name ? '⚡ Model phụ' : 'Đặt làm phụ'}
+                  </button>
+                )}
               </div>
             </div>
           ))}

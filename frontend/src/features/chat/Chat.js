@@ -15,7 +15,14 @@ function processSSEEvent(data, { setLoadingStatus, setHistory, setAdvancedRespon
   const result = { botReply: null, metadata: null, error: null };
   if (data.type === 'status') {
     setLoadingStatus(data.content);
+  } else if (data.type === 'token') {
+    // Stream: nối từng đoạn vào câu trả lời của bot đang hiển thị
+    setHistory(prev => {
+      const last = prev[prev.length - 1];
+      return [...prev.slice(0, -1), { ...last, bot: (last?.bot || '') + data.content }];
+    });
   } else if (data.type === 'text') {
+    // Bản đầy đủ (đã format) — chốt lại nội dung cuối cùng
     result.botReply = data.content;
     setHistory(prev => {
       const last = prev[prev.length - 1];
@@ -84,7 +91,22 @@ function WebSourcesList({ sources, sourceType }) {
 }
 
 // ─── Sub-component: Message Item ───
+// Format thời lượng xử lý; trả null nếu không hợp lệ (vd lỡ lưu timestamp epoch cũ).
+function fmtDuration(ms) {
+  const n = Number(ms);
+  if (!Number.isFinite(n) || n < 0 || n > 600000) return null; // >10 phút coi là rác (epoch)
+  return n >= 1000 ? `${(n / 1000).toFixed(1)}s` : `${Math.round(n)}ms`;
+}
+
+const MODE_BADGE = {
+  stream: { label: '⚡ Streaming', color: '#10a37f' },
+  sync: { label: '📦 Đồng bộ', color: '#6366f1' },
+  async: { label: '🧵 Async', color: '#d97706' },
+};
+
 function MessageItem({ item, isLastMessage, lastMessageRef }) {
+  const dur = fmtDuration(item.metadata?.processing_time);
+  const modeBadge = item.mode && MODE_BADGE[item.mode];
   return (
     <div ref={isLastMessage ? lastMessageRef : null} className={styles.messageContainer}>
       <div className={`${styles.messageRow} ${styles.messageRowUser}`}>
@@ -93,11 +115,14 @@ function MessageItem({ item, isLastMessage, lastMessageRef }) {
       {item.bot && (
         <div className={`${styles.messageRow} ${styles.messageRowBot}`}>
           <div className={styles.botMessage}>
-            {item.metadata && (
+            {(item.metadata || modeBadge) && (
               <div className={styles.metadataHeader}>
-                <span><i className="fas fa-robot"></i> {item.metadata.model_used}</span>
-                <span><i className="fas fa-bolt"></i> {item.metadata.processing_time}ms</span>
-                {item.metadata.total_chunks > 0 && <span><i className="fas fa-book"></i> {item.metadata.total_chunks} chunks</span>}
+                {modeBadge && (
+                  <span style={{ color: modeBadge.color, fontWeight: 600 }}>{modeBadge.label}</span>
+                )}
+                {item.metadata?.model && <span><i className="fas fa-robot"></i> {item.metadata.model}</span>}
+                {dur && <span><i className="fas fa-bolt"></i> {dur}</span>}
+                {item.metadata?.total_chunks > 0 && <span><i className="fas fa-book"></i> {item.metadata.total_chunks} chunks</span>}
               </div>
             )}
             <ReactMarkdown>{item.bot}</ReactMarkdown>
@@ -208,6 +233,9 @@ export default function Chat({ darkMode = false }) {
   const [loadingStatus, setLoadingStatus] = useState('Đang suy nghĩ...');
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
+  const [utilityModel, setUtilityModel] = useState(null); // model phụ (nhanh) cho intent/rewrite
+  const [webOnly, setWebOnly] = useState(false); // chế độ Web Only: đi thẳng web search, bỏ qua intent + RAG
+  const [chatMode, setChatMode] = useState('stream'); // 'stream' | 'sync' | 'async'
   const [showGuide, setShowGuide] = useState(false);
 
   const [advancedResponse, setAdvancedResponse] = useState(null);
@@ -317,6 +345,21 @@ export default function Chat({ darkMode = false }) {
         console.error('Lỗi khi parse model đã lưu:', e);
       }
     }
+
+    const savedUtility = localStorage.getItem('chatbot_utility_model');
+    if (savedUtility) {
+      try {
+        setUtilityModel(JSON.parse(savedUtility));
+      } catch (e) {
+        console.error('Lỗi khi parse model phụ:', e);
+      }
+    }
+
+    const savedWebOnly = localStorage.getItem('chatbot_web_only');
+    if (savedWebOnly !== null) setWebOnly(savedWebOnly === 'true');
+
+    const savedMode = localStorage.getItem('chatbot_chat_mode');
+    if (savedMode && ['stream', 'sync', 'async'].includes(savedMode)) setChatMode(savedMode);
   }, []);
 
   // Render lại khi history thay đổi
@@ -329,6 +372,13 @@ export default function Chat({ darkMode = false }) {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
   };
 
+  // Reply cache: TTL + loại trừ câu thời gian thực (giá/thời tiết/tin tức...) khỏi cache.
+  const REPLY_CACHE_TTL_MS = 30 * 60 * 1000; // 30 phút
+  const isTimeSensitive = text => {
+    const t = (text || '').toLowerCase();
+    return /\b(hôm nay|hôm qua|hiện tại|bây giờ|mới nhất|gần đây|tin tức|giá|tỷ giá|thời tiết|dự báo|kết quả|năm nay|tháng này|tuần này|today|now|latest|current|news|price|weather|stock)\b/.test(t);
+  };
+
   async function sendChat() {
     if (!input.trim() || loading) return;
     setLoading(true);
@@ -337,15 +387,17 @@ export default function Chat({ darkMode = false }) {
     const hash = hashQuestion(input);
     const cached = JSON.parse(localStorage.getItem('chatbot_cache') || '{}');
 
-    if (cached[hash]) {
-      const cachedData = cached[hash];
-      // Support old cache (string) and new cache (object)
-      const reply = typeof cachedData === 'string' ? cachedData : cachedData.reply;
-      const metadata = typeof cachedData === 'string' ? null : cachedData.metadata;
+    // Chỉ dùng cache khi: KHÔNG ở chế độ web only, câu hỏi KHÔNG mang tính thời gian thực,
+    // entry còn hạn (TTL). Câu thời gian thực luôn hỏi mới để tránh trả dữ liệu cũ.
+    const cacheEntry = cached[hash];
+    const canUseCache = cacheEntry && !webOnly && !isTimeSensitive(input)
+      && typeof cacheEntry === 'object'
+      && cacheEntry.ts && (Date.now() - cacheEntry.ts < REPLY_CACHE_TTL_MS);
 
+    if (canUseCache) {
       setHistory([
         ...history,
-        { user: input, bot: reply, createdAt: timestamp, metadata },
+        { user: input, bot: cacheEntry.reply, createdAt: timestamp, metadata: cacheEntry.metadata },
       ]);
       setInput('');
       setLoading(false);
@@ -354,60 +406,117 @@ export default function Chat({ darkMode = false }) {
 
     const token = localStorage.getItem('token');
 
-    // Add temp user message to history immediatelly
-    const newHistory = [...history, { user: input, bot: '', createdAt: timestamp }];
+    // Add temp user message to history immediatelly (kèm chế độ chat để hiện badge)
+    const newHistory = [...history, { user: input, bot: '', createdAt: timestamp, mode: chatMode }];
     setHistory(newHistory);
     setInput('');
     setLoading(true);
     setLoadingStatus('Đang kết nối đến server...');
 
+    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId };
+    const sseHandlers = {
+      setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
+      onNewConversation: () => conversationsListRef.current?.fetchConversations()
+    };
+
     try {
-      const response = await fetch(`${API_URL}/chat/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ message: input, model, conversationId: currentConversationId })
-      });
-
-      if (!response.ok) throw new Error(response.statusText);
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
       let botReply = '';
       let metadata = {};
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      if (chatMode === 'sync') {
+        // ── ĐỒNG BỘ: POST /chat → JSON 1 lần ──
+        const res = await fetch(`${API_URL}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        botReply = data.reply || '';
+        metadata = data;
+        setHistory(prev => [...prev.slice(0, -1), { ...prev[prev.length - 1], bot: botReply }]);
+        setAdvancedResponse(data);
+        if (data.conversationId) setCurrentConversationId(data.conversationId);
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n\n');
+      } else if (chatMode === 'async') {
+        // ── ASYNC + STREAM (hybrid): mở WS TRƯỚC → POST /chat/async {stream} → subscribe ──
+        const ws = new WebSocket(`${API_URL.replace(/^http/, 'ws')}/ws`);
+        await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
+        const res = await fetch(`${API_URL}/chat/async`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ ...body, stream: true })
+        });
+        const { requestId } = await res.json();
+        ws.send(JSON.stringify({ type: 'subscribe', requestId }));
+
+        await new Promise((resolve) => {
+          const timer = setTimeout(() => { try { ws.close(); } catch (_) {} resolve(); }, 120000);
+          ws.onmessage = (ev) => {
             try {
-              const data = JSON.parse(line.slice(6));
-              const result = processSSEEvent(data, {
-                setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
-                onNewConversation: () => conversationsListRef.current?.fetchConversations()
-              });
-              if (result.botReply) botReply = result.botReply;
-              if (result.metadata) metadata = result.metadata;
-              if (result.error) botReply = result.error;
-            } catch (e) { console.error('Error parsing SSE data', e); }
+              const data = JSON.parse(ev.data);
+              const r = processSSEEvent(data, sseHandlers);
+              if (r.botReply) botReply = r.botReply;
+              if (r.metadata) metadata = r.metadata;
+              if (r.error) botReply = r.error;
+              if (data.type === 'done' || data.type === 'error') { clearTimeout(timer); ws.close(); resolve(); }
+            } catch (e) { console.error('WS parse error', e); }
+          };
+        });
+
+      } else {
+        // ── STREAMING (SSE): POST /chat/stream → đọc token dần ──
+        const response = await fetch(`${API_URL}/chat/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(body)
+        });
+        if (!response.ok) throw new Error(response.statusText);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const lines = decoder.decode(value).split('\n\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                const r = processSSEEvent(data, sseHandlers);
+                if (r.botReply) botReply = r.botReply;
+                if (r.metadata) metadata = r.metadata;
+                if (r.error) botReply = r.error;
+              } catch (e) { console.error('Error parsing SSE data', e); }
+            }
           }
         }
       }
 
-      // Finalize state
       setLoading(false);
-      setLoadingStatus('Đang suy nghĩ...'); // Reset for next time
+      setLoadingStatus('Đang suy nghĩ...');
 
-      // Cache result logic (Similar to old code)
-      if (botReply && !botReply.includes('lỗi')) {
-        cached[hash] = { reply: botReply, metadata: metadata, chunks_used: metadata.chunks_used };
+      // Chuẩn hoá metadata: processing_time/model/total_chunks có thể nằm top-level (stream/async)
+      // hoặc trong _meta (sync). Gộp về 1 shape để hiển thị thống nhất.
+      const m = metadata || {};
+      const normMeta = {
+        ...m,
+        processing_time: m.processing_time ?? m._meta?.processing_time,
+        model: m.model ?? m._meta?.model ?? model?.name,
+        total_chunks: m.total_chunks ?? m._meta?.total_chunks ?? (m.chunks_used?.length ?? 0),
+      };
+
+      // Gắn metadata + chi tiết vào tin nhắn bot vừa rồi (để hiện header/mode/chi tiết nhất quán)
+      setHistory(prev => {
+        const last = prev[prev.length - 1];
+        return [...prev.slice(0, -1), { ...last, metadata: normMeta, reasoning_steps: m.reasoning_steps, chunks_used: m.chunks_used }];
+      });
+
+      // Cache kết quả — KHÔNG cache nếu: web only, câu thời gian thực, hoặc nguồn web (cũ nhanh).
+      const webBased = m.source_type === 'web_search' || m.source_type === 'kb_fallback_web';
+      const cacheable = botReply && !botReply.includes('lỗi') && !webOnly && !isTimeSensitive(input) && !webBased;
+      if (cacheable) {
+        cached[hash] = { reply: botReply, metadata: normMeta, chunks_used: m.chunks_used, ts: Date.now() };
         localStorage.setItem('chatbot_cache', JSON.stringify(cached));
       }
 
@@ -474,8 +583,6 @@ export default function Chat({ darkMode = false }) {
               <i className="fas fa-comments"></i>
               Cuộc trò chuyện
             </button>
-
-
 
             <button
               onClick={() => setShowModelPopup(true)}
@@ -592,6 +699,53 @@ export default function Chat({ darkMode = false }) {
         {/* Input Area */}
         <div className={styles.inputArea}>
           <div className={styles.inputContainer}>
+            {/* Thanh công cụ phía trên ô nhập — xếp DỌC (mỗi điều khiển 1 hàng) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8, alignItems: 'flex-start' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !webOnly;
+                  setWebOnly(next);
+                  localStorage.setItem('chatbot_web_only', String(next));
+                }}
+                title={webOnly
+                  ? 'Tìm web: BẬT — tìm thẳng trên internet, bỏ qua phân loại ý định & tra cứu nội bộ (nhanh hơn)'
+                  : 'Tìm web: TẮT — chế độ tự động (phân loại ý định + tra cứu nội bộ + web khi cần)'}
+                aria-pressed={webOnly}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 14px',
+                  borderRadius: 999,
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  border: webOnly ? '1px solid #10a37f' : '1px solid #d1d5db',
+                  background: webOnly ? '#10a37f' : 'transparent',
+                  color: webOnly ? '#fff' : '#6b7280',
+                }}
+              >
+                <i className="fas fa-globe"></i>
+                Tìm web
+              </button>
+
+              {/* Chọn chế độ chat: stream (SSE) | sync (JSON) | async (Kafka+WS) */}
+              <select
+                value={chatMode}
+                onChange={(e) => { setChatMode(e.target.value); localStorage.setItem('chatbot_chat_mode', e.target.value); }}
+                title="Chế độ chat: Streaming (token chạy dần) | Đồng bộ (chờ trả 1 lần) | Async (qua hàng đợi, token realtime qua WebSocket)"
+                style={{
+                  padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                  border: '1px solid #d1d5db', background: 'transparent', color: '#6b7280', cursor: 'pointer',
+                }}
+              >
+                <option value="stream">⚡ Streaming (SSE)</option>
+                <option value="sync">📦 Đồng bộ (JSON)</option>
+                <option value="async">🧵 Async (Kafka + WS)</option>
+              </select>
+            </div>
             <div className={styles.inputWrapper}>
               <ChatInputSuggest
                 value={input}
@@ -610,8 +764,14 @@ export default function Chat({ darkMode = false }) {
             <ModelManager
               onSelectModel={m => {
                 setModel(m);
-                localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
-                setShowModelPopup(false);
+                if (m) localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
+                else localStorage.removeItem('chatbot_selected_model');
+              }}
+              utilityModel={utilityModel}
+              onSelectUtilityModel={m => {
+                setUtilityModel(m);
+                if (m) localStorage.setItem('chatbot_utility_model', JSON.stringify(m));
+                else localStorage.removeItem('chatbot_utility_model');
               }}
               onClose={() => setShowModelPopup(false)}
             />

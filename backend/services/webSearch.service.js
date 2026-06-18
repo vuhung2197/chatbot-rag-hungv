@@ -66,15 +66,6 @@ export function getCacheStats() {
     };
 }
 
-/**
- * Xóa toàn bộ cache (cho admin)
- */
-export function clearSearchCache() {
-    searchCache.clear();
-    cacheStats = { hits: 0, misses: 0, evictions: 0 };
-    console.log('🗑️ Web Search cache cleared.');
-}
-
 // ==================== MAIN SEARCH FUNCTION ====================
 
 /**

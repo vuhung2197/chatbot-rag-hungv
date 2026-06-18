@@ -6,7 +6,7 @@ import { chat, history, streamChat } from '../controllers/chat.controller.js';
 import { suggest } from '../controllers/suggestion.controller.js';
 import { deleteHistoryItem } from '../controllers/conversation.controller.js';
 import { chatSchema, deleteHistoryItemSchema } from '../chat.schemas.js';
-import { chatAsync } from '../controllers/chatAsync.controller.js';
+import { chatAsync, getChatResult } from '../controllers/chatAsync.controller.js';
 
 const router = express.Router();
 
@@ -32,5 +32,7 @@ router.get('/suggest', suggest);
 
 // Kafka async endpoint — returns requestId immediately, result via WebSocket
 router.post('/async', optionalAuth, validate(chatSchema), chatAsync);
+// Polling lấy kết quả async job từ Redis (dự phòng khi không dùng WebSocket)
+router.get('/result/:jobId', optionalAuth, getChatResult);
 
 export default router;

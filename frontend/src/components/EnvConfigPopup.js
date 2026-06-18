@@ -13,12 +13,6 @@ export default function EnvConfigPopup({ darkMode, onClose, onSuccess, mode = 'p
     VNPAY_HASH_SECRET: '',
     VNPAY_URL: '',
     VNPAY_RETURN_URL: '',
-    MOMO_PARTNER_CODE: '',
-    MOMO_ACCESS_KEY: '',
-    MOMO_SECRET_KEY: '',
-    MOMO_ENDPOINT: '',
-    MOMO_REDIRECT_URL: '',
-    MOMO_IPN_URL: '',
     GOOGLE_CLIENT_ID: '',
     GOOGLE_CLIENT_SECRET: '',
     DB_HOST: '',
@@ -117,7 +111,7 @@ export default function EnvConfigPopup({ darkMode, onClose, onSuccess, mode = 'p
     { id: 'google', label: '🔐 Google OAuth', keys: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'] },
     { id: 'db', label: '🗄️ Database', keys: ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_DATABASE'] },
     { id: 'email', label: '✉️ Email', keys: ['EMAIL_SERVICE', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM_NAME'] },
-    { id: 'payment', label: '💳 Payment', keys: ['VNPAY_TMN_CODE', 'VNPAY_HASH_SECRET', 'VNPAY_URL', 'VNPAY_RETURN_URL', 'MOMO_PARTNER_CODE', 'MOMO_ACCESS_KEY', 'MOMO_SECRET_KEY', 'MOMO_ENDPOINT', 'MOMO_REDIRECT_URL', 'MOMO_IPN_URL'] },
+    { id: 'payment', label: '💳 Payment', keys: ['VNPAY_TMN_CODE', 'VNPAY_HASH_SECRET', 'VNPAY_URL', 'VNPAY_RETURN_URL'] },
     { id: 'core', label: '🛠️ Core', keys: ['JWT_SECRET', 'HMAC_KEY', 'FRONTEND_URL', 'PORT'] }
   ];
 
@@ -144,13 +138,6 @@ export default function EnvConfigPopup({ darkMode, onClose, onSuccess, mode = 'p
     VNPAY_HASH_SECRET: 'Chuỗi bí mật để mã hóa dữ liệu thanh toán VNPay',
     VNPAY_URL: 'URL cổng thanh toán VNPay (sandbox hoặc production)',
     VNPAY_RETURN_URL: 'URL callback sau khi thanh toán VNPay hoàn tất',
-    // MoMo
-    MOMO_PARTNER_CODE: 'Mã đối tác MoMo',
-    MOMO_ACCESS_KEY: 'Access Key từ MoMo Business',
-    MOMO_SECRET_KEY: 'Secret Key từ MoMo Business',
-    MOMO_ENDPOINT: 'URL API endpoint của MoMo (test hoặc production)',
-    MOMO_REDIRECT_URL: 'URL chuyển hướng sau khi thanh toán MoMo',
-    MOMO_IPN_URL: 'URL nhận thông báo thanh toán tự động từ MoMo (IPN)',
     // Core
     JWT_SECRET: 'Chuỗi bí mật để mã hóa token đăng nhập (JWT)',
     HMAC_KEY: 'Khóa HMAC dùng cho xác thực và mã hóa nội bộ',

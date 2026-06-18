@@ -28,10 +28,6 @@ import {
     queryVNPayTransaction
 } from '../controllers/gateways/vnpay.controller.js';
 import {
-    momoReturn,
-    momoIPN
-} from '../controllers/gateways/momo.controller.js';
-import {
     createDepositSchema,
     withdrawSchema,
     calculateFeeSchema,
@@ -52,10 +48,6 @@ const router = express.Router();
 // VNPay
 router.get('/vnpay/return', vnpayReturn);
 router.get('/vnpay/ipn', vnpayIPN);
-
-// MoMo
-router.get('/momo/return', momoReturn);
-router.post('/momo/ipn', momoIPN);
 
 // Payment Callback (General)
 router.post('/payment-callback', processPaymentCallback);

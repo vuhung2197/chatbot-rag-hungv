@@ -82,7 +82,6 @@ app.use('/reading', aiLimiter);
 app.use('/listening', aiLimiter);
 app.use('/speaking', aiLimiter);
 app.use('/payment/vnpay/ipn', webhookLimiter);
-app.use('/payment/momo/ipn', webhookLimiter);
 
 // Register Routes
 app.use('/auth', authRoutes);

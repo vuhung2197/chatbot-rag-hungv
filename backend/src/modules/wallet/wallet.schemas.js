@@ -11,7 +11,7 @@ export const createDepositSchema = {
         // currency có thể null/undefined từ frontend → fallback 'USD'
         currency: z.enum(['USD', 'VND']).nullable().optional().default('USD')
             .transform(v => v ?? 'USD'),
-        // Lấy từ DB: vnpay, momo, stripe, paypal, bank_transfer
+        // Lấy từ DB: vnpay, stripe, paypal, bank_transfer
         payment_method: z.string().min(1, 'Payment method is required')
     })
 };

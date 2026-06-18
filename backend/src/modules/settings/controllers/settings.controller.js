@@ -20,9 +20,7 @@ const CONFIG_KEYS = [
     // Email
     'EMAIL_SERVICE', 'EMAIL_USER', 'EMAIL_PASSWORD', 'EMAIL_FROM_NAME',
     // Payment: VNPay
-    'VNPAY_TMN_CODE', 'VNPAY_HASH_SECRET', 'VNPAY_URL', 'VNPAY_RETURN_URL',
-    // Payment: MoMo
-    'MOMO_PARTNER_CODE', 'MOMO_ACCESS_KEY', 'MOMO_SECRET_KEY', 'MOMO_ENDPOINT', 'MOMO_REDIRECT_URL', 'MOMO_IPN_URL'
+    'VNPAY_TMN_CODE', 'VNPAY_HASH_SECRET', 'VNPAY_URL', 'VNPAY_RETURN_URL'
 ];
 
 // Keys that are publicly readable (before login)

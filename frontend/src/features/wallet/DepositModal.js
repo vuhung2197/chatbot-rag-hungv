@@ -34,8 +34,7 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
             console.error('Error fetching payment methods:', err);
             // Use default methods if API fails
             setPaymentMethods([
-                { name: 'vnpay', display_name: 'VNPay', min_amount: 10000, max_amount: 50000000 },
-                { name: 'momo', display_name: 'MoMo', min_amount: 10000, max_amount: 50000000 }
+                { name: 'vnpay', display_name: 'VNPay', min_amount: 10000, max_amount: 50000000 }
             ]);
         }
     };
@@ -118,7 +117,6 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
         // Official Logos
         const logos = {
             vnpay: "https://sandbox.vnpayment.vn/paymentv2/images/logo-vnpay.png",
-            momo: "https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png",
             zalopay: "https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-ZaloPay-Square.png"
         };
 
@@ -135,7 +133,7 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
     };
 
     const isLogo = (methodName) => {
-        return ['vnpay', 'momo', 'zalopay'].includes(methodName.toLowerCase());
+        return ['vnpay', 'zalopay'].includes(methodName.toLowerCase());
     };
 
     return (
@@ -232,7 +230,6 @@ const DepositModal = ({ onClose, onSuccess, currentBalance, currency = 'USD' }) 
                                                 <span className="method-name">{method.display_name}</span>
                                                 <span className="method-description">
                                                     {method.name === 'vnpay' && 'ATM, Visa, MasterCard'}
-                                                    {method.name === 'momo' && 'MoMo Wallet'}
                                                     {method.name === 'stripe' && 'Credit/Debit Card'}
                                                     {method.name === 'zalopay' && 'ZaloPay Wallet'}
                                                 </span>

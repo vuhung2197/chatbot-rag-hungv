@@ -276,6 +276,57 @@ services:
       timeout: 5s
       retries: 5
 
+  # ============================================
+  # AI Service — lõi AI (intent + RAG + agent) bằng Python/FastAPI
+  # Chạy hybrid song song backend Node; dùng chung Postgres (pgvector) + Redis.
+  # ============================================
+  ai-service:
+    build: ./ai-service
+    container_name: chatbot-ai-service
+    restart: unless-stopped
+    ports:
+      - "${AI_SERVICE_PORT:-8000}:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - DB_DATABASE=${POSTGRES_DB:-chatbot}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EMBEDDING_MODEL=text-embedding-3-small
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ============================================
+  # Ollama — chạy LLM on-premise (minh chứng theo JD). Model kéo riêng:
+  #   docker exec chatbot-ollama ollama pull llama3.2
+  # ============================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - chatbot-network
+
 # Networks
 # ============================================
 networks:
@@ -310,4 +361,7 @@ volumes:
     driver: local
   redis_data:
     name: chatbot_redis_data
+    driver: local
+  ollama_data:
+    name: chatbot_ollama_data
     driver: local

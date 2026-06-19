@@ -13,12 +13,18 @@ export function aiServiceEnabled() {
     return process.env.AI_SERVICE_ENABLED === 'true';
 }
 
+// Header shared-secret giữa Node ↔ ai-service (nếu cấu hình). Chống truy cập trực tiếp.
+function internalHeaders() {
+    const token = process.env.INTERNAL_API_TOKEN;
+    return token ? { 'X-Internal-Token': token } : {};
+}
+
 /** Gọi /chat (non-stream). Trả { reply, source_type, citations, meta }. */
-export async function aiChat({ message, model, history }) {
+export async function aiChat({ message, model, history, userId, authToken }) {
     const { data } = await axios.post(
         `${BASE_URL}/chat`,
-        { message, model, history },
-        { timeout: 60000 }
+        { message, model, history, user_id: userId ?? null, auth_token: authToken ?? null },
+        { timeout: 60000, headers: internalHeaders() }
     );
     return data;
 }
@@ -27,11 +33,11 @@ export async function aiChat({ message, model, history }) {
  * Gọi /chat/stream (SSE) và forward từng event qua onEvent(type, payload).
  * Tự gom 'text' làm reply cuối; trả { reply, meta } khi xong.
  */
-export async function aiChatStream({ message, model, history }, onEvent) {
+export async function aiChatStream({ message, model, history, userId, authToken }, onEvent) {
     const resp = await axios.post(
         `${BASE_URL}/chat/stream`,
-        { message, model, history },
-        { responseType: 'stream', timeout: 120000 }
+        { message, model, history, user_id: userId ?? null, auth_token: authToken ?? null },
+        { responseType: 'stream', timeout: 120000, headers: internalHeaders() }
     );
 
     let buffer = '';

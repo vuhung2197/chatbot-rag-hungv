@@ -12,7 +12,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.responses import StreamingResponse
 
 from app.agents.graph import AgentGraph, get_agent
@@ -65,6 +65,17 @@ def agent_dep() -> AgentGraph:
     return get_agent()
 
 
+def verify_internal_token(x_internal_token: str | None = Header(default=None)) -> None:
+    """Chặn truy cập trực tiếp: nếu INTERNAL_API_TOKEN được đặt, request phải kèm header khớp.
+
+    Service không tự có auth user; đây là lớp shared-secret giữa Node gateway ↔ Python.
+    Để rỗng (dev) -> bỏ qua. Đặt trong prod + chỉ Node biết token.
+    """
+    expected = settings.internal_api_token
+    if expected and x_internal_token != expected:
+        raise HTTPException(status_code=401, detail="invalid internal token")
+
+
 def _ms(start: float) -> int:
     return round((time.monotonic() - start) * 1000)
 
@@ -78,12 +89,18 @@ def _meta(state: dict, t0: float) -> dict:
     }
 
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat", response_model=ChatResponse, dependencies=[Depends(verify_internal_token)])
 async def chat(req: ChatRequest, agent: Annotated[AgentGraph, Depends(agent_dep)]) -> ChatResponse:
     """Chạy agent graph (đồng bộ), trả lời kèm intent + citations."""
     t0 = time.monotonic()
     history = [m.model_dump() for m in req.history]
-    state = await agent.run(req.message, model=req.model, history=history)
+    state = await agent.run(
+        req.message,
+        model=req.model,
+        history=history,
+        user_id=req.user_id,
+        auth_token=req.auth_token,
+    )
     return ChatResponse(
         reply=state.get("reply", ""),
         source_type=state.get("source_type", "unknown"),
@@ -97,7 +114,7 @@ def _sse(event_type: str, **data) -> str:
     return f"data: {json.dumps({'type': event_type, **data}, ensure_ascii=False)}\n\n"
 
 
-@app.post("/chat/stream")
+@app.post("/chat/stream", dependencies=[Depends(verify_internal_token)])
 async def chat_stream(req: ChatRequest, agent: Annotated[AgentGraph, Depends(agent_dep)]):
     """SSE: stream từng token (event 'token'), rồi 'text' (đầy đủ) + 'done' (meta)."""
     history = [m.model_dump() for m in req.history]
@@ -113,7 +130,12 @@ async def chat_stream(req: ChatRequest, agent: Annotated[AgentGraph, Depends(age
         async def run():
             try:
                 return await agent.run(
-                    req.message, model=req.model, history=history, on_token=on_token
+                    req.message,
+                    model=req.model,
+                    history=history,
+                    on_token=on_token,
+                    user_id=req.user_id,
+                    auth_token=req.auth_token,
                 )
             finally:
                 queue.put_nowait(_DONE)  # type: ignore[arg-type]

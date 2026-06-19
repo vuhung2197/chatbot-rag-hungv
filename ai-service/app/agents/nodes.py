@@ -161,9 +161,11 @@ async def user_progress_node(state: GraphState, *, node_api: NodeApiClient, llm:
             "citations": [],
             "chunks": [],
         }
+    # data = {user_id, context}; chỉ đưa `context` (chuỗi đã format) vào prompt, không nhét cả dict.
+    progress_context = data.get("context", "") if isinstance(data, dict) else str(data)
     messages = [
         {"role": "system", "content": _PROGRESS_SYSTEM},
-        {"role": "user", "content": f"Dữ liệu: {data}\n\nCâu hỏi: {state['message']}"},
+        {"role": "user", "content": f"Dữ liệu:\n{progress_context}\n\nCâu hỏi: {state['message']}"},
     ]
     reply = await llm.generate(state.get("model") or ModelConfig(), messages, 0.3, 800)
     return {"reply": reply, "source_type": "user_progress", "citations": [], "chunks": []}

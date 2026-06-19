@@ -24,6 +24,9 @@ class ChatRequest(BaseModel):
     model: ModelConfig | None = None
     history: list[ChatMessage] = Field(default_factory=list)
     debug: bool = False
+    # Định danh do Node gateway forward (USER_PROGRESS gọi ngược Node API).
+    user_id: int | None = None
+    auth_token: str | None = None
 
 
 class ChatResponse(BaseModel):

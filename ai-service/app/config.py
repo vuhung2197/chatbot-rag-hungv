@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     embedding_model: str = "text-embedding-3-small"  # khớp vector đã index (1536 chiều)
     ollama_base_url: str = "http://localhost:11434"
+    # Allowlist host base_url LLM — chặn SSRF/lộ key qua model.url do client gửi.
+    # Host ngoài danh sách -> từ chối (xem services/llm.py).
+    allowed_llm_hosts: str = "api.openai.com,localhost,127.0.0.1,ollama"
+
+    # ── Bảo mật service-to-service ──────────────────────────
+    # Nếu đặt, mọi request /chat,/chat/stream phải kèm header X-Internal-Token khớp.
+    # Để rỗng (dev) -> bỏ qua kiểm tra. Node gateway gửi token này.
+    internal_api_token: str = ""
 
     # ── Intent classifier (T7) ──────────────────────────────
     intent_cache_ttl_sec: int = 86400  # 1 ngày; câu hỏi lặp khỏi gọi lại LLM

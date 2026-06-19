@@ -61,3 +61,20 @@ def test_ollama_client_uses_dummy_key():
     client = LLMClient()
     c = client._client(ModelConfig(url="http://ollama:11434/v1", name="llama3.2"))
     assert c.api_key == "ollama"
+
+
+class TestBaseUrlAllowlist:
+    def test_rejects_attacker_host(self):
+        from app.schemas import ModelConfig
+
+        client = LLMClient()
+        # SSRF/lộ key: host lạ phải bị từ chối TRƯỚC khi gắn OPENAI_API_KEY
+        with pytest.raises(LLMError):
+            client._client(ModelConfig(url="http://attacker.example/v1", name="gpt-4o-mini"))
+
+    def test_allows_openai(self):
+        from app.schemas import ModelConfig
+
+        client = LLMClient()
+        c = client._client(ModelConfig(url="https://api.openai.com/v1", name="gpt-4o-mini"))
+        assert c is not None

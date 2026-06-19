@@ -105,13 +105,13 @@ class ChatService {
         return { intent, reasoning };
     }
 
-    async processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug }) {
+    async processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug, authToken }) {
         if (!message) throw new Error('No message provided');
 
         // Hybrid: nếu bật ai-service (Python), ủy quyền phần SINH câu trả lời sang đó.
         // Persistence vẫn ở Node. Tắt flag -> luồng Node cũ bên dưới (rollback an toàn).
         if (aiServiceEnabled()) {
-            return await this._processViaAiService({ userId, message, model, conversationId });
+            return await this._processViaAiService({ userId, message, model, conversationId, authToken });
         }
 
         const webSearchEnabled = webSearch !== false; // mặc định bật
@@ -164,9 +164,9 @@ class ChatService {
     }
 
     /** Đường hybrid (non-stream): gọi ai-service sinh câu trả lời, Node lo lưu trữ. */
-    async _processViaAiService({ userId, message, model, conversationId }) {
+    async _processViaAiService({ userId, message, model, conversationId, authToken }) {
         const { modelConfig, history } = await this._prepareRequest({ userId, message, model, conversationId });
-        const data = await aiChat({ message, model: modelConfig, history });
+        const data = await aiChat({ message, model: modelConfig, history, userId, authToken });
         const result = {
             reply: data.reply,
             chunks_used: [],
@@ -188,11 +188,11 @@ class ChatService {
     }
 
     /** Đường hybrid (stream): forward SSE từ ai-service xuống client, Node lo lưu trữ. */
-    async _streamViaAiService({ userId, message, model, conversationId }, sendEvent) {
+    async _streamViaAiService({ userId, message, model, conversationId, authToken }, sendEvent) {
         const reqStart = Date.now();
         const { modelConfig, history } = await this._prepareRequest({ userId, message, model, conversationId });
 
-        const { reply, meta } = await aiChatStream({ message, model: modelConfig, history }, (type, payload) => {
+        const { reply, meta } = await aiChatStream({ message, model: modelConfig, history, userId, authToken }, (type, payload) => {
             if (type === 'status') sendEvent('status', { content: payload.content });
             else if (type === 'token') sendEvent('token', { content: payload.content });
             else if (type === 'text') sendEvent('text', { content: payload.content });
@@ -224,10 +224,10 @@ class ChatService {
         await chatRepository.insertMessage(userId, conversationId, conversationTitle, question, reply, metadata);
     }
 
-    async streamChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly }, sendEvent) {
+    async streamChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, authToken }, sendEvent) {
         // Hybrid: bật ai-service -> stream từ Python; tắt -> luồng Node cũ bên dưới.
         if (aiServiceEnabled()) {
-            return await this._streamViaAiService({ userId, message, model, conversationId }, sendEvent);
+            return await this._streamViaAiService({ userId, message, model, conversationId, authToken }, sendEvent);
         }
 
         const reqStart = Date.now(); // mốc bắt đầu để tính THỜI LƯỢNG xử lý (ms)

@@ -11,6 +11,7 @@ import logging
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, TypeVar
+from urllib.parse import urlparse
 
 from openai import AsyncOpenAI
 
@@ -53,8 +54,16 @@ class LLMClient:
         self._settings = settings or get_settings()
         self._clients: dict[str, AsyncOpenAI] = {}  # cache theo base_url
 
+    def _allowed_hosts(self) -> set[str]:
+        return {h.strip().lower() for h in self._settings.allowed_llm_hosts.split(",") if h.strip()}
+
     def _client(self, model: ModelConfig) -> AsyncOpenAI:
         url = model.url
+        # Chặn SSRF / lộ OPENAI_API_KEY: chỉ cho base_url thuộc allowlist host.
+        # model.url đến từ client -> KHÔNG tin; host lạ -> từ chối thay vì gửi key đi.
+        host = (urlparse(url).hostname or "").lower()
+        if host not in self._allowed_hosts():
+            raise LLMError(f"LLM base_url không được phép: {host!r}")
         if url not in self._clients:
             api_key = "ollama" if _is_ollama(url) else (self._settings.openai_api_key or "missing")
             self._clients[url] = AsyncOpenAI(base_url=url, api_key=api_key)

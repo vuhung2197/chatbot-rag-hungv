@@ -93,6 +93,7 @@ services:
       - REDIS_PORT=6379
       - AI_SERVICE_ENABLED=${AI_SERVICE_ENABLED:-false}
       - AI_SERVICE_URL=http://ai-service:8000
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -287,7 +288,9 @@ services:
     container_name: chatbot-ai-service
     restart: unless-stopped
     ports:
-      - "${AI_SERVICE_PORT:-8000}:8000"
+      # Chỉ loopback (127.0.0.1) — KHÔNG phơi ra mọi interface. Service không có auth user;
+      # truy cập chính thống đi qua Node gateway trên chatbot-network. Loopback để debug local.
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
     environment:
       - ENVIRONMENT=development
       - DB_HOST=postgres
@@ -302,6 +305,7 @@ services:
       - OLLAMA_BASE_URL=http://ollama:11434
       - TAVILY_API_KEY=${TAVILY_API_KEY}
       - NODE_API_URL=http://backend:3001
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy

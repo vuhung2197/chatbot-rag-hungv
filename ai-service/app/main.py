@@ -17,11 +17,15 @@ from fastapi.responses import StreamingResponse
 
 from app.agents.graph import AgentGraph, get_agent
 from app.config import get_settings
+from app.observability import RequestContextMiddleware
 from app.schemas import ChatRequest, ChatResponse
 from app.services.cache import close_redis, ping_redis
 from app.services.db import close_pool, ping_db
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 settings = get_settings()
 
 
@@ -39,6 +43,7 @@ app = FastAPI(
     description="Lõi AI (intent + RAG + agent) — chạy hybrid song song backend Node.",
     lifespan=lifespan,
 )
+app.add_middleware(RequestContextMiddleware)
 
 
 @app.get("/health")

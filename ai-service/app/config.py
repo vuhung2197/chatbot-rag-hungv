@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     # ── Intent classifier (T7) ──────────────────────────────
     intent_cache_ttl_sec: int = 86400  # 1 ngày; câu hỏi lặp khỏi gọi lại LLM
 
+    # ── Web search (T9) ─────────────────────────────────────
+    tavily_api_key: str = ""
+
+    # ── Node API (T9: gọi ngược cho USER_PROGRESS) ──────────
+    node_api_url: str = "http://localhost:3001"
+
 
 @lru_cache
 def get_settings() -> Settings:

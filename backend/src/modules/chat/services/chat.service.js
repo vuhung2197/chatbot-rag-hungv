@@ -1,11 +1,11 @@
 import { hashQuestion } from '#utils/hash.js';
 import conversationService from './conversation.service.js';
 import usageService from '#modules/usage/services/usage.service.js';
-import { classifyIntent, INTENTS } from '#services/intentRouter.js';
+import { classifyIntentRule, INTENTS } from '#services/intentRouter.js';
 import { saveChatAndTrack } from '../handlers/chat.helpers.js';
 import { handleGreeting } from '../handlers/greeting.handler.js';
 import { handleLiveSearch } from '../handlers/live-search.handler.js';
-import { handleKnowledge } from '../handlers/knowledge.handler.js';
+import { handleKnowledge, handleCatalog } from '../handlers/knowledge.handler.js';
 import { handleProgress } from '../handlers/progress.handler.js';
 import chatRepository from '../repositories/chat.repository.js';
 
@@ -51,8 +51,11 @@ class ChatService {
             const rewritten = await callLLM(modelConfig, [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: `Lịch sử hội thoại:\n${historyText}\n\nCâu hỏi hiện tại: ${message}\n\nViết lại:` }
-            ], 0.3, 200);
-            return rewritten.trim().replace(/(?:^['"])|(?:['"]$)/g, '');
+            ], 0.3, 600);
+            const cleaned = rewritten.trim().replace(/(?:^['"])|(?:['"]$)/g, '').trim();
+            // Một số model (đặc biệt model reasoning) có thể trả về rỗng -> fallback về câu gốc
+            // để tránh processingMessage rỗng làm hỏng intent routing và web search.
+            return cleaned || message;
         } catch (e) {
             console.error('Rewrite query failed:', e.message);
             return message;
@@ -68,24 +71,51 @@ class ChatService {
         let processingMessage = message;
         if (userId && conversationId) {
             history = await this.getChatHistory(userId, conversationId);
+            // Tối ưu: KHÔNG gọi LLM để rewrite nữa — dùng heuristic ghép ngữ cảnh (0 LLM call).
             if (history.length > 0) {
-                processingMessage = await this.rewriteQuery(message, history, modelConfig);
+                processingMessage = this.buildSearchQuery(message, history);
             }
         }
         return { modelConfig, history, processingMessage };
     }
 
-    async _routeIntent(processingMessage, modelConfig) {
-        const { intent, reasoning } = await classifyIntent(processingMessage, modelConfig);
-        console.log(`🧭 Intent: ${intent} | ${reasoning}`);
+    /**
+     * Tạo query cho tìm kiếm/định tuyến mà KHÔNG gọi LLM.
+     * Nếu câu chứa đại từ tham chiếu hoặc quá ngắn (follow-up) -> ghép câu hỏi user gần nhất
+     * để bổ sung ngữ cảnh; ngược lại giữ nguyên.
+     */
+    buildSearchQuery(message, history) {
+        if (!history || history.length === 0) return message;
+        const hasPronoun = /\b(nó|anh ấy|cô ấy|họ|chúng|cái đó|cái này|điều đó|việc đó|đó|này|ấy|vậy)\b/i.test(message);
+        const isShort = message.trim().split(/\s+/).length <= 4;
+        if (hasPronoun || isShort) {
+            const lastUser = [...history].reverse().find(h => h.role === 'user' && h.content);
+            if (lastUser) return `${lastUser.content} ${message}`.trim();
+        }
+        return message;
+    }
+
+    _routeIntent(processingMessage) {
+        // Tối ưu: phân loại bằng LUẬT (regex), KHÔNG gọi LLM.
+        const { intent, reasoning } = classifyIntentRule(processingMessage);
+        console.log(`🧭 Intent (rule): ${intent} | ${reasoning}`);
         return { intent, reasoning };
     }
 
-    async processChat({ userId, message, model, conversationId }) {
+    async processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug }) {
         if (!message) throw new Error('No message provided');
 
+        const webSearchEnabled = webSearch !== false; // mặc định bật
         const { modelConfig, history, processingMessage } = await this._prepareRequest({ userId, message, model, conversationId });
-        const { intent, reasoning } = await this._routeIntent(processingMessage, modelConfig);
+
+        // Chế độ Web Only: đi thẳng web search, BỎ QUA phân loại intent + RAG.
+        let intent, reasoning;
+        if (webOnly) {
+            intent = INTENTS.LIVE_SEARCH;
+            reasoning = 'Web Only mode (bỏ qua phân loại ý định & RAG)';
+        } else {
+            ({ intent, reasoning } = this._routeIntent(processingMessage));
+        }
 
         let result;
 
@@ -98,13 +128,15 @@ class ChatService {
             return result;
         }
 
-        if (intent === INTENTS.USER_PROGRESS) {
+        if (intent === INTENTS.KB_CATALOG) {
+            result = await handleCatalog({ message, history, modelConfig, reasoning });
+        } else if (intent === INTENTS.USER_PROGRESS) {
             if (!userId) return { reply: 'Bạn cần đăng nhập để xem tiến độ học tập của mình.', reasoning_steps: ['Require authentication'], chunks_used: [] };
             result = await handleProgress({ userId, message, processingMessage, history, modelConfig });
         } else if (intent === INTENTS.LIVE_SEARCH) {
-            result = await handleLiveSearch({ message, processingMessage, history, modelConfig, reasoning });
+            result = await handleLiveSearch({ message, processingMessage, history, modelConfig, reasoning, webSearchEnabled, debug });
         } else {
-            result = await handleKnowledge({ message, processingMessage, history, modelConfig, intent, reasoning });
+            result = await handleKnowledge({ message, processingMessage, history, modelConfig, intent, reasoning, webSearchEnabled, debug });
         }
 
         if (userId) {
@@ -128,41 +160,57 @@ class ChatService {
         await chatRepository.insertMessage(userId, conversationId, conversationTitle, question, reply, metadata);
     }
 
-    async streamChat({ userId, message, model, conversationId }, sendEvent) {
+    async streamChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly }, sendEvent) {
+        const reqStart = Date.now(); // mốc bắt đầu để tính THỜI LƯỢNG xử lý (ms)
+        const webSearchEnabled = webSearch !== false; // mặc định bật
         const { modelConfig, history, processingMessage } = await this._prepareRequest({ userId, message, model, conversationId });
 
-        sendEvent('status', { content: '🧭 Đang phân tích ngữ cảnh & câu hỏi...' });
-        const { intent, reasoning } = await this._routeIntent(processingMessage, modelConfig);
-        sendEvent('status', { content: `🔍 Intent detected: ${intent}` });
+        // Chế độ Web Only: đi thẳng web search, bỏ qua phân loại intent + RAG.
+        let intent, reasoning;
+        if (webOnly) {
+            intent = INTENTS.LIVE_SEARCH;
+            reasoning = 'Web Only mode (bỏ qua phân loại ý định & RAG)';
+            sendEvent('status', { content: '🌐 Chế độ Web Only — tìm thẳng trên internet...' });
+        } else {
+            sendEvent('status', { content: '🧭 Đang phân tích câu hỏi...' });
+            ({ intent, reasoning } = this._routeIntent(processingMessage));
+            sendEvent('status', { content: `🔍 Intent detected: ${intent}` });
+        }
 
         const onStatus = (msg) => sendEvent('status', { content: msg });
+        // Stream từng token của câu trả lời cuối xuống client (UX mượt, không phải chờ sinh xong).
+        const onToken = (delta) => sendEvent('token', { content: delta });
         let result;
 
         if (intent === INTENTS.OFF_TOPIC) {
             result = { reply: 'Xin lỗi, tôi không thể thảo luận về chủ đề này.', chunks_used: [], source_type: 'stream', web_sources: [], reasoning_steps: [] };
         } else if (intent === INTENTS.GREETING) {
-            result = await handleGreeting({ message, history, modelConfig, reasoning, onStatus });
+            result = await handleGreeting({ message, history, modelConfig, reasoning, onStatus, onToken });
+        } else if (intent === INTENTS.KB_CATALOG) {
+            result = await handleCatalog({ message, history, modelConfig, reasoning, onStatus, onToken });
         } else if (intent === INTENTS.USER_PROGRESS) {
             if (!userId) {
                 result = { reply: 'Bạn cần đăng nhập để xem tiến độ học tập của mình.', chunks_used: [], source_type: 'stream', web_sources: [], reasoning_steps: [] };
             } else {
-                result = await handleProgress({ userId, message, processingMessage, history, modelConfig, onStatus });
+                result = await handleProgress({ userId, message, processingMessage, history, modelConfig, onStatus, onToken });
             }
         } else if (intent === INTENTS.LIVE_SEARCH) {
-            result = await handleLiveSearch({ message, processingMessage, history, modelConfig, reasoning, onStatus });
+            result = await handleLiveSearch({ message, processingMessage, history, modelConfig, reasoning, onStatus, onToken, webSearchEnabled });
         } else {
-            result = await handleKnowledge({ message, processingMessage, history, modelConfig, intent, reasoning, onStatus });
+            result = await handleKnowledge({ message, processingMessage, history, modelConfig, intent, reasoning, onStatus, onToken, webSearchEnabled });
         }
 
+        // Gửi bản đầy đủ (đã format Markdown) để client chốt lại nội dung cuối cùng.
         sendEvent('text', { content: result.reply });
+
+        const processingTime = Date.now() - reqStart; // THỜI LƯỢNG thật (ms), không phải timestamp
 
         let finalConversationId = conversationId;
         if (userId) {
-            const streamStartTime = Date.now();
             finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
             const isWebSearch = result.source_type === 'web_search' || result.source_type === 'kb_fallback_web';
             await this.saveChat(userId, finalConversationId, message, result.reply, {
-                processing_time: streamStartTime, model: modelConfig.name,
+                processing_time: processingTime, model: modelConfig.name,
                 total_chunks: result.chunks_used?.length ?? 0, intent, source: result.source_type
             });
             await usageService.trackUsage(userId, isWebSearch ? 'web_search' : 'stream_chat', { tokens: result.reply.length / 4 });
@@ -174,7 +222,10 @@ class ChatService {
             chunks_used: result.chunks_used,
             conversationId: finalConversationId,
             source_type: result.source_type,
-            web_sources: result.web_sources
+            web_sources: result.web_sources,
+            processing_time: processingTime,
+            intent,
+            model: modelConfig.name,
         });
     }
 }

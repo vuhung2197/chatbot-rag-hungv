@@ -23,3 +23,5 @@ frontend/node_modules/
 
 # Claude worktrees
 .claude/worktrees/
+
+.claude

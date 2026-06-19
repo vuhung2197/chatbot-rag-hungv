@@ -5,7 +5,7 @@ import { generateReply } from './chat.helpers.js';
  * Fetch all learning progress data for a user from DB.
  * Shared between non-streaming and streaming paths.
  */
-async function buildProgressContext(userId) {
+export async function buildProgressContext(userId) {
     const [[progressRows], [vocabByLevel], [vocabByTopic], [recentVocab],
         [listeningStats], [readingStats], [speakingStats], [writingStats],
         [learningHistory], [learningStreaks]

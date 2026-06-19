@@ -19,7 +19,7 @@ class NodeApiClient:
 
     async def get_user_progress(self, user_id: int, auth_token: str | None = None) -> dict | None:
         """GET tiến độ học của user. Trả dict, hoặc None nếu lỗi/endpoint chưa có."""
-        url = f"{self._settings.node_api_url}/api/internal/user-progress/{user_id}"
+        url = f"{self._settings.node_api_url}/internal/user-progress/{user_id}"
         headers = {"Authorization": f"Bearer {auth_token}"} if auth_token else {}
         try:
             async with httpx.AsyncClient(timeout=10) as client:

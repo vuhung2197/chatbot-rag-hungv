@@ -8,6 +8,7 @@ import { handleLiveSearch } from '../handlers/live-search.handler.js';
 import { handleKnowledge, handleCatalog } from '../handlers/knowledge.handler.js';
 import { handleProgress } from '../handlers/progress.handler.js';
 import chatRepository from '../repositories/chat.repository.js';
+import { aiServiceEnabled, aiChat, aiChatStream } from '#services/aiServiceClient.js';
 
 class ChatService {
     async logUnanswered(question) {
@@ -105,6 +106,12 @@ class ChatService {
     async processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug }) {
         if (!message) throw new Error('No message provided');
 
+        // Hybrid: nếu bật ai-service (Python), ủy quyền phần SINH câu trả lời sang đó.
+        // Persistence vẫn ở Node. Tắt flag -> luồng Node cũ bên dưới (rollback an toàn).
+        if (aiServiceEnabled()) {
+            return await this._processViaAiService({ userId, message, model, conversationId });
+        }
+
         const webSearchEnabled = webSearch !== false; // mặc định bật
         const { modelConfig, history, processingMessage } = await this._prepareRequest({ userId, message, model, conversationId });
 
@@ -154,6 +161,61 @@ class ChatService {
         return result;
     }
 
+    /** Đường hybrid (non-stream): gọi ai-service sinh câu trả lời, Node lo lưu trữ. */
+    async _processViaAiService({ userId, message, model, conversationId }) {
+        const { modelConfig, history } = await this._prepareRequest({ userId, message, model, conversationId });
+        const data = await aiChat({ message, model: modelConfig, history });
+        const result = {
+            reply: data.reply,
+            chunks_used: [],
+            source_type: data.source_type,
+            web_sources: [],
+            reasoning_steps: [`Intent: ${data.meta?.intent} (ai-service)`],
+            _meta: { ...(data.meta || {}), via: 'ai-service' }
+        };
+        if (userId) {
+            const finalConversationId = await saveChatAndTrack(this, {
+                userId, conversationId, message, reply: result.reply,
+                metadata: { model: modelConfig.name, ...result._meta },
+                usageType: 'advanced_rag',
+                usageData: { tokens: result.reply.length }
+            });
+            return { ...result, conversationId: finalConversationId };
+        }
+        return result;
+    }
+
+    /** Đường hybrid (stream): forward SSE từ ai-service xuống client, Node lo lưu trữ. */
+    async _streamViaAiService({ userId, message, model, conversationId }, sendEvent) {
+        const reqStart = Date.now();
+        const { modelConfig, history } = await this._prepareRequest({ userId, message, model, conversationId });
+
+        const { reply, meta } = await aiChatStream({ message, model: modelConfig, history }, (type, payload) => {
+            if (type === 'status') sendEvent('status', { content: payload.content });
+            else if (type === 'token') sendEvent('token', { content: payload.content });
+            else if (type === 'text') sendEvent('text', { content: payload.content });
+            // 'done' do Node tự phát sau khi lưu (kèm conversationId)
+        });
+
+        const processingTime = Date.now() - reqStart;
+        let finalConversationId = conversationId;
+        if (userId) {
+            finalConversationId = await conversationService.getOrCreateConversationId(userId, conversationId);
+            const isWebSearch = meta.source_type === 'web_search' || meta.source_type === 'kb_fallback_web';
+            await this.saveChat(userId, finalConversationId, message, reply, {
+                processing_time: processingTime, model: modelConfig.name,
+                total_chunks: meta.total_chunks ?? 0, intent: meta.intent, source: meta.source_type, via: 'ai-service'
+            });
+            await usageService.trackUsage(userId, isWebSearch ? 'web_search' : 'stream_chat', { tokens: reply.length / 4 });
+        }
+
+        sendEvent('done', {
+            chunks_used: [], conversationId: finalConversationId,
+            source_type: meta.source_type, web_sources: [],
+            processing_time: processingTime, intent: meta.intent, model: modelConfig.name
+        });
+    }
+
     async saveChat(userId, conversationId, question, reply, metadata) {
         const count = await chatRepository.countMessages(userId, conversationId);
         const conversationTitle = count === 0 ? question.trim().substring(0, 50) : null;
@@ -161,6 +223,11 @@ class ChatService {
     }
 
     async streamChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly }, sendEvent) {
+        // Hybrid: bật ai-service -> stream từ Python; tắt -> luồng Node cũ bên dưới.
+        if (aiServiceEnabled()) {
+            return await this._streamViaAiService({ userId, message, model, conversationId }, sendEvent);
+        }
+
         const reqStart = Date.now(); // mốc bắt đầu để tính THỜI LƯỢNG xử lý (ms)
         const webSearchEnabled = webSearch !== false; // mặc định bật
         const { modelConfig, history, processingMessage } = await this._prepareRequest({ userId, message, model, conversationId });

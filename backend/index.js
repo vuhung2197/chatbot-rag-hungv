@@ -18,6 +18,7 @@ import advancedChatRoutes from '#modules/chat/routes/advancedChat.routes.js';
 import conversationRoutes from '#modules/chat/routes/conversation.routes.js';
 import suggestRoutes from '#modules/chat/routes/suggestion.routes.js';
 import unansweredRoutes from '#modules/chat/routes/unanswered.routes.js';
+import internalRoutes from '#modules/chat/routes/internal.routes.js';
 import knowledgeRoutes from '#modules/knowledge/routes/knowledge.routes.js';
 import uploadRoutes from '#modules/upload/routes/upload.routes.js';
 import walletRoutes from '#modules/wallet/routes/wallet.routes.js';
@@ -96,6 +97,7 @@ app.use('/advanced-chat', advancedChatRoutes);
 app.use('/conversations', conversationRoutes);
 app.use('/suggest-next-word', suggestRoutes);
 app.use('/unanswered', unansweredRoutes);
+app.use('/internal', internalRoutes);
 
 app.use('/knowledge', knowledgeRoutes);
 app.use('/upload', uploadRoutes);

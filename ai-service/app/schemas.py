@@ -17,3 +17,17 @@ class ModelConfig(BaseModel):
 class ChatMessage(BaseModel):
     role: str = Field(pattern="^(system|user|assistant)$")
     content: str
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=10000)
+    model: ModelConfig | None = None
+    history: list[ChatMessage] = Field(default_factory=list)
+    debug: bool = False
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    source_type: str
+    citations: list = Field(default_factory=list)
+    meta: dict = Field(default_factory=dict)

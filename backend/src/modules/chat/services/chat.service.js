@@ -87,7 +87,9 @@ class ChatService {
      */
     buildSearchQuery(message, history) {
         if (!history || history.length === 0) return message;
-        const hasPronoun = /\b(nó|anh ấy|cô ấy|họ|chúng|cái đó|cái này|điều đó|việc đó|đó|này|ấy|vậy)\b/i.test(message);
+        // Ranh giới Unicode (?<!\p{L})...(?!\p{L}) thay cho \b: \w chỉ ASCII nên \b hỏng
+        // với đại từ tiếng Việt có dấu (ấy, đó, vậy, điều đó...). Cờ 'u' bật \p{L}.
+        const hasPronoun = /(?<!\p{L})(nó|anh ấy|cô ấy|họ|chúng|cái đó|cái này|điều đó|việc đó|đó|này|ấy|vậy)(?!\p{L})/iu.test(message);
         const isShort = message.trim().split(/\s+/).length <= 4;
         if (hasPronoun || isShort) {
             const lastUser = [...history].reverse().find(h => h.role === 'user' && h.content);

@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"  # khớp vector đã index (1536 chiều)
     ollama_base_url: str = "http://localhost:11434"
 
+    # ── Intent classifier (T7) ──────────────────────────────
+    intent_cache_ttl_sec: int = 86400  # 1 ngày; câu hỏi lặp khỏi gọi lại LLM
+
 
 @lru_cache
 def get_settings() -> Settings:

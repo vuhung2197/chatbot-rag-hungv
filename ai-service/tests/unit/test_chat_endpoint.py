@@ -1,75 +1,77 @@
-"""Unit test /chat — override pipeline bằng fake (không gọi LLM/DB)."""
+"""Unit test /chat + /chat/stream — override agent bằng fake (không mạng)."""
 
 from fastapi.testclient import TestClient
 
-from app.main import app, pipeline_dep
-from app.rag.pipeline import RagResult
-from app.rag.retrieval import RetrievedChunk
+from app.main import agent_dep, app
 
 client = TestClient(app)
 
 
-class _FakePipeline:
-    def __init__(self, result: RagResult):
-        self._result = result
+class _FakeAgent:
+    def __init__(self, state, tokens=None):
+        self._state = state
+        self._tokens = tokens or []
 
-    async def answer(self, query, model=None, history=None, **kw):
-        return self._result
+    async def run(self, message, model=None, history=None, on_token=None, **kw):
+        if on_token:
+            for t in self._tokens:
+                on_token(t)
+        return self._state
 
 
-def _override(result: RagResult):
-    app.dependency_overrides[pipeline_dep] = lambda: _FakePipeline(result)
+def _override(state, tokens=None):
+    app.dependency_overrides[agent_dep] = lambda: _FakeAgent(state, tokens)
 
 
 def teardown_function():
     app.dependency_overrides.clear()
 
 
-def test_chat_with_context():
+def test_chat_returns_reply_and_meta():
     _override(
-        RagResult(
-            reply="RAG là truy hồi [1]",
-            citations=[],
-            chunks_used=[RetrievedChunk(id=1, title="RAG", content="c", score=0.9)],
-            context="[1] RAG\nc",
-            has_context=True,
-        )
+        {
+            "reply": "RAG là truy hồi [1]",
+            "source_type": "knowledge",
+            "intent": "KNOWLEDGE",
+            "citations": [{"n": 1, "id": 7, "title": "T"}],
+            "chunks": [{"id": 7}],
+        }
     )
     resp = client.post("/chat", json={"message": "RAG là gì"})
     assert resp.status_code == 200
     body = resp.json()
     assert body["source_type"] == "knowledge"
-    assert body["reply"] == "RAG là truy hồi [1]"
+    assert body["meta"]["intent"] == "KNOWLEDGE"
     assert body["meta"]["total_chunks"] == 1
-    assert "context" not in body["meta"]  # debug=false -> không lộ context
-
-
-def test_chat_debug_exposes_context():
-    _override(
-        RagResult(
-            reply="x",
-            citations=[],
-            chunks_used=[RetrievedChunk(id=1, title="t", content="c", score=0.9)],
-            context="CTX",
-            has_context=True,
-        )
-    )
-    resp = client.post("/chat", json={"message": "hỏi", "debug": True})
-    assert resp.json()["meta"]["context"] == "CTX"
-
-
-def test_chat_no_context_returns_polite():
-    _override(RagResult(reply="", citations=[], chunks_used=[], context="", has_context=False))
-    resp = client.post("/chat", json={"message": "câu hỏi lạ"})
-    assert resp.status_code == 200
-    assert resp.json()["source_type"] == "kb_empty"
+    assert body["citations"][0]["id"] == 7
 
 
 def test_chat_rejects_empty_message():
     resp = client.post("/chat", json={"message": ""})
-    assert resp.status_code == 422  # Pydantic validation
+    assert resp.status_code == 422
 
 
 def test_chat_rejects_too_long():
     resp = client.post("/chat", json={"message": "x" * 10001})
     assert resp.status_code == 422
+
+
+def test_chat_stream_emits_token_text_done():
+    _override(
+        {
+            "reply": "a b",
+            "source_type": "knowledge",
+            "intent": "KNOWLEDGE",
+            "citations": [],
+            "chunks": [],
+        },
+        tokens=["a", " b"],
+    )
+    with client.stream("POST", "/chat/stream", json={"message": "RAG là gì"}) as resp:
+        assert resp.status_code == 200
+        raw = "".join(resp.iter_text())
+    assert '"type": "token"' in raw
+    assert '"type": "text"' in raw
+    assert '"type": "done"' in raw
+    # token deltas xuất hiện
+    assert '"content": "a"' in raw

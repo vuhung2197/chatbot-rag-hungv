@@ -1,8 +1,4 @@
-"""Integration test /chat — pipeline + LLM + DB thật. `-m integration`.
-
-Dùng httpx.AsyncClient (cùng event loop pytest) thay TestClient để tương thích
-với fixture đóng pool ở conftest (TestClient chạy app ở loop riêng -> lỗi teardown).
-"""
+"""Integration test /chat + /chat/stream — agent + LLM + DB thật. `-m integration`."""
 
 import httpx
 import pytest
@@ -12,14 +8,27 @@ from app.main import app
 pytestmark = pytest.mark.integration
 
 
-async def test_chat_knowledge_grounded():
+async def test_chat_knowledge_routes_and_answers():
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        resp = await client.post("/chat", json={"message": "kiến thức", "debug": True})
+        resp = await client.post("/chat", json={"message": "kiến thức"})
     assert resp.status_code == 200
     body = resp.json()
-    assert body["source_type"] in ("knowledge", "kb_empty")
-    if body["source_type"] == "knowledge":
-        assert body["reply"].strip()
-        assert body["meta"]["total_chunks"] >= 1
-        assert "context" in body["meta"]
+    assert body["meta"]["intent"] in (
+        "KNOWLEDGE",
+        "LIVE_SEARCH",
+        "GREETING",
+        "USER_PROGRESS",
+        "OFF_TOPIC",
+    )
+    assert body["reply"].strip()
+
+
+async def test_chat_stream_yields_events():
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        async with client.stream("POST", "/chat/stream", json={"message": "kiến thức"}) as resp:
+            assert resp.status_code == 200
+            raw = "".join([chunk async for chunk in resp.aiter_text()])
+    assert '"type": "done"' in raw
+    assert '"type": "text"' in raw

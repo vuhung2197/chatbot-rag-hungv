@@ -45,7 +45,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
   - **AC:** F4.1, F4.3 (phần retrieval). **Verify:** `uv run pytest tests/unit/test_degrade_paths.py tests/unit/test_agent_graph.py -q`.
   - Phụ thuộc: T1.
 
-- [ ] **T5 — Redis cache + DB ping degrade contract** `[S]`
+- [x] **T5 — Redis cache + DB ping degrade contract** `[S]` ✅ lock test: redis down -> get=None/set no-raise/ping=False; db lỗi -> ping=False · test 4 + full 79 pass
   - File: xác nhận/sửa nhẹ `app/services/cache.py`, `app/services/db.py`.
   - Test mới (cùng `test_degrade_paths.py`): patch `get_redis` raise → `get_cached`=None, `set_cached` no-raise, `ping_redis`=False; `ping_db`=False khi lỗi. Classifier vẫn chạy khi Redis chết.
   - **AC:** F4.2, F4.3 (ping). **Verify:** `uv run pytest tests/unit/test_degrade_paths.py tests/unit/test_intent.py -q`.

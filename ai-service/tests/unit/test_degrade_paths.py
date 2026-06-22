@@ -30,3 +30,35 @@ async def test_knowledge_node_degrade_does_not_leak_detail():
 
 def _state(message, **kw):
     return {"message": message, **kw}
+
+
+# ── T5: Redis cache + DB ping degrade contract (F4.2, F4.3) ──
+from app.services import cache as cache_mod  # noqa: E402
+from app.services import db as db_mod  # noqa: E402
+
+
+def _raise_redis_down():
+    raise ConnectionError("redis down")
+
+
+async def test_cache_get_degrades_to_none_when_redis_down(monkeypatch):
+    monkeypatch.setattr(cache_mod, "get_redis", _raise_redis_down)
+    assert await cache_mod.get_cached("k") is None
+
+
+async def test_cache_set_swallows_when_redis_down(monkeypatch):
+    monkeypatch.setattr(cache_mod, "get_redis", _raise_redis_down)
+    await cache_mod.set_cached("k", "v", 10)  # không raise
+
+
+async def test_ping_redis_false_when_down(monkeypatch):
+    monkeypatch.setattr(cache_mod, "get_redis", _raise_redis_down)
+    assert await cache_mod.ping_redis() is False
+
+
+async def test_ping_db_false_on_error(monkeypatch):
+    async def boom(*a, **k):
+        raise ConnectionError("db down")
+
+    monkeypatch.setattr(db_mod, "fetchval", boom)
+    assert await db_mod.ping_db() is False

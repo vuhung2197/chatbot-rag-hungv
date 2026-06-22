@@ -10,6 +10,7 @@ import json
 import logging
 import re
 from collections.abc import AsyncIterator, Awaitable, Callable
+from dataclasses import dataclass, field
 from typing import Any, TypeVar
 from urllib.parse import urlparse
 
@@ -23,6 +24,23 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 _JSON_RE = re.compile(r"\{.*\}", re.DOTALL)
+
+
+@dataclass
+class ToolCall:
+    """1 yêu cầu gọi tool do model phát ra (cho Agentic RAG)."""
+
+    id: str
+    name: str
+    arguments: dict
+
+
+@dataclass
+class LLMMessage:
+    """Kết quả 1 lượt LLM khi bật tool-calling: text và/hoặc danh sách tool_calls."""
+
+    content: str = ""
+    tool_calls: list[ToolCall] = field(default_factory=list)
 
 
 class LLMError(Exception):
@@ -106,6 +124,40 @@ class LLMClient:
                 max_tokens=max_tokens,
             )
             return resp.choices[0].message.content or ""
+
+        return await self._retry(_call)
+
+    async def complete_with_tools(
+        self,
+        model: ModelConfig,
+        messages: list[dict[str, Any]],
+        tools: list[dict] | None = None,
+        temperature: float = 0.3,
+        max_tokens: int = 1024,
+    ) -> LLMMessage:
+        """Một lượt LLM có tool-calling. Trả LLMMessage(content, tool_calls).
+
+        `tools` theo schema OpenAI. Không tool -> như chat thường (tool_calls rỗng).
+        arguments hỏng JSON -> {} (degrade, không làm sập vòng agent).
+        """
+
+        async def _call() -> LLMMessage:
+            resp = await self._client(model).chat.completions.create(
+                model=model.name,
+                messages=messages,  # type: ignore[arg-type]
+                temperature=temperature,
+                max_tokens=max_tokens,
+                tools=tools or None,  # type: ignore[arg-type]
+            )
+            msg = resp.choices[0].message
+            calls: list[ToolCall] = []
+            for tc in getattr(msg, "tool_calls", None) or []:
+                try:
+                    args = json.loads(tc.function.arguments or "{}")
+                except (json.JSONDecodeError, TypeError):
+                    args = {}
+                calls.append(ToolCall(id=tc.id, name=tc.function.name, arguments=args))
+            return LLMMessage(content=msg.content or "", tool_calls=calls)
 
         return await self._retry(_call)
 

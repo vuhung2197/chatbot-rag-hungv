@@ -21,7 +21,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
   - **AC:** F1.1–1.5, F5.1, F5.2. **Verify:** `uv run pytest tests/unit/test_mcp_client.py -q`.
   - Phụ thuộc: T1.
 
-- [ ] **T3 — LLM tool-calling** `[S–M]`
+- [x] **T3 — LLM tool-calling** `[S–M]` ✅ complete_with_tools(tools) -> LLMMessage(content, tool_calls); args hỏng->{}; generate cũ giữ nguyên · test 4 + full 103 pass
   - File: `app/services/llm.py`.
   - `generate(..., tools=None)` truyền `tools` xuống `chat.completions.create`; trả tool_calls khi model yêu cầu, text khi xong (giữ allowlist host + timeout + max_retries=0). Không tool → hành vi cũ.
   - Test `test_llm_tools.py` (fake OpenAI client): trả tool_calls đúng shape; không-tool không hồi quy.

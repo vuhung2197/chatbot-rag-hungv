@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     # Allowlist host base_url LLM — chặn SSRF/lộ key qua model.url do client gửi.
     # Host ngoài danh sách -> từ chối (xem services/llm.py).
     allowed_llm_hosts: str = "api.openai.com,localhost,127.0.0.1,ollama"
+    # Timeout (giây) cho mỗi call LLM. max_retries=0 phía SDK -> _retry là cơ chế
+    # retry duy nhất (tránh 3×3). Tránh treo request theo default SDK (600s).
+    llm_timeout_sec: int = 30
 
     # ── Bảo mật service-to-service ──────────────────────────
     # Nếu đặt, mọi request /chat,/chat/stream phải kèm header X-Internal-Token khớp.

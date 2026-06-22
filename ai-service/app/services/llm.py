@@ -66,7 +66,14 @@ class LLMClient:
             raise LLMError(f"LLM base_url không được phép: {host!r}")
         if url not in self._clients:
             api_key = "ollama" if _is_ollama(url) else (self._settings.openai_api_key or "missing")
-            self._clients[url] = AsyncOpenAI(base_url=url, api_key=api_key)
+            # timeout: tránh treo theo default SDK (600s). max_retries=0: để _retry là
+            # cơ chế retry DUY NHẤT, không nhân với retry nội bộ của SDK (3×3).
+            self._clients[url] = AsyncOpenAI(
+                base_url=url,
+                api_key=api_key,
+                timeout=self._settings.llm_timeout_sec,
+                max_retries=0,
+            )
         return self._clients[url]
 
     async def _retry(self, fn: Callable[[], Awaitable[T]], attempts: int = 3) -> T:

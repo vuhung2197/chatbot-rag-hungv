@@ -28,9 +28,19 @@ class RequestIdFilter(logging.Filter):
         return True
 
 
+def clean_request_id(raw: str | None) -> str:
+    """Làm sạch X-Request-ID do client gửi trước khi vào log/response.
+
+    Chỉ giữ [A-Za-z0-9-], cắt tối đa 64 ký tự -> chặn log injection (newline) và
+    record phình. Rỗng/không hợp lệ -> sinh id mới.
+    """
+    cleaned = "".join(c for c in (raw or "") if c.isalnum() or c == "-")[:64]
+    return cleaned or uuid.uuid4().hex[:12]
+
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]
+        request_id = clean_request_id(request.headers.get(REQUEST_ID_HEADER))
         request.state.request_id = request_id
         token = request_id_var.set(request_id)
         start = time.monotonic()

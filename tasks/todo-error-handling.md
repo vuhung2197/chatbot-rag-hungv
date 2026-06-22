@@ -76,5 +76,9 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
 
 - [ ] **✅ Checkpoint 3 (final)** — `uv run pytest tests/unit -q` (64 + mới) xanh; `ruff check` + `black --check` sạch; happy-path không hồi quy. Sẵn sàng re-ship.
 
+## Post-ship cleanups (sau /ship lần 2 — rủi ro thấp)
+- [x] **C1 — clamp X-Request-ID** ✅ `clean_request_id` (chỉ [A-Za-z0-9-], cắt 64) chống log injection · test 2
+- [x] **C2 — /health gating** ✅ caller chưa auth -> chỉ `status`; có token/dev -> full detail · test 2 · full 90 pass
+
 ---
 Ước lượng: XS≈<30ph, S≈30–60ph, M≈1–2h. Tổng ~1 ngày làm việc tập trung.

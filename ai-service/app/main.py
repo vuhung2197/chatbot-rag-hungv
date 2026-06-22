@@ -51,16 +51,26 @@ app.add_middleware(RequestContextMiddleware)
 
 
 @app.get("/health")
-async def health() -> dict:
-    """Liveness + readiness: kiểm tra song song Postgres & Redis (luôn 200)."""
+async def health(x_internal_token: str | None = Header(default=None)) -> dict:
+    """Liveness + readiness (luôn 200).
+
+    Caller chưa auth -> chỉ `status` (tránh lộ version/environment/deps cho recon).
+    Khi token chưa cấu hình (dev) hoặc khớp -> trả chi tiết đầy đủ.
+    """
     db_ok, redis_ok = await asyncio.gather(ping_db(), ping_redis())
-    checks = {"database": "up" if db_ok else "down", "redis": "up" if redis_ok else "down"}
+    status = "ok" if db_ok and redis_ok else "degraded"
+
+    expected = settings.internal_api_token
+    detailed = (not expected) or (x_internal_token == expected)
+    if not detailed:
+        return {"status": status}
+
     return {
-        "status": "ok" if db_ok and redis_ok else "degraded",
+        "status": status,
         "service": settings.app_name,
         "version": settings.version,
         "environment": settings.environment,
-        "checks": checks,
+        "checks": {"database": "up" if db_ok else "down", "redis": "up" if redis_ok else "down"},
     }
 
 

@@ -26,6 +26,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 
@@ -141,14 +142,31 @@ async def chat_stream(req: ChatRequest, agent: Annotated[AgentGraph, Depends(age
                 queue.put_nowait(_DONE)  # type: ignore[arg-type]
 
         task = asyncio.create_task(run())
-        yield _sse("status", content="Đang xử lý...")
-        while True:
-            item = await queue.get()
-            if item is _DONE:
-                break
-            yield _sse("token", content=item)
-        state = await task
-        yield _sse("text", content=state.get("reply", ""))
-        yield _sse("done", **_meta(state, t0), citations=state.get("citations", []))
+        try:
+            yield _sse("status", content="Đang xử lý...")
+            while True:
+                item = await queue.get()
+                if item is _DONE:
+                    break
+                yield _sse("token", content=item)
+            state = await task  # re-raise lỗi từ agent.run (nếu có)
+            yield _sse("text", content=state.get("reply", ""))
+            yield _sse("done", **_meta(state, t0), citations=state.get("citations", []))
+        except asyncio.CancelledError:
+            raise  # client disconnect / shutdown -> để finally hủy task
+        except Exception:
+            # F1: lỗi giữa stream -> báo client 1 event 'error' tường minh, KHÔNG leak
+            # stacktrace/secret (chi tiết chỉ vào log server).
+            logger.exception("stream lỗi giữa chừng")
+            yield _sse("error", content="Đã có lỗi khi xử lý yêu cầu. Vui lòng thử lại.")
+        finally:
+            # F2: client disconnect (GeneratorExit) hoặc lỗi -> hủy task nền, tránh
+            # rò task / LLM call mồ côi.
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except (asyncio.CancelledError, Exception):
+                    pass
 
     return StreamingResponse(event_gen(), media_type="text/event-stream")

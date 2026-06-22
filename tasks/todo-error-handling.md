@@ -20,7 +20,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
 
 ## Phase 1 — Streaming (blocker chính)
 
-- [ ] **T3 — SSE terminal error event + cancellation** `[M]`
+- [x] **T3 — SSE terminal error event + cancellation** `[M]` ✅ error event (no leak) + cancel task on disconnect · test 3 + full 73 pass
   - File: `app/main.py` `event_gen` (108–154).
   - Làm:
     - Bọc toàn bộ vòng stream + `await task` trong `try/except Exception` → `logger.exception(...)` + `yield _sse("error", content="<xin lỗi tiếng Việt>")`; **không** lộ chi tiết.

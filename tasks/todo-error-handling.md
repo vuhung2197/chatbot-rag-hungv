@@ -12,7 +12,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
   - **AC:** F3.1–F3.3. **Verify:** `uv run pytest tests/unit/test_llm_timeout.py tests/unit/test_llm.py -q`.
   - Phụ thuộc: không.
 
-- [ ] **T2 — Input bounds (history/content)** `[XS]`
+- [x] **T2 — Input bounds (history/content)** `[XS]` ✅ history max_length=20 + content max_length=10000 · test 4 + full 70 pass
   - File: `app/schemas.py` — `history: list[ChatMessage] = Field(default_factory=list, max_length=20)`, `ChatMessage.content` thêm `max_length` (đề xuất 10000).
   - Test mới `tests/unit/test_input_bounds.py`: history > 20 → 422; content quá dài → 422; trong giới hạn → OK.
   - **AC:** F6.1–F6.3. **Verify:** `uv run pytest tests/unit/test_input_bounds.py tests/unit/test_contract.py -q`.

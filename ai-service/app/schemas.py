@@ -16,13 +16,14 @@ class ModelConfig(BaseModel):
 
 class ChatMessage(BaseModel):
     role: str = Field(pattern="^(system|user|assistant)$")
-    content: str
+    content: str = Field(max_length=10000)  # F6.2: chặn DoS qua message lớn
 
 
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=10000)
     model: ModelConfig | None = None
-    history: list[ChatMessage] = Field(default_factory=list)
+    # F6.1: cap số lượng history -> chặn prompt phình + DoS.
+    history: list[ChatMessage] = Field(default_factory=list, max_length=20)
     debug: bool = False
     # Định danh do Node gateway forward (USER_PROGRESS gọi ngược Node API).
     user_id: int | None = None

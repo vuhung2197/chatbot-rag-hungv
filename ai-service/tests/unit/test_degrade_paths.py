@@ -62,3 +62,56 @@ async def test_ping_db_false_on_error(monkeypatch):
 
     monkeypatch.setattr(db_mod, "fetchval", boom)
     assert await db_mod.ping_db() is False
+
+
+# ── T6: node_api + Tavily degrade -> node fallback (F4.4, F4.5) ──
+from app.agents.nodes import live_search_node, user_progress_node  # noqa: E402
+from app.clients import node_api as node_api_mod  # noqa: E402
+from app.clients.node_api import NodeApiClient  # noqa: E402
+from app.services.web_search import WebSearchClient  # noqa: E402
+
+
+class _NoneNodeApi:
+    async def get_user_progress(self, user_id, auth_token=None):
+        return None
+
+
+class _NoneWeb:
+    enabled = True
+
+    async def search(self, query, max_results=5):
+        return None
+
+
+class _FakeLLM:
+    async def generate(self, model, messages, temperature, max_tokens):
+        return "x"
+
+    async def stream(self, model, messages, temperature, max_tokens):
+        yield "x"
+
+
+async def test_node_api_returns_none_on_http_error(monkeypatch):
+    def boom(*a, **k):
+        raise ConnectionError("node down")
+
+    monkeypatch.setattr(node_api_mod.httpx, "AsyncClient", boom)
+    assert await NodeApiClient().get_user_progress(1, "tok") is None
+
+
+async def test_user_progress_node_degrades_when_api_returns_none():
+    out = await user_progress_node(
+        _state("tiến độ", user_id=1), node_api=_NoneNodeApi(), llm=_FakeLLM()
+    )
+    assert out["source_type"] == "progress_unavailable"
+    assert out["reply"]
+
+
+async def test_live_search_node_degrades_when_web_empty():
+    out = await live_search_node(_state("tin nóng"), web=_NoneWeb(), llm=_FakeLLM())
+    assert out["source_type"] == "web_empty"
+
+
+def test_web_search_format_empty_returns_none():
+    assert WebSearchClient._format({}) is None
+    assert WebSearchClient._format({"results": []}) is None

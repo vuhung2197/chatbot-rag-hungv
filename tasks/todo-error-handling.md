@@ -51,7 +51,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
   - **AC:** F4.2, F4.3 (ping). **Verify:** `uv run pytest tests/unit/test_degrade_paths.py tests/unit/test_intent.py -q`.
   - Phụ thuộc: không (có thể song song T4).
 
-- [ ] **T6 — node_api + Tavily degrade → node fallback** `[S]`
+- [x] **T6 — node_api + Tavily degrade → node fallback** `[S]` ✅ node_api lỗi->None->progress_unavailable; web None->web_empty; _format rỗng->None · test 4 + full 83 pass
   - File: xác nhận `app/clients/node_api.py`, `app/services/web_search.py`; bọc fallback ở `user_progress_node`/`live_search_node` trong `nodes.py`.
   - Test mới (cùng `test_degrade_paths.py`): node_api timeout/500/JSON hỏng → None → user_progress_node trả lời degrade; web_search empty/lỗi → live_search_node fallback. Không crash.
   - **AC:** F4.4, F4.5. **Verify:** `uv run pytest tests/unit/test_degrade_paths.py tests/unit/test_agent_graph.py -q`.

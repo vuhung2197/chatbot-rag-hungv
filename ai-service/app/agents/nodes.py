@@ -20,6 +20,9 @@ logger = logging.getLogger(__name__)
 _KB_EMPTY_REPLY = "Tôi chưa tìm thấy thông tin liên quan trong tài liệu nội bộ."
 _PROGRESS_UNAVAILABLE = "Hiện chưa lấy được dữ liệu tiến độ học tập của bạn."
 _OFFTOPIC_REPLY = "Xin lỗi, tôi không thể thảo luận về chủ đề này."
+_KB_DEGRADED_REPLY = (
+    "Xin lỗi, hệ thống tra cứu tri thức đang gặp sự cố. Vui lòng thử lại sau ít phút."
+)
 
 _WEB_SYSTEM = (
     "Bạn là trợ lý AI. Trả lời câu hỏi DỰA TRÊN kết quả tìm kiếm web dưới đây.\n"
@@ -81,13 +84,26 @@ async def knowledge_node(
     web: WebSearchClient | None = None,
     llm: LLMClient | None = None,
 ) -> dict:
-    """KNOWLEDGE: RAG nội bộ; rỗng -> web fallback (nếu có) -> kb_empty."""
-    result = await pipeline.answer(
-        state["message"],
-        model=state.get("model"),
-        history=state.get("history"),
-        on_token=state.get("on_token"),
-    )
+    """KNOWLEDGE: RAG nội bộ; rỗng -> web fallback (nếu có) -> kb_empty.
+
+    F4.1/F4.3: embeddings/DB/LLM lỗi giữa pipeline -> degrade an toàn (câu xin lỗi),
+    KHÔNG bubble 500, KHÔNG web-fallback (D2).
+    """
+    try:
+        result = await pipeline.answer(
+            state["message"],
+            model=state.get("model"),
+            history=state.get("history"),
+            on_token=state.get("on_token"),
+        )
+    except Exception:
+        logger.exception("knowledge pipeline lỗi -> degrade")
+        return {
+            "reply": _KB_DEGRADED_REPLY,
+            "source_type": "error",
+            "citations": [],
+            "chunks": [],
+        }
     if result.has_context:
         return {
             "reply": result.reply,

@@ -38,7 +38,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
 
 ## Phase 2 — Degrade paths
 
-- [ ] **T4 — KNOWLEDGE degrade khi embeddings/DB lỗi** `[M]`
+- [x] **T4 — KNOWLEDGE degrade khi embeddings/DB lỗi** `[M]` ✅ pipeline lỗi -> câu xin lỗi degrade (source_type=error), no leak, no web-fallback · test 2 + full 75 pass
   - File: `app/agents/nodes.py` (`knowledge_node` ~80–105), `app/rag/pipeline.py`/`retrieval.py` (cho lỗi propagate có kiểm soát).
   - Làm: bọc retrieve/generate trong knowledge_node; embeddings/DB raise → trả `{reply: <xin lỗi degrade>, source_type:"error"/"degraded"}` (theo D2), KHÔNG web-fallback, KHÔNG 500.
   - Test mới `tests/unit/test_degrade_paths.py::test_knowledge_node_when_embeddings_fail` (+ DB fail).

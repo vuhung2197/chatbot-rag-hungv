@@ -68,7 +68,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
   - **AC:** F5.1–5.2. **Verify:** `uv run pytest tests/unit/test_chat_endpoint.py -q`.
   - Phụ thuộc: T1.
 
-- [ ] **T8 — Logging đường lỗi nhất quán** `[XS]`
+- [x] **T8 — Logging đường lỗi nhất quán** `[XS]` ✅ contextvar + RequestIdFilter -> mọi log có `[rid]`; format cập nhật · test 2 + full 86 pass
   - File: các chỗ degrade đã đụng (T3–T7).
   - Làm: đảm bảo log kèm `request_id` (middleware sẵn) + tên dep + loại lỗi; auth/SSRF-reject ≥ WARNING. Không thêm test riêng — review log thủ công + giữ test cũ.
   - **AC:** F7.1–7.2. **Verify:** đọc log một run mẫu (`uv run pytest -q` + grep), ruff sạch.

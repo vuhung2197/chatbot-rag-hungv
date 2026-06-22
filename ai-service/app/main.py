@@ -17,15 +17,18 @@ from fastapi.responses import StreamingResponse
 
 from app.agents.graph import AgentGraph, get_agent
 from app.config import get_settings
-from app.observability import RequestContextMiddleware
+from app.observability import RequestContextMiddleware, RequestIdFilter
 from app.schemas import ChatRequest, ChatResponse
 from app.services.cache import close_redis, ping_redis
 from app.services.db import close_pool, ping_db
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    format="%(asctime)s %(levelname)s [%(request_id)s] %(name)s: %(message)s",
 )
+# Gắn filter vào mọi handler root -> mọi log record có request_id (F7.1).
+for _h in logging.getLogger().handlers:
+    _h.addFilter(RequestIdFilter())
 logger = logging.getLogger(__name__)
 settings = get_settings()
 

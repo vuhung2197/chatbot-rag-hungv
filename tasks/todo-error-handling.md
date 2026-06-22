@@ -61,7 +61,7 @@ Quy ước: `[ ]` chưa làm · `[~]` đang làm · `[x]` xong. TDD: viết test
 
 ## Phase 3 — Hoàn thiện
 
-- [ ] **T7 — `/chat` non-stream lỗi có cấu trúc** `[S]`
+- [x] **T7 — `/chat` non-stream lỗi có cấu trúc** `[S]` ✅ agent lỗi -> 200 + source_type=error (D1), no leak · test 1 + full 84 pass
   - File: `app/main.py` `chat` handler (92–109).
   - Làm (D1): bọc `agent.run` → lỗi trả HTTP 200 + `ChatResponse{reply:<xin lỗi>, source_type:"error", citations:[], meta}`; không 500 trần, không leak (F5.2).
   - Test (bổ sung `test_chat_endpoint.py`): fake agent raise → 200 với source_type="error", body sạch.

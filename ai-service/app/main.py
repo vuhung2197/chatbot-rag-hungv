@@ -95,13 +95,24 @@ async def chat(req: ChatRequest, agent: Annotated[AgentGraph, Depends(agent_dep)
     """Chạy agent graph (đồng bộ), trả lời kèm intent + citations."""
     t0 = time.monotonic()
     history = [m.model_dump() for m in req.history]
-    state = await agent.run(
-        req.message,
-        model=req.model,
-        history=history,
-        user_id=req.user_id,
-        auth_token=req.auth_token,
-    )
+    try:
+        state = await agent.run(
+            req.message,
+            model=req.model,
+            history=history,
+            user_id=req.user_id,
+            auth_token=req.auth_token,
+        )
+    except Exception:
+        # F5 (D1): lỗi -> 200 + ChatResponse có cấu trúc (source_type=error), KHÔNG
+        # 500 trần, KHÔNG leak chi tiết. Node persistence/UI xử nhất quán happy-path.
+        logger.exception("/chat lỗi")
+        return ChatResponse(
+            reply="Đã có lỗi khi xử lý yêu cầu. Vui lòng thử lại.",
+            source_type="error",
+            citations=[],
+            meta={"source_type": "error", "processing_ms": _ms(t0)},
+        )
     return ChatResponse(
         reply=state.get("reply", ""),
         source_type=state.get("source_type", "unknown"),

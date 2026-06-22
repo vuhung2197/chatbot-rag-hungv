@@ -137,3 +137,23 @@ def test_chat_stream_emits_token_text_done():
     assert '"type": "done"' in raw
     # token deltas xuất hiện
     assert '"content": "a"' in raw
+
+
+class _RaisingAgent:
+    async def run(self, *a, **k):
+        raise RuntimeError("sk-proj-LEAK boom")
+
+
+def test_chat_returns_structured_error_on_agent_failure():
+    # T7/F5 (D1): agent lỗi -> 200 + source_type=error, không 500 trần, không leak.
+    app.dependency_overrides[agent_dep] = lambda: _RaisingAgent()
+    try:
+        r = client.post("/chat", json={"message": "x"})
+        assert r.status_code == 200
+        body = r.json()
+        assert body["source_type"] == "error"
+        assert body["reply"]
+        assert "sk-proj" not in body["reply"]
+        assert "RuntimeError" not in body["reply"]
+    finally:
+        app.dependency_overrides.clear()

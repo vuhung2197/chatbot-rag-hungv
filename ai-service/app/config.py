@@ -6,7 +6,30 @@ sẽ được dùng dần ở các task sau (T2 trở đi); ở T1 chỉ cần k
 
 from functools import lru_cache
 
+from pydantic import BaseModel
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class MCPServerConfig(BaseModel):
+    """Khai báo 1 MCP server agent được phép kết nối (allowlist, config-driven).
+
+    - transport: "http" (streamable-HTTP/SSE remote) cần `endpoint`; "stdio" cần `command`.
+    - api_key_env: TÊN biến môi trường chứa key (không lưu key trực tiếp ở đây).
+    """
+
+    name: str
+    transport: str = "http"
+    endpoint: str | None = None
+    command: str | None = None
+    api_key_env: str | None = None
+    enabled: bool = True
+
+    def is_valid(self) -> bool:
+        if self.transport == "http":
+            return bool(self.endpoint)
+        if self.transport == "stdio":
+            return bool(self.command)
+        return False
 
 
 class Settings(BaseSettings):
@@ -56,6 +79,17 @@ class Settings(BaseSettings):
 
     # ── Node API (T9: gọi ngược cho USER_PROGRESS) ──────────
     node_api_url: str = "http://localhost:3001"
+
+    # ── MCP (Agentic RAG) ───────────────────────────────────
+    # Allowlist server agent được phép kết nối (config-driven). Set qua env MCP_SERVERS
+    # dạng JSON list. Rỗng = không có MCP (agent degrade về RAG thường).
+    mcp_servers: list[MCPServerConfig] = []
+    mcp_max_iterations: int = 5  # trần vòng lặp tool/request -> chặn chi phí + lặp vô hạn
+    mcp_tool_timeout_sec: int = 20  # timeout mỗi tool-call
+
+    def enabled_mcp_servers(self) -> list[MCPServerConfig]:
+        """Server đang bật + cấu hình hợp lệ (bỏ qua disabled/thiếu field)."""
+        return [s for s in self.mcp_servers if s.enabled and s.is_valid()]
 
 
 @lru_cache

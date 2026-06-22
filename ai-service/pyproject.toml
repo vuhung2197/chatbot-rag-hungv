@@ -12,6 +12,7 @@ dependencies = [
     "redis>=8.0.0",
     "openai>=2.43.0",
     "langgraph>=1.2.6",
+    "mcp>=1.28.0",
 ]
 
 [dependency-groups]

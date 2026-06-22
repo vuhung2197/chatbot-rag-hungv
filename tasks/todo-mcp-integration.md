@@ -14,7 +14,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
 
 ## Phase 1 — Components
 
-- [ ] **T2 — MCP client layer** `[M]`
+- [x] **T2 — MCP client layer** `[M]` ✅ connect/discover/call + timeout + allowlist + degrade · session_factory DI · test 6 + full 99 pass
   - File: `app/services/mcp_client.py` (MỚI).
   - `connect()`/`list_tools()` (discover name+desc+schema), `call_tool(server, name, args)` với timeout (`mcp_tool_timeout_sec`); lỗi/timeout → kết quả lỗi có cấu trúc (không raise); chỉ kết nối server trong allowlist; key từ `api_key_env`, không log.
   - Test `test_mcp_client.py` (fake MCP server in-process / fake tại boundary SDK): discover; call ok; timeout→lỗi; allowlist reject endpoint lạ; 0 server → degrade (list rỗng, không crash).
@@ -58,7 +58,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
 
 - [ ] **T7 — Eval + observability + integration** `[M]`
   - File: `tests/eval/test_agentic_eval.py` (gated eval), log tool-call ở mcp_client/agentic_node (kèm request_id), `tests/integration/test_mcp_live.py` (gated, server thật).
-  - Eval: bộ câu cần-tool vs không-cần-tool → agent chọn tool đúng lúc. Integration: 1 luồng end-to-end với MCP server thật (⚠️ cần endpoint + auth từ bạn).
+  - Eval: bộ câu cần-tool vs không-cần-tool → agent chọn tool đúng lúc. Integration: 1 luồng end-to-end với **Fetch** (`mcp-server-fetch`, stdio `uvx mcp-server-fetch`, read-only, không key). Config: `{"name":"fetch","transport":"stdio","command":"uvx mcp-server-fetch","enabled":true}`. ⚠️ cần `uvx`/`uv` trong môi trường chạy (chạy ai-service ngoài Docker hoặc thêm vào Dockerfile).
   - **AC:** F6.1–6.2. **Verify:** `uv run pytest -m eval -q` / `-m integration -q`.
   - Phụ thuộc: T5 (eval); T6 + server thật (integration).
 

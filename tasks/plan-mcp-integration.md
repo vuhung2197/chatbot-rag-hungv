@@ -4,7 +4,7 @@ Spec: [docs/SPEC_MCP_INTEGRATION.md](../docs/SPEC_MCP_INTEGRATION.md) · Todo: [
 TDD: test đỏ trước mỗi task. Giữ 90 test cũ xanh. Test unit **offline** (fake MCP server / fake LLM).
 
 ## Decisions đã chốt ("hướng tốt nhất")
-- **D-A:** Vendor-neutral, config-driven. Unit test dùng **fake MCP server in-process**; server remote thật chọn lúc integration (đề xuất 1 web/fetch read-only). → cần bạn cấp endpoint khi tới integration (T7).
+- **D-A:** Vendor-neutral, config-driven. Unit test dùng **fake MCP server in-process**. Server integration đầu tiên (T7) = **Fetch** (`mcp-server-fetch`, stdio, read-only, không key) — đã chốt.
 - **D-B:** Official **`mcp` SDK**; transport chính **streamable-HTTP** (+ stdio qua config); **tự viết ReAct loop**.
 - **D-C:** Thêm intent **`AGENT`** + node mới; intent cũ không đổi; 0 tool khả dụng → degrade KNOWLEDGE.
 - **D-D:** `mcp_max_iterations=5`, `mcp_tool_timeout_sec=20`.

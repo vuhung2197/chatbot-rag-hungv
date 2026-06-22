@@ -30,7 +30,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
 
 ## Phase 2 — Agentic path
 
-- [ ] **T4 — Agentic node (ReAct loop bounded)** `[M–L]`
+- [x] **T4 — Agentic node (ReAct loop bounded)** `[M–L]` ✅ vòng LLM↔tool, trần iteration, tool lỗi→tiếp, streaming, delimiter tool-output, tools_used trace · test 6 + full 109 pass
   - File: `app/agents/nodes.py` (node `agentic_node`), `app/agents/state.py` nếu cần field.
   - Vòng: LLM(+tool schema) → tool_calls → MCP call (song song nếu nhiều) → kết quả lại LLM → lặp. Trần `mcp_max_iterations` → dừng + tổng hợp. Tool lỗi→đưa LLM xử tiếp. Stream câu cuối qua `on_token`. `source_type="agentic"` + tool đã gọi vào meta.
   - Test `test_agentic_node.py` (fake mcp_client + fake LLM kịch bản): gọi tool→trả lời; trần iteration; tool lỗi giữa vòng→vẫn trả lời; streaming; tool-output bọc delimiter (F5.3).

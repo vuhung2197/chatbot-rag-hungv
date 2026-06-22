@@ -25,3 +25,4 @@ class GraphState(TypedDict, total=False):
     source_type: str
     citations: list[Any]
     chunks: list[Any]
+    tools_used: list[str]  # agentic node: tên tool đã gọi (trace)

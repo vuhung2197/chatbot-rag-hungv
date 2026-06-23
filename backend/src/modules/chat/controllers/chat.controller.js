@@ -9,7 +9,7 @@ import { aiServiceEnabled, aiTools } from '#services/aiServiceClient.js';
  * Handle new Chat API
  */
 export async function chat(req, res) {
-    const { message, model, conversationId, utilityModel, webSearch, webOnly, debug, forceAgent, mcpServer } = req.body;
+    const { message, model, conversationId, utilityModel, webSearch, webOnly, debug, forceAgent, mcpServer, mcpServers} = req.body;
     const userId = req.user?.id;
     // JWT thô (bỏ tiền tố Bearer) để forward cho ai-service gọi ngược Node API (USER_PROGRESS).
     const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || undefined;
@@ -19,7 +19,7 @@ export async function chat(req, res) {
 
     try {
         console.log('🎯 Controller: Calling processChat with userId:', userId);
-        const result = await chatService.processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug, authToken, forceAgent, mcpServer });
+        const result = await chatService.processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug, authToken, forceAgent, mcpServer, mcpServers});
         console.log('✅ Controller: processChat returned, sending response');
         res.json(result);
     } catch (err) {
@@ -82,7 +82,7 @@ export async function streamChat(req, res) {
     // Let's implement streamChat using the service's methods for DB access,
     // effectively removing SQL from here.
 
-    const { message, model, conversationId, utilityModel, webSearch, webOnly, forceAgent, mcpServer } = req.body;
+    const { message, model, conversationId, utilityModel, webSearch, webOnly, forceAgent, mcpServer, mcpServers} = req.body;
     const userId = req.user?.id;
     const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || undefined;
 
@@ -104,7 +104,7 @@ export async function streamChat(req, res) {
         // Let's delegate to service stream function if we make one.
         // It's better to make streamChat in service accept a callback for events.
 
-        await chatService.streamChat({ userId, message, model: modelConfig, conversationId, utilityModel, webSearch, webOnly, authToken, forceAgent, mcpServer }, sendEvent);
+        await chatService.streamChat({ userId, message, model: modelConfig, conversationId, utilityModel, webSearch, webOnly, authToken, forceAgent, mcpServer, mcpServers}, sendEvent);
 
     } catch (err) {
         console.error('Stream Error:', err);

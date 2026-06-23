@@ -29,7 +29,7 @@ export async function aiTools() {
 }
 
 /** Gọi /chat (non-stream). Trả { reply, source_type, citations, meta }. */
-export async function aiChat({ message, model, history, userId, authToken, forceAgent, mcpServer }) {
+export async function aiChat({ message, model, history, userId, authToken, forceAgent, mcpServer, mcpServers }) {
     const { data } = await axios.post(
         `${BASE_URL}/chat`,
         {
@@ -40,6 +40,7 @@ export async function aiChat({ message, model, history, userId, authToken, force
             auth_token: authToken ?? null,
             force_agent: forceAgent ?? false,
             mcp_server: mcpServer ?? null,
+            mcp_servers: mcpServers ?? null,
         },
         { timeout: 60000, headers: internalHeaders() }
     );
@@ -51,7 +52,7 @@ export async function aiChat({ message, model, history, userId, authToken, force
  * Tự gom 'text' làm reply cuối; trả { reply, meta } khi xong.
  */
 export async function aiChatStream(
-    { message, model, history, userId, authToken, forceAgent, mcpServer },
+    { message, model, history, userId, authToken, forceAgent, mcpServer, mcpServers },
     onEvent
 ) {
     const resp = await axios.post(
@@ -64,6 +65,7 @@ export async function aiChatStream(
             auth_token: authToken ?? null,
             force_agent: forceAgent ?? false,
             mcp_server: mcpServer ?? null,
+            mcp_servers: mcpServers ?? null,
         },
         { responseType: 'stream', timeout: 120000, headers: internalHeaders() }
     );

@@ -22,6 +22,7 @@ export const chatSchema = {
         // Agentic RAG (UI option): ép dùng tool + chọn 1 MCP server (TÊN, khớp allowlist ai-service).
         forceAgent: z.boolean().optional(),
         mcpServer: z.string().nullish(),
+        mcpServers: z.array(z.string()).nullish(),
         conversationId: z.string().nullish()
     })
 };

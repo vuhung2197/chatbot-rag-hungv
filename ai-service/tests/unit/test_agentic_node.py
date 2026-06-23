@@ -115,6 +115,32 @@ async def test_streaming_emits_tokens():
     assert len(pieces) >= 1
 
 
+async def test_mcp_server_filter_no_match_answers_directly():
+    from app.agents.nodes import agentic_node
+
+    # Chọn server không khớp -> không tool nào được offer -> trả lời thẳng, không gọi tool.
+    llm = _ScriptLLM(final_content="trả lời thẳng")
+    mcp = _FakeMcp(_TOOLS, ToolResult(ok=True, content="x"))  # _TOOLS có server="fetch"
+    out = await agentic_node(_state(mcp_server="server_khac"), mcp_client=mcp, llm=llm)
+    assert mcp.calls == []
+    assert out["reply"] == "trả lời thẳng"
+
+
+async def test_mcp_server_filter_match_uses_tool():
+    from app.agents.nodes import agentic_node
+
+    llm = _ScriptLLM(
+        scripted=[
+            LLMMessage(tool_calls=[ToolCall("t1", "fetch", {"url": "http://x"})]),
+            LLMMessage(content="xong"),
+        ]
+    )
+    mcp = _FakeMcp(_TOOLS, ToolResult(ok=True, content="nội dung"))
+    out = await agentic_node(_state(mcp_server="fetch"), mcp_client=mcp, llm=llm)
+    assert out["reply"] == "xong"
+    assert mcp.calls == [("fetch", "fetch", {"url": "http://x"})]
+
+
 async def test_tool_output_wrapped_in_delimiter():
     from app.agents.nodes import agentic_node
 

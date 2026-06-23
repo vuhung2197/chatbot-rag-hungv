@@ -103,6 +103,20 @@ def _meta(state: dict, t0: float) -> dict:
     }
 
 
+@app.get("/tools", dependencies=[Depends(verify_internal_token)])
+async def list_tools() -> dict:
+    """Liệt kê MCP tool khả dụng (cho UI dropdown chọn server/tool). Rỗng nếu chưa cấu hình."""
+    from app.services.mcp_client import get_mcp_client
+
+    tools = await get_mcp_client().list_tools()
+    return {
+        "servers": sorted({t.server for t in tools}),
+        "tools": [
+            {"server": t.server, "name": t.name, "description": t.description} for t in tools
+        ],
+    }
+
+
 @app.post("/chat", response_model=ChatResponse, dependencies=[Depends(verify_internal_token)])
 async def chat(req: ChatRequest, agent: Annotated[AgentGraph, Depends(agent_dep)]) -> ChatResponse:
     """Chạy agent graph (đồng bộ), trả lời kèm intent + citations."""
@@ -115,6 +129,8 @@ async def chat(req: ChatRequest, agent: Annotated[AgentGraph, Depends(agent_dep)
             history=history,
             user_id=req.user_id,
             auth_token=req.auth_token,
+            force_agent=req.force_agent,
+            mcp_server=req.mcp_server,
         )
     except Exception:
         # F5 (D1): lỗi -> 200 + ChatResponse có cấu trúc (source_type=error), KHÔNG
@@ -161,6 +177,8 @@ async def chat_stream(req: ChatRequest, agent: Annotated[AgentGraph, Depends(age
                     on_token=on_token,
                     user_id=req.user_id,
                     auth_token=req.auth_token,
+                    force_agent=req.force_agent,
+                    mcp_server=req.mcp_server,
                 )
             finally:
                 queue.put_nowait(_DONE)  # type: ignore[arg-type]

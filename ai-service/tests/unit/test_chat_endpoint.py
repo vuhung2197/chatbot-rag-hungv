@@ -139,6 +139,14 @@ def test_chat_stream_emits_token_text_done():
     assert '"content": "a"' in raw
 
 
+def test_tools_endpoint_empty_without_servers():
+    # Không cấu hình MCP server -> /tools trả rỗng (UI dropdown chỉ có 'Tự động').
+    r = client.get("/tools")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["servers"] == [] and body["tools"] == []
+
+
 class _RaisingAgent:
     async def run(self, *a, **k):
         raise RuntimeError("sk-proj-LEAK boom")

@@ -28,6 +28,10 @@ class ChatRequest(BaseModel):
     # Định danh do Node gateway forward (USER_PROGRESS gọi ngược Node API).
     user_id: int | None = None
     auth_token: str | None = None
+    # UI option (Agentic): ép dùng tool. mcp_server là TÊN server (khớp allowlist
+    # server-side; KHÔNG phải endpoint -> không mở SSRF). Tên lạ -> bỏ qua/degrade.
+    force_agent: bool = False
+    mcp_server: str | None = None
 
 
 class ChatResponse(BaseModel):

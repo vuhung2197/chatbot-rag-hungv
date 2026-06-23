@@ -43,7 +43,13 @@ _PROGRESS_SYSTEM = (
 
 
 async def router_node(state: GraphState, *, classifier: IntentClassifier) -> dict:
-    """Phân loại intent, đặt vào state để conditional edge định tuyến."""
+    """Phân loại intent, đặt vào state để conditional edge định tuyến.
+
+    UI option force_agent -> ép AGENT, bỏ qua classifier (tiết kiệm 1 LLM call).
+    """
+    if state.get("force_agent"):
+        logger.info("intent=AGENT | forced (UI option)")
+        return {"intent": "AGENT", "reasoning": "forced by UI option"}
     out = await classifier.classify(state["message"], model=state.get("model"))
     logger.info("intent=%s | %s", out["intent"], out["reasoning"])
     return {"intent": out["intent"], "reasoning": out["reasoning"]}
@@ -255,6 +261,10 @@ async def agentic_node(state: GraphState, *, mcp_client: McpClient, llm: LLMClie
     Tool output bọc delimiter (dữ liệu, không phải chỉ thị) giảm prompt injection.
     """
     tool_defs = await mcp_client.list_tools()
+    # UI option: nếu chọn 1 server cụ thể -> chỉ dùng tool của server đó.
+    chosen = state.get("mcp_server")
+    if chosen:
+        tool_defs = [t for t in tool_defs if t.server == chosen]
     by_name = {t.name: t for t in tool_defs}
     tools_schema = _to_openai_tools(tool_defs) or None
 

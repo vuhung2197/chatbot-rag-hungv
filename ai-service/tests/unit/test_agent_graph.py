@@ -137,6 +137,15 @@ def test_route_agent_to_agentic_with_servers(monkeypatch):
     assert route_by_intent({"intent": "AGENT"}) == "agentic"
 
 
+async def test_router_force_agent_skips_classifier():
+    class _BoomClassifier:
+        async def classify(self, *a, **k):
+            raise AssertionError("không được gọi classifier khi force_agent")
+
+    out = await router_node({"message": "x", "force_agent": True}, classifier=_BoomClassifier())
+    assert out["intent"] == "AGENT"
+
+
 def test_agent_intent_registered():
     from app.intent.registry import INTENT_LABELS
 

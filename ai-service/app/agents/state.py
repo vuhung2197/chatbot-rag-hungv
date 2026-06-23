@@ -17,6 +17,9 @@ class GraphState(TypedDict, total=False):
     on_token: Callable[[str], None] | None
     user_id: int | None
     auth_token: str | None
+    # UI option: ép đi đường AGENT + giới hạn 1 MCP server (tên, khớp allowlist).
+    force_agent: bool
+    mcp_server: str | None
     # router đặt
     intent: str
     reasoning: str

@@ -87,6 +87,7 @@ class AgentGraph:
         auth_token: str | None = None,
         force_agent: bool = False,
         mcp_server: str | None = None,
+        mcp_servers: list[str] | None = None,
     ) -> GraphState:
         state: GraphState = {
             "message": message,
@@ -97,6 +98,7 @@ class AgentGraph:
             "auth_token": auth_token,
             "force_agent": force_agent,
             "mcp_server": mcp_server,
+            "mcp_servers": mcp_servers,
         }
         return await self._graph.ainvoke(state)
 

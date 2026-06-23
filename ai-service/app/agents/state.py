@@ -20,6 +20,7 @@ class GraphState(TypedDict, total=False):
     # UI option: ép đi đường AGENT + giới hạn 1 MCP server (tên, khớp allowlist).
     force_agent: bool
     mcp_server: str | None
+    mcp_servers: list[str] | None  # tập server bật (multi-toggle UI); rỗng = mọi server
     # router đặt
     intent: str
     reasoning: str

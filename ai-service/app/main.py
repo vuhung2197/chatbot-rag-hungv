@@ -131,6 +131,7 @@ async def chat(req: ChatRequest, agent: Annotated[AgentGraph, Depends(agent_dep)
             auth_token=req.auth_token,
             force_agent=req.force_agent,
             mcp_server=req.mcp_server,
+            mcp_servers=req.mcp_servers,
         )
     except Exception:
         # F5 (D1): lỗi -> 200 + ChatResponse có cấu trúc (source_type=error), KHÔNG
@@ -179,6 +180,7 @@ async def chat_stream(req: ChatRequest, agent: Annotated[AgentGraph, Depends(age
                     auth_token=req.auth_token,
                     force_agent=req.force_agent,
                     mcp_server=req.mcp_server,
+                    mcp_servers=req.mcp_servers,
                 )
             finally:
                 queue.put_nowait(_DONE)  # type: ignore[arg-type]

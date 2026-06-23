@@ -12,11 +12,10 @@ _SRV = {"name": "fetch", "transport": "stdio", "command": "uvx mcp-server-fetch"
 
 
 def test_chatrequest_has_no_client_controlled_mcp_endpoint():
-    # Client KHÔNG được chỉ định server/endpoint/command MCP qua request body (chặn SSRF).
+    # Client KHÔNG được chỉ định ENDPOINT/COMMAND/URL MCP qua request body (chặn SSRF).
+    # mcp_server / mcp_servers chỉ là TÊN server (khớp allowlist server-side) -> được phép.
     fields = set(ChatRequest.model_fields)
-    assert not (
-        fields & {"mcp_servers", "mcp_endpoint", "mcp_command", "server", "endpoint", "command"}
-    )
+    assert not (fields & {"mcp_endpoint", "mcp_command", "endpoint", "command", "url"})
 
 
 def test_serverconfig_holds_env_name_not_secret():

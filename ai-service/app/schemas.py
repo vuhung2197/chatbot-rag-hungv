@@ -32,6 +32,7 @@ class ChatRequest(BaseModel):
     # server-side; KHÔNG phải endpoint -> không mở SSRF). Tên lạ -> bỏ qua/degrade.
     force_agent: bool = False
     mcp_server: str | None = None
+    mcp_servers: list[str] | None = None  # tập server bật (multi-toggle UI)
 
 
 class ChatResponse(BaseModel):

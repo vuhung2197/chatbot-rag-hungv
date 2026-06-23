@@ -4,6 +4,12 @@ FROM python:3.12-slim AS base
 # uv copy thẳng từ image chính thức (nhanh, không cần curl)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Node + npx: cho các MCP server chạy qua `npx ...` (sequential-thinking, tavily-mcp...).
+# Server Python (uvx) không cần Node; chỉ cài để mở khoá nhóm npx.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nodejs npm \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     PYTHONUNBUFFERED=1

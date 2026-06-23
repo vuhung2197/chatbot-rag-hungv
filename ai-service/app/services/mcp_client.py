@@ -37,10 +37,14 @@ async def _default_session(server: MCPServerConfig):
     from mcp import ClientSession
 
     if server.transport == "stdio":
+        import shlex
+
         from mcp import StdioServerParameters, stdio_client
 
-        parts = (server.command or "").split()
-        params = StdioServerParameters(command=parts[0], args=parts[1:])
+        parts = shlex.split(server.command or "")
+        # Truyền env hiện tại để server con đọc được key (vd TAVILY_API_KEY). Mặc định
+        # StdioServerParameters dùng env tối thiểu -> server cần key sẽ thiếu.
+        params = StdioServerParameters(command=parts[0], args=parts[1:], env=dict(os.environ))
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()

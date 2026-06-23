@@ -805,18 +805,18 @@ export default function Chat({ darkMode = false }) {
                   {showToolsPanel && (
                     <div
                       style={{
-                        position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, zIndex: 1000,
-                        minWidth: 260, padding: 10, borderRadius: 12,
+                        position: 'absolute', bottom: 'calc(100% + 6px)', left: 0, zIndex: 1000,
+                        width: 240, maxHeight: 260, overflowY: 'auto', padding: 6, borderRadius: 10,
                         background: '#fff', border: '1px solid #e5e7eb',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.14)',
                       }}
                     >
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
-                        Công cụ MCP {enabledServers.length ? `· đang bật ${enabledServers.length}` : '· tắt (trợ lý thường)'}
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', padding: '4px 6px 6px' }}>
+                        {enabledServers.length ? `Đang bật ${enabledServers.length} công cụ` : 'Trợ lý thường (chưa bật)'}
                       </div>
                       {!toolCapable && (
-                        <div style={{ fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 8px', marginBottom: 8 }}>
-                          Model hiện tại không hỗ trợ tool. Chọn <b>gpt-4o-mini</b> qua nút Model.
+                        <div style={{ fontSize: 11, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6, padding: '5px 7px', margin: '0 2px 6px' }}>
+                          Model không hỗ trợ tool — chọn <b>gpt-4o-mini</b>.
                         </div>
                       )}
                       {mcpServers.map((s) => {
@@ -830,20 +830,20 @@ export default function Chat({ darkMode = false }) {
                             aria-pressed={on}
                             style={{
                               width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              padding: '8px 10px', marginBottom: 4, borderRadius: 8,
-                              border: '1px solid transparent', background: on ? '#ecfdf5' : 'transparent',
+                              gap: 8, padding: '7px 8px', borderRadius: 8,
+                              border: 'none', background: on ? '#ecfdf5' : 'transparent',
                               cursor: toolCapable ? 'pointer' : 'not-allowed', opacity: toolCapable ? 1 : 0.6,
-                              fontSize: 13, color: '#374151',
+                              fontSize: 13, color: '#374151', textAlign: 'left',
                             }}
                           >
-                            <span>🔧 {s}</span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🔧 {s}</span>
                             {/* switch giả lập */}
                             <span style={{
-                              width: 34, height: 18, borderRadius: 999, padding: 2,
+                              flexShrink: 0, width: 30, height: 16, borderRadius: 999, padding: 2,
                               background: on ? '#10a37f' : '#d1d5db', transition: 'all 0.15s',
                               display: 'inline-flex', justifyContent: on ? 'flex-end' : 'flex-start',
                             }}>
-                              <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff' }} />
+                              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff' }} />
                             </span>
                           </button>
                         );

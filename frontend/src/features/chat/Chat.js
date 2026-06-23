@@ -837,13 +837,14 @@ export default function Chat({ darkMode = false }) {
                             }}
                           >
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🔧 {s}</span>
-                            {/* switch giả lập */}
+                            {/* switch giả lập — cao 12px, bo tròn pill */}
                             <span style={{
-                              flexShrink: 0, width: 30, height: 16, borderRadius: 999, padding: 2,
+                              flexShrink: 0, width: 22, height: 12, borderRadius: 999, padding: 2,
                               background: on ? '#10a37f' : '#d1d5db', transition: 'all 0.15s',
-                              display: 'inline-flex', justifyContent: on ? 'flex-end' : 'flex-start',
+                              display: 'inline-flex', alignItems: 'center',
+                              justifyContent: on ? 'flex-end' : 'flex-start', boxSizing: 'border-box',
                             }}>
-                              <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff' }} />
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff' }} />
                             </span>
                           </button>
                         );

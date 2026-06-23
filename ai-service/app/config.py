@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     mcp_servers: list[MCPServerConfig] = []
     mcp_max_iterations: int = 5  # trần vòng lặp tool/request -> chặn chi phí + lặp vô hạn
     mcp_tool_timeout_sec: int = 20  # timeout mỗi tool-call
+    mcp_tools_cache_ttl_sec: int = 300  # cache danh sách tool (discover chậm) -> /tools nhanh
 
     def enabled_mcp_servers(self) -> list[MCPServerConfig]:
         """Server đang bật + cấu hình hợp lệ (bỏ qua disabled/thiếu field)."""

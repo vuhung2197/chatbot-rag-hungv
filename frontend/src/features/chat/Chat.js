@@ -372,12 +372,21 @@ export default function Chat({ darkMode = false }) {
     localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
   }, [history]);
 
-  // Lấy danh sách MCP server khả dụng (Agentic RAG) cho dropdown. Lỗi/rỗng -> chỉ 'Tự động'.
+  // MCP server khả dụng cho nút Công cụ. Đọc cache localStorage TRƯỚC (hiện nút tức thì
+  // khi refresh, tránh pop-in muộn), rồi refresh nền từ /chat/tools + lưu lại cache.
   useEffect(() => {
+    try {
+      const cached = JSON.parse(localStorage.getItem('chatbot_mcp_servers') || '[]');
+      if (Array.isArray(cached) && cached.length) setMcpServers(cached);
+    } catch { /* cache hỏng -> bỏ qua */ }
     fetch(`${API_URL}/chat/tools`)
       .then(r => r.ok ? r.json() : { servers: [] })
-      .then(d => setMcpServers(Array.isArray(d.servers) ? d.servers : []))
-      .catch(() => setMcpServers([]));
+      .then(d => {
+        const servers = Array.isArray(d.servers) ? d.servers : [];
+        setMcpServers(servers);
+        localStorage.setItem('chatbot_mcp_servers', JSON.stringify(servers));
+      })
+      .catch(() => { /* giữ cache hiện có */ });
   }, []);
 
   // Tool-calling chỉ chạy với model hỗ trợ function-calling (OpenAI gpt-*). Model mặc

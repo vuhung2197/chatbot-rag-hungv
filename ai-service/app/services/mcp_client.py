@@ -77,29 +77,46 @@ class McpClient:
         self._settings = settings or get_settings()
         self._session_factory = session_factory or _default_session
         self._timeout = self._settings.mcp_tool_timeout_sec
+        self._cache_ttl = self._settings.mcp_tools_cache_ttl_sec
+        self._tools_cache: list[ToolDef] | None = None
+        self._tools_cache_at = 0.0
 
     def _server(self, name: str) -> MCPServerConfig | None:
         # Chỉ server trong allowlist (enabled + hợp lệ). name lạ -> None.
         return next((s for s in self._settings.enabled_mcp_servers() if s.name == name), None)
 
-    async def list_tools(self) -> list[ToolDef]:
-        """Discover tool từ mọi server bật. Server lỗi -> bỏ qua (degrade)."""
-        out: list[ToolDef] = []
-        for server in self._settings.enabled_mcp_servers():
-            try:
-                async with self._session_factory(server) as session:
-                    result = await session.list_tools()
-                    for t in result.tools:
-                        out.append(
-                            ToolDef(
-                                server=server.name,
-                                name=t.name,
-                                description=getattr(t, "description", "") or "",
-                                input_schema=getattr(t, "inputSchema", {}) or {},
-                            )
-                        )
-            except Exception as e:  # noqa: BLE001 - 1 server lỗi không được làm sập discover
-                logger.warning("MCP list_tools '%s' lỗi -> bỏ qua: %s", server.name, e)
+    async def _discover(self, server: MCPServerConfig) -> list[ToolDef]:
+        """Discover tool của 1 server. Lỗi/timeout -> [] (degrade, không làm sập cả discover)."""
+        try:
+            async with self._session_factory(server) as session:
+                result = await session.list_tools()
+                return [
+                    ToolDef(
+                        server=server.name,
+                        name=t.name,
+                        description=getattr(t, "description", "") or "",
+                        input_schema=getattr(t, "inputSchema", {}) or {},
+                    )
+                    for t in result.tools
+                ]
+        except Exception as e:  # noqa: BLE001 - 1 server lỗi không được làm sập discover
+            logger.warning("MCP discover '%s' lỗi -> bỏ qua: %s", server.name, e)
+            return []
+
+    async def list_tools(self, use_cache: bool = True) -> list[ToolDef]:
+        """Discover tool từ mọi server bật (SONG SONG). Cache theo TTL -> /tools nhanh."""
+        now = asyncio.get_event_loop().time()
+        if (
+            use_cache
+            and self._tools_cache is not None
+            and (now - self._tools_cache_at) < self._cache_ttl
+        ):
+            return self._tools_cache
+        servers = self._settings.enabled_mcp_servers()
+        results = await asyncio.gather(*[self._discover(s) for s in servers])
+        out = [t for sub in results for t in sub]
+        self._tools_cache = out
+        self._tools_cache_at = now
         return out
 
     async def call_tool(self, server_name: str, tool_name: str, args: dict | None) -> ToolResult:

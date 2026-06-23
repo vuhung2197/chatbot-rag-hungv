@@ -432,7 +432,10 @@ export default function Chat({ darkMode = false }) {
     setLoading(true);
     setLoadingStatus('Đang kết nối đến server...');
 
-    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId, forceAgent: !!mcpServer, mcpServer: mcpServer || null };
+    // Công cụ (Agentic): '' = trợ lý thường (không tool) · '__all__' = mọi công cụ (agent tự chọn)
+    // · '<server>' = scope vào 1 server. force_agent bật khi != ''; mcp_server chỉ gửi khi scope.
+    const agentScoped = mcpServer && mcpServer !== '__all__' ? mcpServer : null;
+    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId, forceAgent: mcpServer !== '', mcpServer: agentScoped };
     const sseHandlers = {
       setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
       onNewConversation: () => conversationsListRef.current?.fetchConversations()
@@ -758,7 +761,7 @@ export default function Chat({ darkMode = false }) {
                     onChange={(e) => setMcpServer(e.target.value)}
                     disabled={!toolCapable}
                     title={toolCapable
-                      ? "Công cụ (Agentic RAG): chọn 1 MCP server để bot dùng tool tra cứu/đọc URL. 'Tự động' = phân loại ý định như thường."
+                      ? "Công cụ (Agentic RAG): 'Trợ lý thường' = không dùng tool · 'Mọi công cụ' = agent tự chọn tool từ mọi server · 'Chỉ: <server>' = giới hạn vào 1 server."
                       : 'Model hiện tại không hỗ trợ tool-calling. Chọn model OpenAI (gpt-4o-mini) qua nút Model để dùng công cụ.'}
                     style={{
                       padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
@@ -769,9 +772,10 @@ export default function Chat({ darkMode = false }) {
                       opacity: toolCapable ? 1 : 0.7,
                     }}
                   >
-                    <option value="">🛠️ Công cụ: Tự động</option>
+                    <option value="">💬 Trợ lý thường (không công cụ)</option>
+                    <option value="__all__">🛠️ Mọi công cụ (tự chọn)</option>
                     {mcpServers.map((s) => (
-                      <option key={s} value={s}>🛠️ {s}</option>
+                      <option key={s} value={s}>🔧 Chỉ: {s}</option>
                     ))}
                   </select>
                   {!toolCapable && (

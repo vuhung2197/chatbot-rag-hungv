@@ -10,6 +10,7 @@ from functools import partial
 from langgraph.graph import END, StateGraph
 
 from app.agents.nodes import (
+    agentic_node,
     greeting_node,
     knowledge_node,
     live_search_node,
@@ -24,11 +25,12 @@ from app.intent.classifier import IntentClassifier, get_classifier
 from app.rag.pipeline import RagPipeline, get_pipeline
 from app.schemas import ModelConfig
 from app.services.llm import LLMClient, get_llm
+from app.services.mcp_client import McpClient, get_mcp_client
 from app.services.web_search import WebSearchClient, get_web_search
 
 logger = logging.getLogger(__name__)
 
-_NODE_NAMES = ["knowledge", "live_search", "user_progress", "greeting", "offtopic"]
+_NODE_NAMES = ["knowledge", "live_search", "user_progress", "greeting", "offtopic", "agentic"]
 
 
 def build_graph(
@@ -37,6 +39,7 @@ def build_graph(
     web: WebSearchClient,
     llm: LLMClient,
     node_api: NodeApiClient,
+    mcp_client: McpClient,
 ):
     """Dựng + compile graph với deps inject sẵn vào từng node."""
     g = StateGraph(GraphState)
@@ -46,6 +49,7 @@ def build_graph(
     g.add_node("user_progress", partial(user_progress_node, node_api=node_api, llm=llm))
     g.add_node("greeting", partial(greeting_node, llm=llm))
     g.add_node("offtopic", offtopic_node)
+    g.add_node("agentic", partial(agentic_node, mcp_client=mcp_client, llm=llm))
 
     g.set_entry_point("router")
     g.add_conditional_edges("router", route_by_intent, {n: n for n in _NODE_NAMES})
@@ -62,6 +66,7 @@ class AgentGraph:
         web: WebSearchClient | None = None,
         llm: LLMClient | None = None,
         node_api: NodeApiClient | None = None,
+        mcp_client: McpClient | None = None,
     ):
         self._graph = build_graph(
             classifier or get_classifier(),
@@ -69,6 +74,7 @@ class AgentGraph:
             web or get_web_search(),
             llm or get_llm(),
             node_api or get_node_api(),
+            mcp_client or get_mcp_client(),
         )
 
     async def run(

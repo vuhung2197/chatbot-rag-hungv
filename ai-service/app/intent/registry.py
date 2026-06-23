@@ -46,6 +46,17 @@ INTENT_REGISTRY: dict[str, IntentDef] = {
         ),
         examples=["RAG là gì", "Cách dùng useEffect", "Bạn đã học những tài liệu nào"],
     ),
+    "AGENT": IntentDef(
+        pillar=False,
+        description=(
+            "Yêu cầu cần DÙNG CÔNG CỤ ngoài qua nhiều bước: đọc/lấy nội dung một URL cụ thể, "
+            "tra cứu/tính toán bằng tool. Khác LIVE_SEARCH (chỉ tìm tin tức nhanh)."
+        ),
+        examples=[
+            "Đọc trang https://example.com và tóm tắt",
+            "Lấy nội dung URL này giúp tôi",
+        ],
+    ),
 }
 
 INTENT_LABELS: list[str] = list(INTENT_REGISTRY.keys())

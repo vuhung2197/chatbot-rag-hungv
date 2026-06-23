@@ -56,12 +56,19 @@ INTENT_TO_NODE = {
     "USER_PROGRESS": "user_progress",
     "GREETING": "greeting",
     "OFF_TOPIC": "offtopic",
+    "AGENT": "agentic",
 }
 
 
 def route_by_intent(state: GraphState) -> str:
-    """Edge function: tên node kế tiếp theo intent (mặc định knowledge)."""
-    return INTENT_TO_NODE.get(state.get("intent", ""), "knowledge")
+    """Edge function: tên node kế tiếp theo intent (mặc định knowledge).
+
+    F4.2: AGENT mà KHÔNG có MCP server nào bật -> degrade về KNOWLEDGE (RAG thường).
+    """
+    node = INTENT_TO_NODE.get(state.get("intent", ""), "knowledge")
+    if node == "agentic" and not get_settings().enabled_mcp_servers():
+        return "knowledge"
+    return node
 
 
 async def _synthesize_web(state: GraphState, llm: LLMClient, context: str) -> str:

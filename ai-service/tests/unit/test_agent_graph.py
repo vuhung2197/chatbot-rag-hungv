@@ -43,6 +43,26 @@ class _FakeLLM:
     async def stream(self, model, messages, temperature, max_tokens) -> AsyncIterator[str]:
         yield self.text
 
+    async def complete_with_tools(
+        self, model, messages, tools=None, temperature=0.3, max_tokens=1024
+    ):
+        from app.services.llm import LLMMessage
+
+        return LLMMessage(content=self.text)
+
+
+class _FakeMcp:
+    def __init__(self, tools=None):
+        self._tools = tools or []
+
+    async def list_tools(self):
+        return self._tools
+
+    async def call_tool(self, server, name, args):
+        from app.services.mcp_client import ToolResult
+
+        return ToolResult(ok=True, content="x")
+
 
 class _FakeWeb:
     def __init__(self, enabled=True, context="kết quả web"):
@@ -98,6 +118,51 @@ def test_route_by_intent_maps_all():
     assert route_by_intent({"intent": "GREETING"}) == "greeting"
     assert route_by_intent({"intent": "OFF_TOPIC"}) == "offtopic"
     assert route_by_intent({"intent": "???"}) == "knowledge"  # mặc định
+
+
+def test_route_agent_degrades_to_knowledge_without_servers():
+    # F4.2: AGENT mà không có MCP server bật -> degrade KNOWLEDGE (settings mặc định rỗng).
+    assert route_by_intent({"intent": "AGENT"}) == "knowledge"
+
+
+def test_route_agent_to_agentic_with_servers(monkeypatch):
+    from app.agents import nodes
+    from app.config import Settings
+
+    monkeypatch.setattr(
+        nodes,
+        "get_settings",
+        lambda: Settings(mcp_servers=[{"name": "fetch", "transport": "stdio", "command": "x"}]),
+    )
+    assert route_by_intent({"intent": "AGENT"}) == "agentic"
+
+
+def test_agent_intent_registered():
+    from app.intent.registry import INTENT_LABELS
+
+    assert "AGENT" in INTENT_LABELS
+
+
+async def test_graph_routes_agent_to_agentic_node(monkeypatch):
+    from app.agents import nodes
+    from app.config import Settings
+
+    monkeypatch.setattr(
+        nodes,
+        "get_settings",
+        lambda: Settings(mcp_servers=[{"name": "fetch", "transport": "stdio", "command": "x"}]),
+    )
+    agent = AgentGraph(
+        classifier=_FakeClassifier("AGENT"),
+        pipeline=_FakePipeline(_ctx()),
+        web=_FakeWeb(),
+        llm=_FakeLLM("đáp agentic"),
+        node_api=_FakeNodeApi({}),
+        mcp_client=_FakeMcp(tools=[]),
+    )
+    state = await agent.run("đọc trang này")
+    assert state["source_type"] == "agentic"
+    assert state["reply"] == "đáp agentic"
 
 
 async def test_knowledge_node_with_context():

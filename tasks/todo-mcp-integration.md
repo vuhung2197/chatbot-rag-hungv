@@ -39,7 +39,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
 
 - [ ] **✅ Checkpoint 1** — vòng lặp tool chạy offline; trần iteration dừng sạch. Full unit xanh.
 
-- [ ] **T5 — Intent `AGENT` + graph wiring + degrade** `[M]`
+- [x] **T5 — Intent `AGENT` + graph wiring + degrade** `[M]` ✅ intent AGENT + node "agentic" wired; route degrade->knowledge khi 0 server · test 4 + full 113 pass
   - File: `app/intent/registry.py` (thêm `AGENT`), `app/agents/nodes.py` (INTENT_TO_NODE), `app/agents/graph.py` (add_node + edge + inject mcp_client/llm).
   - 0 tool khả dụng → agentic path degrade về knowledge_node (RAG thường), không lỗi.
   - Test: cập nhật `test_agent_graph.py` (route AGENT→agentic node; degrade khi 0 tool); `test_intent.py` nếu eval intent cần nhãn mới.

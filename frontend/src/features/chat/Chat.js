@@ -385,7 +385,7 @@ export default function Chat({ darkMode = false }) {
   // Model đổi sang loại không hỗ trợ -> bỏ chọn công cụ (không gửi forceAgent).
   useEffect(() => {
     if (!toolCapable && mcpServer) setMcpServer('');
-  }, [toolCapable]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [toolCapable, mcpServer]);
 
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();

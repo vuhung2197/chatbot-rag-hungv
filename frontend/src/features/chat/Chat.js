@@ -378,6 +378,15 @@ export default function Chat({ darkMode = false }) {
       .catch(() => setMcpServers([]));
   }, []);
 
+  // Tool-calling chỉ chạy với model hỗ trợ function-calling (OpenAI gpt-*). Model mặc
+  // định (null) = gpt-4o-mini phía ai-service -> coi như hỗ trợ.
+  const toolCapable = !model || (/openai\.com/i.test(model?.url || '') && /gpt-/i.test(model?.name || ''));
+
+  // Model đổi sang loại không hỗ trợ -> bỏ chọn công cụ (không gửi forceAgent).
+  useEffect(() => {
+    if (!toolCapable && mcpServer) setMcpServer('');
+  }, [toolCapable]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
   };
@@ -743,22 +752,34 @@ export default function Chat({ darkMode = false }) {
 
               {/* Agentic RAG: chọn công cụ (MCP server). 'Tự động' = intent thường. Ẩn nếu chưa cấu hình server. */}
               {mcpServers.length > 0 && (
-                <select
-                  value={mcpServer}
-                  onChange={(e) => setMcpServer(e.target.value)}
-                  title="Công cụ (Agentic RAG): chọn 1 MCP server để bot dùng tool tra cứu/đọc URL. 'Tự động' = phân loại ý định như thường."
-                  style={{
-                    padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
-                    border: mcpServer ? '1px solid #10a37f' : '1px solid #d1d5db',
-                    background: mcpServer ? '#10a37f' : 'transparent',
-                    color: mcpServer ? '#fff' : '#6b7280', cursor: 'pointer',
-                  }}
-                >
-                  <option value="">🛠️ Công cụ: Tự động</option>
-                  {mcpServers.map((s) => (
-                    <option key={s} value={s}>🛠️ {s}</option>
-                  ))}
-                </select>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <select
+                    value={mcpServer}
+                    onChange={(e) => setMcpServer(e.target.value)}
+                    disabled={!toolCapable}
+                    title={toolCapable
+                      ? "Công cụ (Agentic RAG): chọn 1 MCP server để bot dùng tool tra cứu/đọc URL. 'Tự động' = phân loại ý định như thường."
+                      : 'Model hiện tại không hỗ trợ tool-calling. Chọn model OpenAI (gpt-4o-mini) qua nút Model để dùng công cụ.'}
+                    style={{
+                      padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                      border: mcpServer ? '1px solid #10a37f' : '1px solid #d1d5db',
+                      background: !toolCapable ? '#f3f4f6' : (mcpServer ? '#10a37f' : 'transparent'),
+                      color: !toolCapable ? '#9ca3af' : (mcpServer ? '#fff' : '#6b7280'),
+                      cursor: toolCapable ? 'pointer' : 'not-allowed',
+                      opacity: toolCapable ? 1 : 0.7,
+                    }}
+                  >
+                    <option value="">🛠️ Công cụ: Tự động</option>
+                    {mcpServers.map((s) => (
+                      <option key={s} value={s}>🛠️ {s}</option>
+                    ))}
+                  </select>
+                  {!toolCapable && (
+                    <span style={{ fontSize: 12, color: '#9ca3af' }}>
+                      Cần model OpenAI (gpt-*) để dùng công cụ
+                    </span>
+                  )}
+                </div>
               )}
 
               {/* Chọn chế độ chat: stream (SSE) | sync (JSON) | async (Kafka+WS) */}

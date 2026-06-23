@@ -237,6 +237,8 @@ export default function Chat({ darkMode = false }) {
   const [webOnly, setWebOnly] = useState(false); // chế độ Web Only: đi thẳng web search, bỏ qua intent + RAG
   const [enabledServers, setEnabledServers] = useState([]); // server đang BẬT (toggle); rỗng = trợ lý thường
   const [mcpServers, setMcpServers] = useState([]); // danh sách MCP server khả dụng (cho toggle)
+  const [showToolsPanel, setShowToolsPanel] = useState(false); // popover bật/tắt công cụ
+  const toolsPanelRef = useRef(null);
   const [chatMode, setChatMode] = useState('stream'); // 'stream' | 'sync' | 'async'
   const [showGuide, setShowGuide] = useState(false);
 
@@ -389,6 +391,18 @@ export default function Chat({ darkMode = false }) {
 
   const toggleServer = (s) =>
     setEnabledServers((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+
+  // Đóng popover Công cụ khi click ra ngoài.
+  useEffect(() => {
+    if (!showToolsPanel) return;
+    function onClickOutside(e) {
+      if (toolsPanelRef.current && !toolsPanelRef.current.contains(e.target)) {
+        setShowToolsPanel(false);
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [showToolsPanel]);
 
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
@@ -756,40 +770,76 @@ export default function Chat({ darkMode = false }) {
                 Tìm web
               </button>
 
-              {/* Agentic RAG: BẬT/TẮT từng MCP server (toggle). Bật ≥1 -> agent dùng tool.
-                  Rỗng = trợ lý thường. Ẩn nếu chưa cấu hình server. */}
+              {/* Agentic RAG: nút "Công cụ" mở popover bật/tắt từng MCP server. Popover float
+                  (position absolute) nên KHÔNG đẩy layout ô nhập chat. Ẩn nếu chưa có server. */}
               {mcpServers.length > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>🛠️ Công cụ:</span>
-                  {mcpServers.map((s) => {
-                    const on = enabledServers.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => toggleServer(s)}
-                        disabled={!toolCapable}
-                        aria-pressed={on}
-                        title={toolCapable
-                          ? `Bật/tắt công cụ "${s}". Bật ≥1 công cụ -> bot tự dùng tool khi cần (Agentic). Không bật cái nào = trợ lý thường.`
-                          : 'Model hiện tại không hỗ trợ tool-calling. Chọn model OpenAI (gpt-4o-mini) qua nút Model.'}
-                        style={{
-                          padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
-                          border: on ? '1px solid #10a37f' : '1px solid #d1d5db',
-                          background: !toolCapable ? '#f3f4f6' : (on ? '#10a37f' : 'transparent'),
-                          color: !toolCapable ? '#9ca3af' : (on ? '#fff' : '#6b7280'),
-                          cursor: toolCapable ? 'pointer' : 'not-allowed',
-                          opacity: toolCapable ? 1 : 0.7,
-                        }}
-                      >
-                        {on ? '✓ ' : ''}{s}
-                      </button>
-                    );
-                  })}
-                  {!toolCapable && (
-                    <span style={{ fontSize: 12, color: '#9ca3af' }}>
-                      Cần model OpenAI (gpt-*) để dùng công cụ
-                    </span>
+                <div ref={toolsPanelRef} style={{ position: 'relative', display: 'inline-block' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowToolsPanel((v) => !v)}
+                    title="Bật/tắt công cụ (MCP) cho bot. Bật ≥1 -> bot tự dùng tool khi cần."
+                    aria-expanded={showToolsPanel}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                      cursor: 'pointer', transition: 'all 0.15s ease',
+                      border: enabledServers.length ? '1px solid #10a37f' : '1px solid #d1d5db',
+                      background: enabledServers.length ? '#10a37f' : 'transparent',
+                      color: enabledServers.length ? '#fff' : '#6b7280',
+                    }}
+                  >
+                    <i className="fas fa-toolbox"></i>
+                    Công cụ{enabledServers.length ? ` (${enabledServers.length})` : ''}
+                    <i className={`fas fa-chevron-${showToolsPanel ? 'up' : 'down'}`} style={{ fontSize: 10 }}></i>
+                  </button>
+
+                  {showToolsPanel && (
+                    <div
+                      style={{
+                        position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, zIndex: 1000,
+                        minWidth: 260, padding: 10, borderRadius: 12,
+                        background: '#fff', border: '1px solid #e5e7eb',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                      }}
+                    >
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+                        Công cụ MCP {enabledServers.length ? `· đang bật ${enabledServers.length}` : '· tắt (trợ lý thường)'}
+                      </div>
+                      {!toolCapable && (
+                        <div style={{ fontSize: 12, color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, padding: '6px 8px', marginBottom: 8 }}>
+                          Model hiện tại không hỗ trợ tool. Chọn <b>gpt-4o-mini</b> qua nút Model.
+                        </div>
+                      )}
+                      {mcpServers.map((s) => {
+                        const on = enabledServers.includes(s);
+                        return (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => toggleServer(s)}
+                            disabled={!toolCapable}
+                            aria-pressed={on}
+                            style={{
+                              width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                              padding: '8px 10px', marginBottom: 4, borderRadius: 8,
+                              border: '1px solid transparent', background: on ? '#ecfdf5' : 'transparent',
+                              cursor: toolCapable ? 'pointer' : 'not-allowed', opacity: toolCapable ? 1 : 0.6,
+                              fontSize: 13, color: '#374151',
+                            }}
+                          >
+                            <span>🔧 {s}</span>
+                            {/* switch giả lập */}
+                            <span style={{
+                              width: 34, height: 18, borderRadius: 999, padding: 2,
+                              background: on ? '#10a37f' : '#d1d5db', transition: 'all 0.15s',
+                              display: 'inline-flex', justifyContent: on ? 'flex-end' : 'flex-start',
+                            }}>
+                              <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff' }} />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}

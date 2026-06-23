@@ -200,6 +200,10 @@ services:
       - KAFKA_BROKERS=kafka:9092
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      # Hybrid: worker async cũng ủy quyền sinh câu trả lời sang ai-service (đồng bộ với backend).
+      - AI_SERVICE_ENABLED=${AI_SERVICE_ENABLED:-false}
+      - AI_SERVICE_URL=http://ai-service:8000
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
     volumes:
       - ./backend:/app
       - /app/node_modules

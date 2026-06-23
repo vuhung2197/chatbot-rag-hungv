@@ -233,7 +233,6 @@ export default function Chat({ darkMode = false }) {
   const [loadingStatus, setLoadingStatus] = useState('Đang suy nghĩ...');
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [model, setModel] = useState(null);
-  const [utilityModel, setUtilityModel] = useState(null); // model phụ (nhanh) cho intent/rewrite
   const [webOnly, setWebOnly] = useState(false); // chế độ Web Only: đi thẳng web search, bỏ qua intent + RAG
   const [enabledServers, setEnabledServers] = useState([]); // server đang BẬT (toggle); rỗng = trợ lý thường
   const [mcpServers, setMcpServers] = useState([]); // danh sách MCP server khả dụng (cho toggle)
@@ -350,14 +349,6 @@ export default function Chat({ darkMode = false }) {
       }
     }
 
-    const savedUtility = localStorage.getItem('chatbot_utility_model');
-    if (savedUtility) {
-      try {
-        setUtilityModel(JSON.parse(savedUtility));
-      } catch (e) {
-        console.error('Lỗi khi parse model phụ:', e);
-      }
-    }
 
     const savedWebOnly = localStorage.getItem('chatbot_web_only');
     if (savedWebOnly !== null) setWebOnly(savedWebOnly === 'true');
@@ -461,7 +452,7 @@ export default function Chat({ darkMode = false }) {
     // Công cụ (Agentic): bật ≥1 server -> force_agent + gửi danh sách mcpServers (agent
     // tự chọn tool trong các server đã bật). Rỗng -> trợ lý thường (không tool).
     const agentic = toolCapable && enabledServers.length > 0;
-    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId, forceAgent: agentic, mcpServers: agentic ? enabledServers : null };
+    const body = { message: input, model, webOnly, conversationId: currentConversationId, forceAgent: agentic, mcpServers: agentic ? enabledServers : null };
     const sseHandlers = {
       setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
       onNewConversation: () => conversationsListRef.current?.fetchConversations()
@@ -889,12 +880,6 @@ export default function Chat({ darkMode = false }) {
                 setModel(m);
                 if (m) localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
                 else localStorage.removeItem('chatbot_selected_model');
-              }}
-              utilityModel={utilityModel}
-              onSelectUtilityModel={m => {
-                setUtilityModel(m);
-                if (m) localStorage.setItem('chatbot_utility_model', JSON.stringify(m));
-                else localStorage.removeItem('chatbot_utility_model');
               }}
               onClose={() => setShowModelPopup(false)}
             />

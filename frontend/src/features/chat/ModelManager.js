@@ -14,7 +14,7 @@ const defaultForm = {
   maxTokens: 512,
 };
 
-const ModelManagerPage = ({ onSelectModel, onSelectUtilityModel, utilityModel, onClose }) => {
+const ModelManagerPage = ({ onSelectModel, onClose }) => {
   const [models, setModels] = useState([]);
   const [form, setForm] = useState(defaultForm);
   const [editingIndex, setEditingIndex] = useState(null);
@@ -116,29 +116,6 @@ const ModelManagerPage = ({ onSelectModel, onSelectUtilityModel, utilityModel, o
           </div>
         )}
 
-        {onSelectUtilityModel && (
-          <div className={styles.selectedModelInfo}>
-            <div className={styles.selectedModelIcon}>⚡</div>
-            <div className={styles.selectedModelContent}>
-              <div className={styles.selectedModelLabel}>
-                Model phụ (phân loại/viết lại câu hỏi — nên chọn model nhẹ/nhanh):
-              </div>
-              <div className={styles.selectedModelName}>
-                {utilityModel ? utilityModel.name : '(chưa chọn — dùng chung model chính)'}
-              </div>
-              {utilityModel && (
-                <button
-                  type="button"
-                  className={`${buttons.button} ${buttons.buttonSmall} ${buttons.buttonSecondary}`}
-                  onClick={() => onSelectUtilityModel(null)}
-                >
-                  Bỏ chọn model phụ
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
         <form
           onSubmit={handleSubmit}
           className={forms.form}
@@ -218,11 +195,6 @@ const ModelManagerPage = ({ onSelectModel, onSelectUtilityModel, utilityModel, o
                       ✓ ĐANG SỬ DỤNG
                     </span>
                   )}
-                  {utilityModel?.name === m.name && (
-                    <span className={styles.badge}>
-                      ⚡ MODEL PHỤ
-                    </span>
-                  )}
                 </div>
                 <div className={styles.modelUrl}>{m.url}</div>
                 <div className={styles.modelMeta}>
@@ -252,15 +224,6 @@ const ModelManagerPage = ({ onSelectModel, onSelectUtilityModel, utilityModel, o
                 >
                   {selectedModel?.name === m.name ? '✓ Đã chọn' : 'Chọn'}
                 </button>
-                {onSelectUtilityModel && (
-                  <button
-                    className={`${buttons.button} ${buttons.buttonSmall} ${utilityModel?.name === m.name ? buttons.buttonSuccess : buttons.buttonSecondary}`}
-                    onClick={() => onSelectUtilityModel(m)}
-                    title="Dùng model này cho phân loại ý định & viết lại câu hỏi (nên chọn model nhẹ/nhanh)"
-                  >
-                    {utilityModel?.name === m.name ? '⚡ Model phụ' : 'Đặt làm phụ'}
-                  </button>
-                )}
               </div>
             </div>
           ))}

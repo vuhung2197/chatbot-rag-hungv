@@ -9,7 +9,7 @@ import { aiServiceEnabled, aiTools } from '#services/aiServiceClient.js';
  * Handle new Chat API
  */
 export async function chat(req, res) {
-    const { message, model, conversationId, utilityModel, webSearch, webOnly, debug, forceAgent, mcpServer, mcpServers} = req.body;
+    const { message, model, conversationId, webSearch, webOnly, debug, forceAgent, mcpServer, mcpServers} = req.body;
     const userId = req.user?.id;
     // JWT thô (bỏ tiền tố Bearer) để forward cho ai-service gọi ngược Node API (USER_PROGRESS).
     const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || undefined;
@@ -19,7 +19,7 @@ export async function chat(req, res) {
 
     try {
         console.log('🎯 Controller: Calling processChat with userId:', userId);
-        const result = await chatService.processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug, authToken, forceAgent, mcpServer, mcpServers});
+        const result = await chatService.processChat({ userId, message, model, conversationId, webSearch, webOnly, debug, authToken, forceAgent, mcpServer, mcpServers});
         console.log('✅ Controller: processChat returned, sending response');
         res.json(result);
     } catch (err) {
@@ -82,14 +82,14 @@ export async function streamChat(req, res) {
     // Let's implement streamChat using the service's methods for DB access,
     // effectively removing SQL from here.
 
-    const { message, model, conversationId, utilityModel, webSearch, webOnly, forceAgent, mcpServer, mcpServers} = req.body;
+    const { message, model, conversationId, webSearch, webOnly, forceAgent, mcpServer, mcpServers} = req.body;
     const userId = req.user?.id;
     const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || undefined;
 
     if (!message) return res.status(400).json({ error: 'No message provided' });
 
     const modelConfig = (model && model.url && model.name) ? model : { url: 'https://api.openai.com/v1', name: 'gpt-4o-mini' };
-    // utilityModel: model nhẹ/nhanh dùng cho intent + rewrite (tùy chọn). webSearch: bật/tắt tra web (mặc định bật).
+    // webSearch: bật/tắt tra web (mặc định bật).
 
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -104,7 +104,7 @@ export async function streamChat(req, res) {
         // Let's delegate to service stream function if we make one.
         // It's better to make streamChat in service accept a callback for events.
 
-        await chatService.streamChat({ userId, message, model: modelConfig, conversationId, utilityModel, webSearch, webOnly, authToken, forceAgent, mcpServer, mcpServers}, sendEvent);
+        await chatService.streamChat({ userId, message, model: modelConfig, conversationId, webSearch, webOnly, authToken, forceAgent, mcpServer, mcpServers}, sendEvent);
 
     } catch (err) {
         console.error('Stream Error:', err);

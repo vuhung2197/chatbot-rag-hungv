@@ -105,7 +105,7 @@ class ChatService {
         return { intent, reasoning };
     }
 
-    async processChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, debug, authToken, forceAgent, mcpServer, mcpServers}) {
+    async processChat({ userId, message, model, conversationId, webSearch, webOnly, debug, authToken, forceAgent, mcpServer, mcpServers}) {
         if (!message) throw new Error('No message provided');
 
         // Hybrid: nếu bật ai-service (Python), ủy quyền phần SINH câu trả lời sang đó.
@@ -224,7 +224,7 @@ class ChatService {
         await chatRepository.insertMessage(userId, conversationId, conversationTitle, question, reply, metadata);
     }
 
-    async streamChat({ userId, message, model, conversationId, utilityModel, webSearch, webOnly, authToken, forceAgent, mcpServer, mcpServers}, sendEvent) {
+    async streamChat({ userId, message, model, conversationId, webSearch, webOnly, authToken, forceAgent, mcpServer, mcpServers}, sendEvent) {
         // Hybrid: bật ai-service -> stream từ Python; tắt -> luồng Node cũ bên dưới.
         if (aiServiceEnabled()) {
             return await this._streamViaAiService({ userId, message, model, conversationId, authToken, forceAgent, mcpServer, mcpServers}, sendEvent);

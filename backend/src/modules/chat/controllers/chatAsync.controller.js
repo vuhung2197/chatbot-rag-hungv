@@ -10,7 +10,7 @@ import { getJobResult } from '../../../redis/redisClient.js';
  * Client dùng WebSocket (ws://host/ws) để nhận kết quả khi worker xử lý xong.
  */
 export async function chatAsync(req, res) {
-  const { message, model, conversationId, utilityModel, webSearch, webOnly, stream, forceAgent, mcpServer, mcpServers } = req.body;
+  const { message, model, conversationId, webSearch, webOnly, stream, forceAgent, mcpServer, mcpServers } = req.body;
   const userId = req.user?.id ?? null;
   // JWT thô để worker forward cho ai-service (USER_PROGRESS gọi ngược Node API).
   const authToken = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || undefined;
@@ -28,7 +28,6 @@ export async function chatAsync(req, res) {
       message,
       model,
       conversationId,
-      utilityModel,
       webSearch,
       webOnly,
       authToken,

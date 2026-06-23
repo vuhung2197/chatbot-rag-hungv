@@ -111,3 +111,13 @@ async def test_list_tools_degrades_on_connection_error():
 async def test_no_servers_returns_empty():
     client = McpClient(settings=_settings([]), session_factory=_factory_for({}))
     assert await client.list_tools() == []
+
+
+async def test_call_tool_logs_observability(caplog):
+    import logging
+
+    sess = _FakeSession(call_text="ok")
+    client = McpClient(settings=_settings([_FETCH]), session_factory=_factory_for({"fetch": sess}))
+    with caplog.at_level(logging.INFO):
+        await client.call_tool("fetch", "fetch", {})
+    assert any("MCP tool 'fetch/fetch' ok" in r.getMessage() for r in caplog.records)

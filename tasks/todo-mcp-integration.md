@@ -56,7 +56,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
   - **AC:** F5.1–5.4 (khoá). **Verify:** `uv run pytest tests/unit/test_mcp_security.py -q`.
   - Phụ thuộc: T2, T4, T5.
 
-- [ ] **T7 — Eval + observability + integration** `[M]`
+- [~] **T7 — Eval + observability + integration** `[M]` ✅ observability log tool-call (test 1) + eval scaffold (gated `-m eval`) + integration Fetch (gated `-m integration`, viết xong) · full 118 pass. ⏳ **chạy live integration + eval cần môi trường thật (uvx + LLM key) — pending bạn chạy**
   - File: `tests/eval/test_agentic_eval.py` (gated eval), log tool-call ở mcp_client/agentic_node (kèm request_id), `tests/integration/test_mcp_live.py` (gated, server thật).
   - Eval: bộ câu cần-tool vs không-cần-tool → agent chọn tool đúng lúc. Integration: 1 luồng end-to-end với **Fetch** (`mcp-server-fetch`, stdio `uvx mcp-server-fetch`, read-only, không key). Config: `{"name":"fetch","transport":"stdio","command":"uvx mcp-server-fetch","enabled":true}`. ⚠️ cần `uvx`/`uv` trong môi trường chạy (chạy ai-service ngoài Docker hoặc thêm vào Dockerfile).
   - **AC:** F6.1–6.2. **Verify:** `uv run pytest -m eval -q` / `-m integration -q`.

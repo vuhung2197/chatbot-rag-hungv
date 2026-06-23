@@ -103,11 +103,15 @@ class McpClient:
         server = self._server(server_name)
         if server is None:
             return ToolResult(ok=False, error=f"server không cho phép: {server_name}")
+        start = asyncio.get_event_loop().time()
         try:
             async with self._session_factory(server) as session:
                 result = await asyncio.wait_for(
                     session.call_tool(tool_name, args or {}), timeout=self._timeout
                 )
+            ms = round((asyncio.get_event_loop().time() - start) * 1000)
+            # F6.2: log mỗi tool-call (request_id tự gắn qua RequestIdFilter).
+            logger.info("MCP tool '%s/%s' ok (%dms)", server_name, tool_name, ms)
             return ToolResult(ok=True, content=_extract_text(result))
         except TimeoutError:
             logger.warning("MCP call_tool '%s/%s' timeout", server_name, tool_name)

@@ -235,8 +235,8 @@ export default function Chat({ darkMode = false }) {
   const [model, setModel] = useState(null);
   const [utilityModel, setUtilityModel] = useState(null); // model phụ (nhanh) cho intent/rewrite
   const [webOnly, setWebOnly] = useState(false); // chế độ Web Only: đi thẳng web search, bỏ qua intent + RAG
-  const [mcpServer, setMcpServer] = useState(''); // '' = Tự động; tên server -> ép Agentic (dùng tool MCP)
-  const [mcpServers, setMcpServers] = useState([]); // danh sách MCP server khả dụng (cho dropdown)
+  const [enabledServers, setEnabledServers] = useState([]); // server đang BẬT (toggle); rỗng = trợ lý thường
+  const [mcpServers, setMcpServers] = useState([]); // danh sách MCP server khả dụng (cho toggle)
   const [chatMode, setChatMode] = useState('stream'); // 'stream' | 'sync' | 'async'
   const [showGuide, setShowGuide] = useState(false);
 
@@ -382,10 +382,13 @@ export default function Chat({ darkMode = false }) {
   // định (null) = gpt-4o-mini phía ai-service -> coi như hỗ trợ.
   const toolCapable = !model || (/openai\.com/i.test(model?.url || '') && /gpt-/i.test(model?.name || ''));
 
-  // Model đổi sang loại không hỗ trợ -> bỏ chọn công cụ (không gửi forceAgent).
+  // Model đổi sang loại không hỗ trợ -> tắt hết công cụ (không gửi forceAgent).
   useEffect(() => {
-    if (!toolCapable && mcpServer) setMcpServer('');
-  }, [toolCapable, mcpServer]);
+    if (!toolCapable && enabledServers.length) setEnabledServers([]);
+  }, [toolCapable, enabledServers]);
+
+  const toggleServer = (s) =>
+    setEnabledServers((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
@@ -432,10 +435,10 @@ export default function Chat({ darkMode = false }) {
     setLoading(true);
     setLoadingStatus('Đang kết nối đến server...');
 
-    // Công cụ (Agentic): '' = trợ lý thường (không tool) · '__all__' = mọi công cụ (agent tự chọn)
-    // · '<server>' = scope vào 1 server. force_agent bật khi != ''; mcp_server chỉ gửi khi scope.
-    const agentScoped = mcpServer && mcpServer !== '__all__' ? mcpServer : null;
-    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId, forceAgent: mcpServer !== '', mcpServer: agentScoped };
+    // Công cụ (Agentic): bật ≥1 server -> force_agent + gửi danh sách mcpServers (agent
+    // tự chọn tool trong các server đã bật). Rỗng -> trợ lý thường (không tool).
+    const agentic = toolCapable && enabledServers.length > 0;
+    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId, forceAgent: agentic, mcpServers: agentic ? enabledServers : null };
     const sseHandlers = {
       setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
       onNewConversation: () => conversationsListRef.current?.fetchConversations()
@@ -753,31 +756,36 @@ export default function Chat({ darkMode = false }) {
                 Tìm web
               </button>
 
-              {/* Agentic RAG: chọn công cụ (MCP server). 'Tự động' = intent thường. Ẩn nếu chưa cấu hình server. */}
+              {/* Agentic RAG: BẬT/TẮT từng MCP server (toggle). Bật ≥1 -> agent dùng tool.
+                  Rỗng = trợ lý thường. Ẩn nếu chưa cấu hình server. */}
               {mcpServers.length > 0 && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <select
-                    value={mcpServer}
-                    onChange={(e) => setMcpServer(e.target.value)}
-                    disabled={!toolCapable}
-                    title={toolCapable
-                      ? "Công cụ (Agentic RAG): 'Trợ lý thường' = không dùng tool · 'Mọi công cụ' = agent tự chọn tool từ mọi server · 'Chỉ: <server>' = giới hạn vào 1 server."
-                      : 'Model hiện tại không hỗ trợ tool-calling. Chọn model OpenAI (gpt-4o-mini) qua nút Model để dùng công cụ.'}
-                    style={{
-                      padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
-                      border: mcpServer ? '1px solid #10a37f' : '1px solid #d1d5db',
-                      background: !toolCapable ? '#f3f4f6' : (mcpServer ? '#10a37f' : 'transparent'),
-                      color: !toolCapable ? '#9ca3af' : (mcpServer ? '#fff' : '#6b7280'),
-                      cursor: toolCapable ? 'pointer' : 'not-allowed',
-                      opacity: toolCapable ? 1 : 0.7,
-                    }}
-                  >
-                    <option value="">💬 Trợ lý thường (không công cụ)</option>
-                    <option value="__all__">🛠️ Mọi công cụ (tự chọn)</option>
-                    {mcpServers.map((s) => (
-                      <option key={s} value={s}>🔧 Chỉ: {s}</option>
-                    ))}
-                  </select>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 13, color: '#6b7280', fontWeight: 500 }}>🛠️ Công cụ:</span>
+                  {mcpServers.map((s) => {
+                    const on = enabledServers.includes(s);
+                    return (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => toggleServer(s)}
+                        disabled={!toolCapable}
+                        aria-pressed={on}
+                        title={toolCapable
+                          ? `Bật/tắt công cụ "${s}". Bật ≥1 công cụ -> bot tự dùng tool khi cần (Agentic). Không bật cái nào = trợ lý thường.`
+                          : 'Model hiện tại không hỗ trợ tool-calling. Chọn model OpenAI (gpt-4o-mini) qua nút Model.'}
+                        style={{
+                          padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                          border: on ? '1px solid #10a37f' : '1px solid #d1d5db',
+                          background: !toolCapable ? '#f3f4f6' : (on ? '#10a37f' : 'transparent'),
+                          color: !toolCapable ? '#9ca3af' : (on ? '#fff' : '#6b7280'),
+                          cursor: toolCapable ? 'pointer' : 'not-allowed',
+                          opacity: toolCapable ? 1 : 0.7,
+                        }}
+                      >
+                        {on ? '✓ ' : ''}{s}
+                      </button>
+                    );
+                  })}
                   {!toolCapable && (
                     <span style={{ fontSize: 12, color: '#9ca3af' }}>
                       Cần model OpenAI (gpt-*) để dùng công cụ

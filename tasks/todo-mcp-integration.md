@@ -50,7 +50,7 @@ Plan: [tasks/plan-mcp-integration.md](plan-mcp-integration.md) · Spec: [docs/SP
 
 ## Phase 3 — Hardening & eval
 
-- [ ] **T6 — Bảo mật (lock test)** `[S]`
+- [x] **T6 — Bảo mật (lock test)** `[S]` ✅ client không điều khiển endpoint; secret=tên-env; allowlist reject (không mở session); tool bịa không thực thi · test 4 + full 117 pass
   - File: bổ sung test + sửa nhẹ nếu hở.
   - Test `test_mcp_security.py`: allowlist reject server/endpoint lạ; client (request body) KHÔNG chỉ định được server/endpoint; secret (`api_key_env`) không xuất hiện trong prompt/log/meta; tool-output không vào sink eval/exec.
   - **AC:** F5.1–5.4 (khoá). **Verify:** `uv run pytest tests/unit/test_mcp_security.py -q`.

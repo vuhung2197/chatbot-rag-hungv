@@ -19,11 +19,28 @@ function internalHeaders() {
     return token ? { 'X-Internal-Token': token } : {};
 }
 
+/** Liệt kê MCP tool khả dụng (cho UI dropdown). Trả { servers, tools }. */
+export async function aiTools() {
+    const { data } = await axios.get(`${BASE_URL}/tools`, {
+        timeout: 15000,
+        headers: internalHeaders(),
+    });
+    return data;
+}
+
 /** Gọi /chat (non-stream). Trả { reply, source_type, citations, meta }. */
-export async function aiChat({ message, model, history, userId, authToken }) {
+export async function aiChat({ message, model, history, userId, authToken, forceAgent, mcpServer }) {
     const { data } = await axios.post(
         `${BASE_URL}/chat`,
-        { message, model, history, user_id: userId ?? null, auth_token: authToken ?? null },
+        {
+            message,
+            model,
+            history,
+            user_id: userId ?? null,
+            auth_token: authToken ?? null,
+            force_agent: forceAgent ?? false,
+            mcp_server: mcpServer ?? null,
+        },
         { timeout: 60000, headers: internalHeaders() }
     );
     return data;
@@ -33,10 +50,21 @@ export async function aiChat({ message, model, history, userId, authToken }) {
  * Gọi /chat/stream (SSE) và forward từng event qua onEvent(type, payload).
  * Tự gom 'text' làm reply cuối; trả { reply, meta } khi xong.
  */
-export async function aiChatStream({ message, model, history, userId, authToken }, onEvent) {
+export async function aiChatStream(
+    { message, model, history, userId, authToken, forceAgent, mcpServer },
+    onEvent
+) {
     const resp = await axios.post(
         `${BASE_URL}/chat/stream`,
-        { message, model, history, user_id: userId ?? null, auth_token: authToken ?? null },
+        {
+            message,
+            model,
+            history,
+            user_id: userId ?? null,
+            auth_token: authToken ?? null,
+            force_agent: forceAgent ?? false,
+            mcp_server: mcpServer ?? null,
+        },
         { responseType: 'stream', timeout: 120000, headers: internalHeaders() }
     );
 

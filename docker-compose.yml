@@ -306,6 +306,9 @@ services:
       - TAVILY_API_KEY=${TAVILY_API_KEY}
       - NODE_API_URL=http://backend:3001
       - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
+      # Agentic RAG: allowlist MCP server (JSON). Fetch qua stdio (uvx có sẵn trong image).
+      # Mặc định bật Fetch để demo; override bằng env MCP_SERVERS.
+      - MCP_SERVERS=${MCP_SERVERS:-[{"name":"fetch","transport":"stdio","command":"uvx mcp-server-fetch","enabled":true}]}
     depends_on:
       postgres:
         condition: service_healthy

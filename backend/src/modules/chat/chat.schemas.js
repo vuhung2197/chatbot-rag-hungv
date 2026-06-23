@@ -19,6 +19,9 @@ export const chatSchema = {
         webSearch: z.boolean().optional(), // bật/tắt web fallback (mặc định bật)
         debug: z.boolean().optional(),     // trả thêm _meta.context để đánh giá faithfulness
         stream: z.boolean().optional(),    // (async) stream token qua WebSocket thay vì trả cục
+        // Agentic RAG (UI option): ép dùng tool + chọn 1 MCP server (TÊN, khớp allowlist ai-service).
+        forceAgent: z.boolean().optional(),
+        mcpServer: z.string().nullish(),
         conversationId: z.string().nullish()
     })
 };

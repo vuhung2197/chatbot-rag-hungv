@@ -235,6 +235,8 @@ export default function Chat({ darkMode = false }) {
   const [model, setModel] = useState(null);
   const [utilityModel, setUtilityModel] = useState(null); // model phụ (nhanh) cho intent/rewrite
   const [webOnly, setWebOnly] = useState(false); // chế độ Web Only: đi thẳng web search, bỏ qua intent + RAG
+  const [mcpServer, setMcpServer] = useState(''); // '' = Tự động; tên server -> ép Agentic (dùng tool MCP)
+  const [mcpServers, setMcpServers] = useState([]); // danh sách MCP server khả dụng (cho dropdown)
   const [chatMode, setChatMode] = useState('stream'); // 'stream' | 'sync' | 'async'
   const [showGuide, setShowGuide] = useState(false);
 
@@ -368,6 +370,14 @@ export default function Chat({ darkMode = false }) {
     localStorage.setItem(`chatbot_history_${userId}`, JSON.stringify(history));
   }, [history]);
 
+  // Lấy danh sách MCP server khả dụng (Agentic RAG) cho dropdown. Lỗi/rỗng -> chỉ 'Tự động'.
+  useEffect(() => {
+    fetch(`${API_URL}/chat/tools`)
+      .then(r => r.ok ? r.json() : { servers: [] })
+      .then(d => setMcpServers(Array.isArray(d.servers) ? d.servers : []))
+      .catch(() => setMcpServers([]));
+  }, []);
+
   const hashQuestion = text => {
     return CryptoJS.SHA256(text.trim().toLowerCase()).toString();
   };
@@ -413,7 +423,7 @@ export default function Chat({ darkMode = false }) {
     setLoading(true);
     setLoadingStatus('Đang kết nối đến server...');
 
-    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId };
+    const body = { message: input, model, utilityModel, webOnly, conversationId: currentConversationId, forceAgent: !!mcpServer, mcpServer: mcpServer || null };
     const sseHandlers = {
       setLoadingStatus, setHistory, setAdvancedResponse, setCurrentConversationId,
       onNewConversation: () => conversationsListRef.current?.fetchConversations()
@@ -730,6 +740,26 @@ export default function Chat({ darkMode = false }) {
                 <i className="fas fa-globe"></i>
                 Tìm web
               </button>
+
+              {/* Agentic RAG: chọn công cụ (MCP server). 'Tự động' = intent thường. Ẩn nếu chưa cấu hình server. */}
+              {mcpServers.length > 0 && (
+                <select
+                  value={mcpServer}
+                  onChange={(e) => setMcpServer(e.target.value)}
+                  title="Công cụ (Agentic RAG): chọn 1 MCP server để bot dùng tool tra cứu/đọc URL. 'Tự động' = phân loại ý định như thường."
+                  style={{
+                    padding: '6px 12px', borderRadius: 999, fontSize: 13, fontWeight: 500,
+                    border: mcpServer ? '1px solid #10a37f' : '1px solid #d1d5db',
+                    background: mcpServer ? '#10a37f' : 'transparent',
+                    color: mcpServer ? '#fff' : '#6b7280', cursor: 'pointer',
+                  }}
+                >
+                  <option value="">🛠️ Công cụ: Tự động</option>
+                  {mcpServers.map((s) => (
+                    <option key={s} value={s}>🛠️ {s}</option>
+                  ))}
+                </select>
+              )}
 
               {/* Chọn chế độ chat: stream (SSE) | sync (JSON) | async (Kafka+WS) */}
               <select

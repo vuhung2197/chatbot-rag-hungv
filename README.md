@@ -2,16 +2,16 @@
 
 ## 🧠 Giới Thiệu Dự Án
 
-Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-Augmented Generation)** tối ưu, hỗ trợ:
+Chatbot AI thông minh kiến trúc **RAG (Retrieval-Augmented Generation)**, vận hành theo mô hình **hybrid**: backend Node.js và **lõi AI Python (FastAPI)** chạy song song, giao tiếp bất đồng bộ qua **Kafka** và stream thời gian thực qua **Redis Pub/Sub → WebSocket**.
 
-- **🎯 Thuần RAG**: Tìm kiếm và trả lời dựa trên kiến thức đã học
-- **📚 Quản lý kiến thức**: Upload, chunking và embedding tự động
-- **⚡ Advanced RAG**: Multi-stage retrieval, semantic clustering, multi-hop reasoning
-- **⚡ Tối ưu hiệu suất**: Vector database với indexing và caching
-- **🔒 Bảo mật**: Authentication và authorization đầy đủ
+- **🎯 RAG nội bộ**: Tìm kiếm vector (pgvector) + rerank trên kho tri thức đã index
+- **🧭 Định tuyến intent**: 6 nhãn (KNOWLEDGE / LIVE_SEARCH / USER_PROGRESS / GREETING / OFF_TOPIC / AGENT) bằng LLM router, có cache Redis
+- **🤖 Agentic RAG (MCP)**: Vòng lặp ReAct gọi tool qua Model Context Protocol (fetch, time, web search…)
+- **🌐 Live search**: Tìm web thời gian thực (Tavily) khi câu hỏi cần dữ liệu cập nhật
+- **⚡ Async + Streaming**: Chat qua Kafka worker, stream token qua WebSocket, polling kết quả qua Redis
+- **🔒 Bảo mật**: JWT auth, shared-secret service-to-service, allowlist host LLM (chống SSRF), bound input
 
-
-> **Kiến trúc**: Frontend (React Modular) + Backend (Node.js Modular Monolith) + PostgreSQL + Vector Database
+> **Kiến trúc**: React (frontend) + Node.js (gateway/RAG) + **Python FastAPI (lõi AI)** + Kafka + Redis + PostgreSQL/pgvector + Ollama
 
 ---
 
@@ -51,17 +51,50 @@ Chatbot AI thông minh được xây dựng với kiến trúc **RAG (Retrieval-
 ## 🏗️ Kiến Trúc Hệ Thống
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │    Backend      │    │   Database      │
-│   (React)       │◄──►│   (Node.js)     │◄──►│ (PostgreSQL)    │
-│                 │    │                 │    │                 │
-│ • Chat Features │    │ • RAG Engine    │    │ • Knowledge     │
-│ • Admin Module  │    │ • Vector Search │    │ • Vectors       │
-│ • User Module   │    │ • Modules API   │    │ • Users         │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+        ┌─────────────┐        ┌──────────────────────────┐
+        │  Frontend   │  HTTP  │   Backend (Node.js)      │
+        │  (React)    │◄──────►│   gateway · RAG · auth   │
+        │             │   WS   │   wallet · knowledge     │
+        └─────────────┘◄──────►└──────────┬───────────────┘
+                                          │
+              ┌───────────────────────────┼───────────────────────┐
+              │ Kafka (async chat)        │ Redis (job/cache/      │
+              │ chat-requests/responses   │  Pub/Sub stream)       │
+              ▼                           ▼                        │
+        ┌───────────────┐         ┌──────────────────────────┐    │
+        │  chat-worker  │────────►│  ai-service (Python)     │    │
+        │  (consumer)   │  HTTP   │  FastAPI · LangGraph     │◄───┘
+        └───────────────┘         │  intent · RAG · agentic  │
+                                  └───────┬──────────┬───────┘
+                                          │          │
+                          ┌───────────────▼──┐   ┌───▼─────────┐   ┌──────────┐
+                          │ PostgreSQL       │   │  Ollama     │   │   MCP    │
+                          │ + pgvector       │   │ (on-prem)   │   │ servers  │
+                          └──────────────────┘   └─────────────┘   └──────────┘
 ```
 
-### **RAG Processing Flow**
+> **Hybrid**: Node và ai-service **dùng chung** Postgres (pgvector) + Redis. Câu chat đi async qua Kafka → worker gọi ai-service; token stream về client qua Redis Pub/Sub → WebSocket. Xem chi tiết lõi Python tại [`ai-service/README.md`](ai-service/README.md).
+
+### **Luồng chat của ai-service (Python — đường mặc định hiện tại)**
+```mermaid
+graph TD
+    Q[Câu hỏi] --> R[Router: phân loại intent + cache Redis]
+    R -->|KNOWLEDGE| K[RAG pgvector: embed → retrieve → rerank → generate]
+    R -->|LIVE_SEARCH| W[Web search Tavily → tổng hợp]
+    R -->|USER_PROGRESS| P[Gọi ngược Node API → LLM diễn giải]
+    R -->|GREETING| G[LLM trả lời xã giao]
+    R -->|OFF_TOPIC| O[Từ chối tĩnh]
+    R -->|AGENT| AG[ReAct loop gọi tool MCP]
+    K -->|KB rỗng| W
+    K --> RESP[reply + source_type + citations]
+    W --> RESP
+    P --> RESP
+    G --> RESP
+    O --> RESP
+    AG --> RESP
+```
+
+### **Advanced RAG Flow (Node.js — đường legacy `/chat`, `/chat/stream`)**
 ```mermaid
 graph TD
     A[User Question] --> B{History?}
@@ -104,40 +137,30 @@ graph TD
 ## 📂 Cấu Trúc Dự Án (New Architecture)
 
 ```
-english-chatbot/
-├── 📁 backend/                 # Node.js API Server (Modular Architecture)
-│   ├── 📁 src/modules/         # Feature Modules (Routes & Controllers)
-│   │   ├── 📁 auth/           # Authentication
-│   │   ├── 📁 chat/           # Chat Logic & History
-│   │   ├── 📁 knowledge/      # Knowledge Base Management
-
-│   │   ├── 📁 wallet/         # Wallet & Payment
-│   │   ├── 📁 user/           # User Management
-│   │   └── ...
-│   ├── 📁 services/            # Business Logic & Integrations
-│   │   ├── 🔧 advancedRAGFixed.js  # Advanced RAG Core Engine
-│   │   ├── 🔧 embeddingVector.js   # Embedding Service
-│   │   ├── 🔧 momoService.js       # MoMo Payment Integration
-│   │   ├── 🔧 vnpayService.js      # VNPay Payment Integration
-│   │   └── 🔧 emailService.js      # Email Service
-│   ├── 📁 middlewares/         # Shared Middlewares (Auth, Error)
-│   └── 📁 db/                  # Database Scripts
-├── 📁 frontend/                # React Application (Feature-based)
-│   ├── 📁 src/features/        # Feature Modules (UI & Logic)
-│   │   ├── 📁 auth/           # Login, Register, OAuth
-│   │   ├── 📁 chat/           # Chat Interface
-│   │   ├── 📁 knowledge/      # Admin Dashboard & Search
-
-│   │   ├── 📁 wallet/         # Wallet & Transactions
-│   │   └── 📁 user/           # Profile & Settings
-│   ├── 📁 src/components/      # Shared Components
-│   │   ├── 📁 ui/             # Atomic UI (Buttons, Modals)
-│   │   └── 📁 shared/         # Common Widgets
-│   ├── 📁 src/context/         # Global State Providers
-│   ├── 📁 src/hooks/           # Custom Hooks
-│   └── 📁 src/pages/           # Page Wrappers
-├── 📁 db/                      # SQL Init Scripts
-└── 📄 docker-compose.yml       # Docker Configuration
+chatbot-rag-hungv/
+├── 📁 backend/                 # Node.js gateway (Modular Architecture)
+│   ├── 📁 src/modules/         # Feature Modules (auth, chat, knowledge, wallet, user, learning…)
+│   ├── 📁 src/kafka/           # Kafka producer + topics (chat-requests / chat-responses)
+│   ├── 📁 src/workers/         # chat-worker: consume chat-requests → gọi AI → trả kết quả
+│   ├── 📁 src/redis/           # ioredis client: job result (TTL) + Pub/Sub stream
+│   ├── 📁 src/services/        # advancedRAGFixed.js, embeddingVector.js, momo/vnpay/email…
+│   ├── 📁 src/shared/          # Middlewares (auth, rate-limit, error)
+│   └── 📄 index.js             # API server + WebSocket relay (Redis → WS)
+│
+├── 📁 ai-service/              # ⭐ Lõi AI Python (FastAPI) — chạy hybrid song song Node
+│   ├── 📁 app/
+│   │   ├── 📄 main.py          # FastAPI: /health /chat /chat/stream /tools
+│   │   ├── 📁 agents/          # LangGraph: graph + 7 node (router + 6 intent)
+│   │   ├── 📁 intent/          # registry + classifier (cache Redis)
+│   │   ├── 📁 rag/             # retrieval (pgvector) · rerank · pipeline
+│   │   ├── 📁 services/        # llm · embeddings · db · cache · web_search · mcp_client
+│   │   └── 📁 clients/         # node_api (gọi ngược Node cho USER_PROGRESS)
+│   └── 📁 tests/               # unit · integration · eval
+│
+├── 📁 frontend/                # React (Feature-based: auth, chat, knowledge, wallet, user)
+├── 📁 db/                      # SQL init + migrations
+├── 📁 docs/                    # ADR, deploy checklist, spec
+└── 📄 docker-compose.yml       # 12 services (xem mục Khởi Chạy)
 ```
 
 ---
@@ -145,9 +168,10 @@ english-chatbot/
 ## ⚙️ Cài Đặt & Chạy Dự Án
 
 ### **1. Yêu Cầu Hệ Thống**
-- **Docker** + **Docker Compose**
-- **Node.js** 18+ (cho development)
-- **PostgreSQL** 13+ (với pgvector extension)
+- **Docker** + **Docker Compose** (chạy toàn bộ 12 service)
+- **Node.js** 18+ (dev backend/frontend)
+- **Python** 3.12 + [**uv**](https://docs.astral.sh/uv/) (dev ai-service)
+- **PostgreSQL** 13+ với **pgvector** extension
 
 ### **2. Clone Repository**
 ```bash
@@ -178,7 +202,7 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres123
 POSTGRES_DB=chatbot
 
-# OpenAI API
+# OpenAI API (embeddings + LLM)
 OPENAI_API_KEY=sk-your-openai-api-key
 
 # Server
@@ -187,6 +211,17 @@ NODE_ENV=development
 
 # Frontend
 REACT_APP_API_URL=http://localhost:3001
+
+# Kafka & Redis (chat async + stream)
+KAFKA_BROKERS=localhost:9094
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# ai-service (Python) — bảo mật & tính năng
+INTERNAL_API_TOKEN=          # shared-secret Node ↔ Python (để rỗng ở dev)
+TAVILY_API_KEY=              # web search (LIVE_SEARCH / fallback)
+OLLAMA_BASE_URL=http://localhost:11434
+# MCP_SERVERS=[...]          # allowlist server MCP (JSON) cho Agentic RAG
 ```
 
 ### **4. Khởi Chạy Với Docker**
@@ -212,34 +247,44 @@ npm start
 cd frontend
 npm install
 npm start
+
+# ai-service (terminal mới) — lõi AI Python
+cd ai-service
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+curl localhost:8000/health    # kiểm tra
 ```
 
-### **6. Truy Cập Ứng Dụng**
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **Database**: localhost:5432
+### **6. Truy Cập Ứng Dụng & Các Service**
+
+| Service | URL / Port | Vai trò |
+|---|---|---|
+| Frontend (React) | http://localhost:3000 | Giao diện chat |
+| Backend (Node.js) | http://localhost:3001 | API gateway + WebSocket (`/ws`) |
+| ai-service (Python) | http://127.0.0.1:8000 | Lõi AI (chỉ loopback; truy cập qua Node) |
+| PostgreSQL + pgvector | localhost:5432 | DB + vector store |
+| Redis | localhost:6379 | Job result · cache · Pub/Sub |
+| Kafka | localhost:9094 | Hàng đợi chat async |
+| Kafka UI | http://localhost:8080 | Theo dõi topic/consumer |
+| pgAdmin | http://localhost:5050 | Quản trị Postgres |
+| Ollama | http://localhost:11434 | LLM on-premise |
+| SonarQube | http://localhost:9000 | Phân tích chất lượng code |
+
+> **Lưu ý**: `chat-worker` (consumer Kafka) chạy nền, không expose cổng.
 
 -----
 
 ## 🗄️ Database Setup
 
-### **1. Khởi Tạo Database**
-```bash
-# Chạy script khởi tạo
-psql -U postgres -f db/init.sql
-```
+### **1. Khởi Tạo Tự Động (Docker)**
+Khi `docker-compose up`, Postgres tự chạy `db/init_postgres.sql` (mount vào `docker-entrypoint-initdb.d`) — tạo schema + bật extension `pgvector`. Không cần thao tác tay.
 
-### **2. Tối Ưu Vector Database**
+### **2. Migrations (khi cần cập nhật schema)**
 ```bash
-# Chạy script tối ưu hóa vector
-psql -U postgres -d chatbot -f db/vector_optimization.sql
+# Áp 1 migration cụ thể
+docker exec -i chatbot-postgres psql -U postgres -d chatbot < db/migrations/<tên-file>.sql
 ```
-
-### **3. Dọn Dẹp Database (Nếu Cần)**
-```bash
-# Loại bỏ các bảng không cần thiết
-psql -U postgres -d chatbot -f db/remove_unused_tables.sql
-```
+Thư mục `db/migrations/` chứa các thay đổi schema theo tính năng (learning hub, reading/writing/speaking, vocabulary, wallet…).
 
 ---
 
@@ -273,11 +318,17 @@ POST /auth/logout      # Đăng xuất
 
 ### **Chat**
 ```http
-POST /chat/stream     # Gửi tin nhắn (Streaming + Context Aware)
-POST /chat            # Gửi tin nhắn (Legacy/Block)
-GET  /chat/history    # Lịch sử chat
-DELETE /chat/history/:id # Xóa tin nhắn
+POST   /chat/async        # Gửi chat bất đồng bộ → trả requestId (xử lý qua Kafka)
+GET    /chat/result/:jobId # Polling kết quả async từ Redis (200 done / 202 pending)
+POST   /chat/stream       # Gửi tin nhắn (SSE streaming, context-aware)
+POST   /chat              # Gửi tin nhắn (block, đồng bộ)
+GET    /chat/history      # Lịch sử chat
+DELETE /chat/history/:id  # Xóa tin nhắn
+GET    /chat/tools        # Liệt kê MCP tool khả dụng (Agentic RAG)
+WS     /ws                # WebSocket: subscribe requestId để nhận token stream
 ```
+
+> Luồng async: `POST /chat/async` → Kafka → `chat-worker` → ai-service → kết quả về Redis + push qua WebSocket. Client có thể nhận realtime qua `/ws` hoặc polling `/chat/result/:jobId`.
 
 ### **Knowledge Management**
 ```http
@@ -326,16 +377,20 @@ docker-compose logs -f backend
 ## 🛠️ Development
 
 ### **Code Structure**
-- **Backend**: Express.js với modular architecture
-- **Frontend**: React với Feature-based architecture
-- **Database**: PostgreSQL với pgvector optimization
-- **AI**: OpenAI API với Advanced RAG pattern
+- **Backend**: Node.js/Express modular monolith — gateway, RAG legacy, Kafka producer, WebSocket relay
+- **ai-service**: Python 3.12 / FastAPI + LangGraph (uv) — intent router, RAG, Agentic/MCP
+- **Frontend**: React feature-based
+- **Database**: PostgreSQL + pgvector (dùng chung Node & Python)
+- **Messaging**: Kafka (chat async), Redis (job result · cache · Pub/Sub stream)
+- **LLM**: OpenAI-compatible + Ollama (on-prem)
 
 ### **Key Features**
-- **Vector Database**: Tối ưu cho large-scale vector search
-- **Caching Layer**: Redis-style caching cho performance
-- **Error Handling**: Comprehensive error handling
-- **Security**: JWT authentication, input validation
+- **Hybrid AI core**: Node và Python ai-service song song, dùng chung Postgres/Redis
+- **Vector Database**: pgvector cho semantic search
+- **Caching Layer**: Redis (intent cache, job result TTL)
+- **Streaming**: token stream qua Kafka worker → Redis Pub/Sub → WebSocket
+- **Error Handling**: degrade an toàn (không bubble 500), request_id trace xuyên log
+- **Security**: JWT, shared-secret service-to-service, allowlist host LLM (chống SSRF), bound input
 
 ### **Testing**
 ```bash
@@ -429,6 +484,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
+- **Issues**: [GitHub Issues](https://github.com/vuhung2197/chatbot-rag-hungv/issues)
 - **Email**: hung97vu@gmail.com
-- **Documentation**: [Wiki](https://github.com/your-repo/wiki)
+- **Tài liệu**: [`ai-service/README.md`](ai-service/README.md), [`docs/`](docs/)

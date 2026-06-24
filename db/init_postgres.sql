@@ -187,9 +187,12 @@ CREATE TABLE user_questions (
     is_reviewed BOOLEAN DEFAULT FALSE,
     is_archived BOOLEAN DEFAULT FALSE,
     is_pinned BOOLEAN DEFAULT FALSE,
+    metadata JSONB NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_user_questions_metadata_source ON user_questions USING gin (metadata);
 
 CREATE INDEX idx_user_questions_conversation_id ON user_questions(conversation_id);
 CREATE INDEX idx_user_questions_user_archived ON user_questions(user_id, is_archived);

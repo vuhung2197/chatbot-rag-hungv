@@ -1,0 +1,32 @@
+"""State của agent graph (LangGraph).
+
+TypedDict total=False: node chỉ trả về các field nó cập nhật, LangGraph merge vào state.
+"""
+
+from collections.abc import Callable
+from typing import Any, TypedDict
+
+from app.schemas import ModelConfig
+
+
+class GraphState(TypedDict, total=False):
+    # input
+    message: str
+    history: list[dict[str, str]]
+    model: ModelConfig
+    on_token: Callable[[str], None] | None
+    user_id: int | None
+    auth_token: str | None
+    # UI option: ép đi đường AGENT + giới hạn 1 MCP server (tên, khớp allowlist).
+    force_agent: bool
+    mcp_server: str | None
+    mcp_servers: list[str] | None  # tập server bật (multi-toggle UI); rỗng = mọi server
+    # router đặt
+    intent: str
+    reasoning: str
+    # node trả lời đặt
+    reply: str
+    source_type: str
+    citations: list[Any]
+    chunks: list[Any]
+    tools_used: list[str]  # agentic node: tên tool đã gọi (trace)

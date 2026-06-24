@@ -1,6 +1,5 @@
 import currencyService from '#services/currencyService.js';
 import vnpayService from '#services/vnpayService.js';
-import momoService from '#services/momoService.js';
 import walletService from '../services/wallet.service.js';
 import walletRepository from '../repositories/wallet.repository.js';
 
@@ -12,7 +11,7 @@ function getClientIp(req) {
     return ipAddr;
 }
 
-// ─── Helper: Convert amount for VNPay/MoMo gateway (always VND) ───
+// ─── Helper: Convert amount for VNPay gateway (always VND) ───
 function getGatewayAmount(amount, inputCurrency) {
     let amountVnd = inputCurrency !== 'VND'
         ? currencyService.convertCurrency(amount, inputCurrency, 'VND')
@@ -38,18 +37,12 @@ async function createPaymentUrl(paymentMethod, { transactionId, amount, inputCur
         return url;
     }
 
-    if (paymentMethod === 'momo') {
-        const url = await momoService.createPaymentUrl({ orderId, amount, orderInfo });
-        await walletRepository.updateTransactionOrderId(transactionId, orderId);
-        return url;
-    }
-
     return `/payment/process?transaction_id=${transactionId}&method=${paymentMethod}`;
 }
 
 // ─── Helper: Validate deposit amount against payment method limits ───
 function validateAmount(amount, inputCurrency, paymentMethod, method) {
-    const isVnGateway = paymentMethod === 'vnpay' || paymentMethod === 'momo';
+    const isVnGateway = paymentMethod === 'vnpay';
     let amountForValidation = amount;
 
     if (isVnGateway && inputCurrency !== 'VND') {

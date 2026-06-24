@@ -34,10 +34,20 @@ const chatRepository = {
         return parseInt(rows[0].count);
     },
 
+    async getKnowledgeTitles() {
+        const [rows] = await pool.execute(
+            `SELECT title, COUNT(*) AS chunk_count
+             FROM knowledge_chunks
+             GROUP BY title
+             ORDER BY chunk_count DESC`
+        );
+        return rows;
+    },
+
     async insertMessage(userId, conversationId, conversationTitle, question, reply, metadata) {
         await pool.execute(
             'INSERT INTO user_questions (user_id, conversation_id, conversation_title, question, bot_reply, is_answered, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [userId, conversationId, conversationTitle, question, reply, true, JSON.stringify(metadata)]
+            [userId, conversationId, conversationTitle, question, reply, true, metadata]
         );
     },
 };

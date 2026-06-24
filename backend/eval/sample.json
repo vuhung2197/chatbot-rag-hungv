@@ -1,0 +1,5 @@
+{
+  "question": "RAG là gì và ai phát minh ra nó?",
+  "context": "# Nguồn 1: RAG\nRAG (Retrieval-Augmented Generation) là kỹ thuật kết hợp truy xuất thông tin với mô hình sinh ngôn ngữ. Hệ thống tìm tài liệu liên quan rồi đưa vào ngữ cảnh để LLM trả lời chính xác hơn, giảm bịa đặt.",
+  "answer": "RAG (Retrieval-Augmented Generation) là kỹ thuật kết hợp truy xuất thông tin với mô hình sinh ngôn ngữ để giảm bịa đặt. Kỹ thuật này được Google phát minh năm 2018 và hiện chạy nhanh nhất trên GPU H100."
+}

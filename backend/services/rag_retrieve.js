@@ -114,17 +114,3 @@ function cosineSimilarity(a, b, eps = 1e-12) {
   const s = dot / denom;
   return Math.max(-1, Math.min(1, s));
 }
-
-/**
- * Batch retrieval cho multiple queries
- * Tối ưu khi cần tìm kiếm nhiều câu hỏi cùng lúc
- */
-export async function batchRetrieveTopChunks(queries, topK = 3) {
-  try {
-    const { batchVectorSearch } = await import('./vectorDatabase.js');
-    return await batchVectorSearch(queries, topK);
-  } catch {
-    // console.error('❌ Error in batch retrieval');
-    return [];
-  }
-}

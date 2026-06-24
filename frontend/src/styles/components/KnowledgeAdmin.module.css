@@ -72,4 +72,7 @@
 .modalPre {
   white-space: pre-wrap;
   word-break: break-word;
+  color: #1a1a1a;
+  font-size: 14px;
+  line-height: 1.6;
 }

@@ -22,11 +22,11 @@ const analyticsRepository = {
                 MAX(created_at) as last_occurred
              FROM user_mistake_logs
              WHERE user_id = $1
-               AND created_at >= NOW() - INTERVAL '${days} days'
+               AND created_at >= NOW() - ($3 * INTERVAL '1 day')
              GROUP BY error_category, error_detail
              ORDER BY error_count DESC
              LIMIT $2`,
-            [userId, limit]
+            [userId, limit, parseInt(days, 10)]
         );
         return rows;
     },

@@ -1,0 +1,33 @@
+[
+  { "id": 1,  "question": "Xin chào",                              "expected_intent": "GREETING",      "category": "greeting" },
+  { "id": 2,  "question": "Hi bạn",                                 "expected_intent": "GREETING",      "category": "greeting" },
+  { "id": 3,  "question": "Cảm ơn bạn nhiều nhé",                   "expected_intent": "GREETING",      "category": "greeting" },
+  { "id": 4,  "question": "Bạn là ai vậy",                          "expected_intent": "GREETING",      "category": "greeting" },
+  { "id": 5,  "question": "Bạn khỏe không",                         "expected_intent": "GREETING",      "category": "greeting" },
+
+  { "id": 10, "question": "Tiến độ học tập của tôi thế nào",        "expected_intent": "USER_PROGRESS", "category": "progress" },
+  { "id": 11, "question": "Tôi đã học được bao nhiêu từ vựng",      "expected_intent": "USER_PROGRESS", "category": "progress" },
+  { "id": 12, "question": "Từ vựng của tôi có những từ nào",        "expected_intent": "USER_PROGRESS", "category": "progress" },
+  { "id": 13, "question": "Điểm của tôi ở kỹ năng nghe là bao nhiêu","expected_intent": "USER_PROGRESS","category": "progress" },
+  { "id": 14, "question": "Tôi đã hoàn thành bao nhiêu bài",        "expected_intent": "USER_PROGRESS", "category": "progress" },
+
+  { "id": 20, "question": "Giá vàng hôm nay bao nhiêu",             "expected_intent": "LIVE_SEARCH",   "category": "live" },
+  { "id": 21, "question": "Thời tiết Hà Nội hôm nay thế nào",       "expected_intent": "LIVE_SEARCH",   "category": "live" },
+  { "id": 22, "question": "Tin tức mới nhất về iPhone",             "expected_intent": "LIVE_SEARCH",   "category": "live" },
+  { "id": 23, "question": "Tỷ giá USD hiện tại là bao nhiêu",       "expected_intent": "LIVE_SEARCH",   "category": "live" },
+  { "id": 24, "question": "Kết quả bóng đá đêm qua",                "expected_intent": "LIVE_SEARCH",   "category": "live" },
+  { "id": 25, "question": "Dự báo thời tiết tuần này",              "expected_intent": "LIVE_SEARCH",   "category": "live" },
+
+  { "id": 30, "question": "RAG là gì",                             "expected_intent": "KNOWLEDGE",     "category": "knowledge" },
+  { "id": 31, "question": "Cách dùng useEffect trong React",        "expected_intent": "KNOWLEDGE",     "category": "knowledge" },
+  { "id": 32, "question": "Giải thích giao thức HTTP hoạt động ra sao","expected_intent": "KNOWLEDGE",  "category": "knowledge" },
+  { "id": 33, "question": "Sự khác nhau giữa SQL và NoSQL",         "expected_intent": "KNOWLEDGE",     "category": "knowledge" },
+  { "id": 34, "question": "Định nghĩa machine learning",            "expected_intent": "KNOWLEDGE",     "category": "knowledge" },
+
+  { "id": 40, "question": "Nói cho tôi về chính trị Việt Nam hiện nay","expected_intent": "OFF_TOPIC",  "category": "offtopic" },
+  { "id": 41, "question": "Hướng dẫn chế tạo bom",                  "expected_intent": "OFF_TOPIC",     "category": "offtopic" },
+
+  { "id": 50, "question": "Bitcoin đang bao nhiêu",                 "expected_intent": "LIVE_SEARCH",   "category": "edge", "known_limitation": "không có từ khóa thời gian -> rule trả KNOWLEDGE" },
+  { "id": 51, "question": "Ai là tổng thống Mỹ đương nhiệm",        "expected_intent": "LIVE_SEARCH",   "category": "edge", "known_limitation": "kiến thức thay đổi theo thời gian, rule không bắt" },
+  { "id": 52, "question": "Hôm nay là thứ mấy",                     "expected_intent": "LIVE_SEARCH",   "category": "edge" }
+]

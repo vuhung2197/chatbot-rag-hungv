@@ -7,6 +7,7 @@ import { callLLM } from './llmService.js';
 
 export const INTENTS = {
     GREETING: 'GREETING',   // Chào hỏi, giao tiếp xã hội
+    KB_CATALOG: 'KB_CATALOG', // Hỏi danh mục: bot đã học/biết gì, có tài liệu/chủ đề nào
     KNOWLEDGE: 'KNOWLEDGE', // Hỏi kiến thức, cần tra cứu RAG (DB nội bộ)
     LIVE_SEARCH: 'LIVE_SEARCH', // Cần thông tin thời gian thực logic (Thời tiết, Giá cả, Tin tức...)
     USER_PROGRESS: 'USER_PROGRESS', // Hỏi về tiến độ học tập của bản thân
@@ -14,7 +15,58 @@ export const INTENTS = {
 };
 
 /**
- * Phân loại câu hỏi của người dùng
+ * Phân loại ý định bằng LUẬT (regex từ khóa) — KHÔNG gọi LLM.
+ * Mục tiêu: bỏ 1 LLM call để tăng tốc; chỉ giữ LLM ở bước sinh câu trả lời cuối.
+ * Khi không chắc -> mặc định KNOWLEDGE (an toàn, còn có fallback web phía sau).
+ * @param {string} message
+ * @returns {{intent: string, reasoning: string}}
+ */
+export function classifyIntentRule(message) {
+    const m = (message || '').toLowerCase().trim();
+    if (!m) return { intent: INTENTS.GREETING, reasoning: 'rule: empty' };
+
+    // Lưu ý: KHÔNG dùng \b vì \w chỉ gồm ASCII -> hỏng với chữ tiếng Việt có dấu (á, ị, đ...).
+    // Dùng ranh giới Unicode: (?<!\p{L}) ... (?!\p{L}) với cờ 'u' (\p{L} = mọi chữ cái Unicode).
+
+    // 1) GREETING — chào hỏi / cảm ơn / xã giao
+    if (/^(hi|hello|hey|chào|xin chào|chao|alo)(?!\p{L})/u.test(m)
+        || /(?<!\p{L})(cảm ơn|cám ơn|thank you|thanks|tạm biệt|bye)(?!\p{L})/u.test(m)
+        || /(?<!\p{L})(bạn là ai|bạn khỏe không|bạn tên gì|ai tạo ra bạn)(?!\p{L})/u.test(m)) {
+        return { intent: INTENTS.GREETING, reasoning: 'rule: greeting/social keywords' };
+    }
+
+    // 2) OFF_TOPIC — chủ đề nhạy cảm/cấm (danh sách tối thiểu, lọt sẽ rơi về KNOWLEDGE)
+    if (/(?<!\p{L})(chính trị|đảng phái|tôn giáo cực đoan|khủng bố|khiêu dâm|sex|ma túy|chế tạo (bom|vũ khí))(?!\p{L})/u.test(m)) {
+        return { intent: INTENTS.OFF_TOPIC, reasoning: 'rule: sensitive keywords' };
+    }
+
+    // 3) USER_PROGRESS — hỏi về tiến độ học của chính người dùng
+    if (/(?<!\p{L})(tiến độ|của tôi|tôi đã học|tôi đã hoàn thành|từ vựng của tôi|kết quả học|tôi học được|điểm của tôi)(?!\p{L})/u.test(m)) {
+        return { intent: INTENTS.USER_PROGRESS, reasoning: 'rule: progress keywords' };
+    }
+
+    // 4) LIVE_SEARCH — cần dữ liệu thời gian thực
+    if (/(?<!\p{L})(hôm nay|hôm qua|đêm qua|hiện tại|bây giờ|mới nhất|gần đây|tin tức|giá|tỷ giá|thời tiết|dự báo|năm nay|tháng này|tuần này|sắp tới|kết quả (bóng đá|trận))(?!\p{L})/u.test(m)) {
+        return { intent: INTENTS.LIVE_SEARCH, reasoning: 'rule: time-sensitive keywords' };
+    }
+
+    // 5) KB_CATALOG — hỏi META về kho kiến thức: "bạn đã học gì", "có tài liệu/chủ đề nào".
+    //    Phải đứng TRƯỚC KNOWLEDGE vì câu kiểu này không khớp ngữ nghĩa với nội dung chunk
+    //    (retrieval ra điểm thấp -> LLM trả "Tôi không biết"). Ta trả danh mục title thay vì RAG.
+    const asksAboutAssistant = /(?<!\p{L})(bạn|chatbot|trợ lý|hệ thống|bot|cậu)(?!\p{L})/u.test(m);
+    const asksWhatLearned = /(học|được train|được dạy|biết|nắm|hiểu).{0,25}(gì|nào|nhóm kiến thức|chủ đề|lĩnh vực|tài liệu|nội dung)/u.test(m);
+    if ((asksAboutAssistant && asksWhatLearned)
+        || /(?<!\p{L})(có những|có các|có bao nhiêu|danh mục|danh sách|liệt kê).{0,20}(tài liệu|chủ đề|kiến thức|lĩnh vực)/u.test(m)
+        || /(nhóm|loại) kiến thức (nào|gì)/u.test(m)) {
+        return { intent: INTENTS.KB_CATALOG, reasoning: 'rule: knowledge catalog/meta question' };
+    }
+
+    // 6) Mặc định KNOWLEDGE (RAG + fallback web)
+    return { intent: INTENTS.KNOWLEDGE, reasoning: 'rule: default knowledge' };
+}
+
+/**
+ * Phân loại câu hỏi của người dùng (BẰNG LLM — bản cũ, giữ lại để tùy chọn/fallback).
  * @param {string} message - Câu hỏi của người dùng
  * @param {object} model - Cấu hình model LLM để dùng cho việc phân loại (thường dùng model nhỏ/nhanh)
  * @returns {Promise<{intent: string, reasoning: string}>}
@@ -44,8 +96,10 @@ Chỉ trả về định dạng JSON duy nhất như sau, không thêm bất k�
             { role: 'user', content: message }
         ];
 
-        // Dùng temperature 0 để đảm bảo tính nhất quán (deterministic)
-        const responseText = await callLLM(model, messages, 0.1, 100);
+        // Dùng temperature thấp để nhất quán (deterministic).
+        // 800 token: model reasoning (vd gemma-4) cần đủ chỗ "suy nghĩ" rồi mới sinh JSON;
+        // nếu quá thấp, content trả về rỗng -> luôn rơi vào fallback KNOWLEDGE.
+        const responseText = await callLLM(model, messages, 0.1, 800);
 
         // Parse JSON output
         let result;

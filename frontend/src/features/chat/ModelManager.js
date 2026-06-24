@@ -58,6 +58,15 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
       updated.push(form);
     }
     saveModels(updated);
+
+    // Nếu đang sửa chính model đang được sử dụng, đồng bộ luôn model active
+    // để URL/config mới được gửi lên backend mà không cần bấm "Chọn" lại.
+    // onSelectModel (ở component cha) lo việc ghi localStorage.
+    if (editingIndex !== null && selectedModel?.name === form.name) {
+      setSelectedModel(form);
+      onSelectModel(form);
+    }
+
     setForm(defaultForm);
     setEditingIndex(null);
   };
@@ -68,8 +77,17 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
   };
 
   const handleDelete = index => {
+    const removed = models[index];
     const updated = models.filter((_, i) => i !== index);
     saveModels(updated);
+
+    // Nếu xoá đúng model đang được sử dụng, dọn luôn model active để
+    // backend không nhận config trỏ tới model đã bị xoá (stale).
+    // onSelectModel(null) (ở component cha) lo việc xoá localStorage.
+    if (selectedModel?.name === removed.name) {
+      setSelectedModel(null);
+      onSelectModel(null);
+    }
   };
 
   return (
@@ -86,7 +104,7 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
             </div>
             <div className={styles.selectedModelContent}>
               <div className={styles.selectedModelLabel}>
-                Model đang sử dụng:
+                Model chính (trả lời):
               </div>
               <div className={styles.selectedModelName}>
                 {selectedModel.name}
@@ -201,7 +219,6 @@ const ModelManagerPage = ({ onSelectModel, onClose }) => {
                   onClick={() => {
                     onSelectModel(m);
                     setSelectedModel(m);
-                    localStorage.setItem('chatbot_selected_model', JSON.stringify(m));
                     onClose();
                   }}
                 >

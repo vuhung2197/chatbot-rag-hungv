@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ============================================
   # PostgreSQL Database
@@ -90,11 +88,21 @@ services:
       - VNPAY_URL=${VNPAY_URL}
       - VNPAY_RETURN_URL=${VNPAY_RETURN_URL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - AI_SERVICE_ENABLED=${AI_SERVICE_ENABLED:-false}
+      - AI_SERVICE_URL=http://ai-service:8000
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
     volumes:
       - ./backend:/app
       - /app/node_modules
     depends_on:
       postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - chatbot-network
@@ -119,6 +127,97 @@ services:
       - chatbot-network
     depends_on:
       - backend
+
+  # ============================================
+  # Kafka (KRaft mode — no Zookeeper)
+  # ============================================
+  kafka:
+    image: apache/kafka:latest
+    container_name: chatbot-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 0
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    ports:
+      - "9094:9094"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # Kafka UI — Monitor topics, consumers, lag
+  # ============================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: chatbot-kafka-ui
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    networks:
+      - chatbot-network
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  # ============================================
+  # Chat Worker — Kafka consumer (separate process)
+  # ============================================
+  chat-worker:
+    build: ./backend
+    container_name: chatbot-chat-worker
+    restart: unless-stopped
+    command: sh -c "npm list ioredis >/dev/null 2>&1 || npm install ioredis --legacy-peer-deps; node src/workers/chatConsumer.js"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - DB_DATABASE=${POSTGRES_DB:-chatbot}
+      - NODE_ENV=development
+      - JWT_SECRET=${JWT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      # Hybrid: worker async cũng ủy quyền sinh câu trả lời sang ai-service (đồng bộ với backend).
+      - AI_SERVICE_ENABLED=${AI_SERVICE_ENABLED:-false}
+      - AI_SERVICE_URL=http://ai-service:8000
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   # ============================================
   # SonarQube Database (separate from app DB)
@@ -165,6 +264,85 @@ services:
       - chatbot-network
 
 # ============================================
+  # ============================================
+  # Redis — lưu kết quả async job (polling + chống race) & cache
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # AI Service — lõi AI (intent + RAG + agent) bằng Python/FastAPI
+  # Chạy hybrid song song backend Node; dùng chung Postgres (pgvector) + Redis.
+  # ============================================
+  ai-service:
+    build: ./ai-service
+    container_name: chatbot-ai-service
+    restart: unless-stopped
+    ports:
+      # Chỉ loopback (127.0.0.1) — KHÔNG phơi ra mọi interface. Service không có auth user;
+      # truy cập chính thống đi qua Node gateway trên chatbot-network. Loopback để debug local.
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
+    environment:
+      - ENVIRONMENT=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-postgres}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-postgres123}
+      - DB_DATABASE=${POSTGRES_DB:-chatbot}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EMBEDDING_MODEL=text-embedding-3-small
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - NODE_API_URL=http://backend:3001
+      - INTERNAL_API_TOKEN=${INTERNAL_API_TOKEN:-}
+      # Agentic RAG: allowlist MCP server (JSON). uvx (Python) + npx (Node) có sẵn trong image.
+      # Mặc định: fetch+time (uvx) · sequential-thinking+tavily (npx). Override bằng env MCP_SERVERS.
+      # Tavily cần TAVILY_API_KEY (truyền qua env cho stdio); thiếu key -> server tự degrade.
+      - MCP_SERVERS=${MCP_SERVERS:-[{"name":"fetch","transport":"stdio","command":"uvx mcp-server-fetch","enabled":true},{"name":"time","transport":"stdio","command":"uvx mcp-server-time","enabled":true},{"name":"sequential-thinking","transport":"stdio","command":"npx -y @modelcontextprotocol/server-sequential-thinking","enabled":true},{"name":"tavily","transport":"stdio","command":"npx -y tavily-mcp","api_key_env":"TAVILY_API_KEY","enabled":true}]}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ============================================
+  # Ollama — chạy LLM on-premise (minh chứng theo JD). Model kéo riêng:
+  #   docker exec chatbot-ollama ollama pull llama3.2
+  # ============================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot-ollama
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - chatbot-network
+
 # Networks
 # ============================================
 networks:
@@ -193,4 +371,13 @@ volumes:
     driver: local
   sonarqube_logs:
     name: chatbot_sonarqube_logs
+    driver: local
+  kafka_data:
+    name: chatbot_kafka_data
+    driver: local
+  redis_data:
+    name: chatbot_redis_data
+    driver: local
+  ollama_data:
+    name: chatbot_ollama_data
     driver: local

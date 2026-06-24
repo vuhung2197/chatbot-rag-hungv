@@ -167,23 +167,3 @@ export async function hybridVectorSearch(questionEmbedding, keywords = [], topK 
     .sort((a, b) => b.score - a.score)
     .slice(0, topK);
 }
-
-/**
- * Performance monitoring cho vector search
- */
-export async function getVectorSearchStats() {
-  try {
-    const [stats] = await pool.execute(`
-      SELECT 
-        COUNT(*) as total_chunks,
-        AVG(JSON_LENGTH(embedding)) as avg_vector_dimension,
-        MAX(created_at) as last_updated
-      FROM knowledge_chunks
-    `);
-
-    return stats[0];
-  } catch {
-    // console.error('❌ Error getting vector stats');
-    return null;
-  }
-}

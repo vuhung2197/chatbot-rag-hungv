@@ -1,11 +1,11 @@
 import pool from '#db';
-import { callLLM } from '#services/llmService.js';
+import { generateReply } from './chat.helpers.js';
 
 /**
  * Fetch all learning progress data for a user from DB.
  * Shared between non-streaming and streaming paths.
  */
-async function buildProgressContext(userId) {
+export async function buildProgressContext(userId) {
     const [[progressRows], [vocabByLevel], [vocabByTopic], [recentVocab],
         [listeningStats], [readingStats], [speakingStats], [writingStats],
         [learningHistory], [learningStreaks]
@@ -84,7 +84,7 @@ ${streak ? `- Chuỗi ngày học hiện tại: ${streak.current_streak} ngày
  * @param {{ userId, message, history, modelConfig, onStatus? }} opts
  * @returns {{ reply, chunks_used, source_type, reasoning_steps, _meta }}
  */
-export async function handleProgress({ userId, message, history, modelConfig, onStatus }) {
+export async function handleProgress({ userId, message, history, modelConfig, onStatus, onToken }) {
     onStatus?.('📊 Đang lấy thông tin tiến độ học tập...');
     const t0 = Date.now();
 
@@ -94,11 +94,11 @@ export async function handleProgress({ userId, message, history, modelConfig, on
 
         onStatus?.('💡 Đang tổng hợp thông tin...');
         const systemPrompt = `Bạn là trợ lý học tiếng Anh. Hãy trả lời câu hỏi về tiến độ học tập dựa trên dữ liệu sau:\n\n${context}`;
-        const reply = await callLLM(modelConfig, [
+        const reply = await generateReply(modelConfig, [
             { role: 'system', content: systemPrompt },
             ...history.slice(-4),
             { role: 'user', content: message }
-        ], 0.3, 500);
+        ], 0.3, 1500, onToken);
 
         const processTime = Date.now() - t0;
         return {

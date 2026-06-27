@@ -99,6 +99,7 @@ def _meta(state: dict, t0: float) -> dict:
         "intent": state.get("intent"),
         "source_type": state.get("source_type"),
         "total_chunks": len(state.get("chunks", [])),
+        "tools_used": state.get("tools_used", []),
         "processing_ms": _ms(t0),
     }
 

@@ -224,6 +224,11 @@ function AdvancedRAGAnalysis({ advancedResponse }) {
   );
 }
 
+// Model mặc định khi user CHƯA chọn model nào (chưa có chatbot_selected_model).
+// gpt-4o bám tool-instruction tốt -> agent thực sự gọi tool MCP (vd sequentialthinking),
+// khác gpt-4o-mini hay tự suy luận inline. User vẫn đổi/xoá qua ModelManager.
+const DEFAULT_MODEL = { url: 'https://api.openai.com/v1', name: 'gpt-4o' };
+
 export default function Chat({ darkMode = false }) {
   const { confirm } = useConfirmContext();
   const [input, setInput] = useState('');
@@ -232,7 +237,7 @@ export default function Chat({ darkMode = false }) {
   // New state for realtime status update
   const [loadingStatus, setLoadingStatus] = useState('Đang suy nghĩ...');
   const [showModelPopup, setShowModelPopup] = useState(false);
-  const [model, setModel] = useState(null);
+  const [model, setModel] = useState(DEFAULT_MODEL);
   const [webOnly, setWebOnly] = useState(false); // chế độ Web Only: đi thẳng web search, bỏ qua intent + RAG
   const [enabledServers, setEnabledServers] = useState([]); // server đang BẬT (toggle); rỗng = trợ lý thường
   const [mcpServers, setMcpServers] = useState([]); // danh sách MCP server khả dụng (cho toggle)
@@ -380,8 +385,8 @@ export default function Chat({ darkMode = false }) {
       .catch(() => { /* giữ cache hiện có */ });
   }, []);
 
-  // Tool-calling chỉ chạy với model hỗ trợ function-calling (OpenAI gpt-*). Model mặc
-  // định (null) = gpt-4o-mini phía ai-service -> coi như hỗ trợ.
+  // Tool-calling chỉ chạy với model hỗ trợ function-calling (OpenAI gpt-*). Mặc định
+  // DEFAULT_MODEL (gpt-4o) -> hỗ trợ; model rỗng (vd vừa xoá) -> ai-service fallback gpt-4o-mini.
   const toolCapable = !model || (/openai\.com/i.test(model?.url || '') && /gpt-/i.test(model?.name || ''));
 
   // Model đổi sang loại không hỗ trợ -> tắt hết công cụ (không gửi forceAgent).

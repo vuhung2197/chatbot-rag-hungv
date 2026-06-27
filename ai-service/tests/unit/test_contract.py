@@ -1,7 +1,7 @@
 """Contract test: schema Python ↔ payload Node (aiServiceClient.js / chat.schemas.js).
 
 Chống drift giữa 2 phía. Node gửi {message, model:{url,name}, history:[{role,content}]}
-và đọc lại {reply, source_type, citations, meta:{intent,source_type,total_chunks,processing_ms}}.
+và đọc lại {reply, source_type, citations, meta:{intent,source_type,total_chunks,tools_used,processing_ms}}.
 SSE: Node parse các event type status/token/text/done.
 """
 

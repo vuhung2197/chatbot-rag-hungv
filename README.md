@@ -1,4 +1,22 @@
-# 🤖 Chatbot-RAG-Powered AI Assistant
+<div align="center">
+
+<img src="assets/brand/banner-readme.png" alt="RAG Assistant — Hybrid Retrieval-Augmented chatbot" width="100%" />
+
+<h1>🤖 Chatbot-RAG-Powered AI Assistant</h1>
+
+<p><em>Hybrid Retrieval-Augmented chatbot · Node.js + Python · pgvector</em></p>
+
+<p>
+  <img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white" />
+  <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white" />
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" />
+  <img alt="React" src="https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=black" />
+  <img alt="Kafka" src="https://img.shields.io/badge/Kafka-231F20?logo=apachekafka&logoColor=white" />
+  <img alt="Redis" src="https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL%2Fpgvector-4169E1?logo=postgresql&logoColor=white" />
+</p>
+
+</div>
 
 ## 🧠 Giới Thiệu Dự Án
 
@@ -160,7 +178,7 @@ chatbot-rag-hungv/
 ├── 📁 frontend/                # React (Feature-based: auth, chat, knowledge, wallet, user)
 ├── 📁 db/                      # SQL init + migrations
 ├── 📁 docs/                    # ADR, deploy checklist, spec
-└── 📄 docker-compose.yml       # 12 services (xem mục Khởi Chạy)
+└── 📄 docker-compose.yml       # 12 services (7 lõi mặc định + profiles, xem mục Khởi Chạy)
 ```
 
 ---
@@ -168,7 +186,7 @@ chatbot-rag-hungv/
 ## ⚙️ Cài Đặt & Chạy Dự Án
 
 ### **1. Yêu Cầu Hệ Thống**
-- **Docker** + **Docker Compose** (chạy toàn bộ 12 service)
+- **Docker** + **Docker Compose** (7 service lõi mặc định; service nặng/tuỳ chọn bật qua profile — xem Khởi Chạy)
 - **Node.js** 18+ (dev backend/frontend)
 - **Python** 3.12 + [**uv**](https://docs.astral.sh/uv/) (dev ai-service)
 - **PostgreSQL** 13+ với **pgvector** extension
@@ -226,7 +244,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 ### **4. Khởi Chạy Với Docker**
 ```bash
-# Build và chạy tất cả services
+# Chạy 7 service lõi (postgres, redis, backend, frontend, kafka, chat-worker, ai-service)
 docker-compose up -d
 
 # Xem logs
@@ -235,6 +253,17 @@ docker-compose logs -f
 # Dừng services
 docker-compose down
 ```
+
+> 💡 **Tối ưu RAM (đặc biệt máy 16GB):** mặc định chỉ chạy 7 service lõi. Các service nặng/tuỳ chọn tách thành **profile**, chỉ bật khi cần:
+>
+> | Profile | Service | Lệnh |
+> |---|---|---|
+> | `tools` | pgAdmin, Kafka UI | `docker-compose --profile tools up -d` |
+> | `quality` | SonarQube (+db) | `docker-compose --profile quality up -d` |
+> | `ai-local` | Ollama (LLM on-prem) | `docker-compose --profile ai-local up -d` |
+>
+> Kết hợp nhiều profile được, ví dụ: `docker-compose --profile tools --profile quality up -d`.
+> Gọi tên service trực tiếp cũng bật được dù nó thuộc profile, ví dụ `docker-compose up -d pgadmin`.
 
 ### **5. Khởi Chạy Development Mode**
 ```bash
